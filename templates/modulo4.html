@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Disponible - Sistema de Administración{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2><i class="fas fa-car"></i> Disponible</h2>
+    
+    <div class="alert alert-success" id="successAlert">
+        <i class="fas fa-check-circle"></i> 
+        <strong>¡Éxito!</strong> <span id="successMessage"></span>
+    </div>
+    
+    <div class="alert alert-error" id="errorAlert">
+        <i class="fas fa-exclamation-circle"></i> 
+        <strong>Error:</strong> <span id="errorMessage"></span>
+    </div>
+    
+    <!-- Botón de Unidades Reservadas -->
+    <div style="margin: 20px 0; text-align: center;">
+        <button class="btn btn-warning" onclick="openReservadasModal()">
+            <i class="fas fa-bookmark"></i> Gestionar Unidades Reservadas (<span id="reservadasCount">0</span>)
+        </button>
+        <p style="color: #718096; font-size: 0.9em; margin-top: 10px;">
+            <i class="fas fa-info-circle"></i> Las unidades reservadas no aparecerán en la tabla de disponibles
+        </p>
+    </div>
+    
+    <!-- Pestañas -->
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('detalle')">
+            <i class="fas fa-list"></i> Detalle
+        </button>
+        <button class="tab-button" onclick="switchTab('resumen')">
+            <i class="fas fa-chart-pie"></i> Resumen por Modelo
+        </button>
+    </div>
+    
+    <!-- Tab Detalle -->
+    <div id="tab-detalle" class="tab-content active">
+        <div class="alert alert-info mb-3" style="display: block; background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; border-radius: 5px;">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Total de unidades disponibles:</strong> <span id="totalDisponibles">0</span>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Nº Fábrica</th>
+                        <th><i class="fas fa-car"></i> Modelo/Versión</th>
+                        <th><i class="fas fa-palette"></i> Color</th>
+                        <th><i class="fas fa-calendar-check"></i> Entrega Estimada</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
+                        <th><i class="fas fa-percentage"></i> Desc. Individual</th>
+                        <th><i class="fas fa-tags"></i> Desc. Adicionales</th>
+                        <th><i class="fas fa-dollar-sign"></i> Precio Final</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDisponibles">
+                    <!-- Datos cargados dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center; padding: 20px;">
+            <button class="btn btn-primary" onclick="actualizarDisponibles()">
+                <i class="fas fa-sync"></i> Actualizar Tabla
+            </button>
+            <button class="btn btn-success" onclick="exportarAExcel()">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </button>
+        </div>
+    </div>
+    
+    <!-- Tab Resumen -->
+    <div id="tab-resumen" class="tab-content">
+        <div class="alert alert-info mb-3" style="display: block; background: #e6fffa; border-left: 4px solid #38b2ac; padding: 15px; border-radius: 5px;">
+            <i class="fas fa-chart-pie me-2"></i>
+            <strong>Resumen de Disponibilidad por Modelo</strong>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-car"></i> Modelo/Versión</th>
+                        <th><i class="fas fa-hashtag"></i> Cantidad Disponible</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaResumen">
+                    <!-- Datos cargados dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center; padding: 20px;">
+            <button class="btn btn-primary" onclick="actualizarDisponibles()">
+                <i class="fas fa-sync"></i> Actualizar Resumen
+            </button>
+            <button class="btn btn-success" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir Lista
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Unidades Reservadas -->
+<div id="modalReservadas" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-bookmark"></i> Gestionar Unidades Reservadas</h3>
+            <button class="modal-close" onclick="closeReservadasModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: #718096; margin-bottom: 20px;">
+                Agrega números de fábrica de unidades reservadas. Estas unidades NO aparecerán en la tabla de disponibles.
+            </p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" 
+                       id="inputReservada" 
+                       placeholder="Nº Fábrica (Ej: YAC125090007)" 
+                       style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 5px;">
+                <input type="text" 
+                       id="inputVendedor" 
+                       placeholder="Nombre del Vendedor" 
+                       style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 5px;">
+                <button class="btn btn-primary" onclick="addReservada()">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+            
+            <div id="listaReservadas" style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 5px; padding: 10px;">
+                <!-- Lista de unidades reservadas -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor para alertas flotantes -->
+<div id="alertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<style>
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: #718096;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+    color: #2d3748;
+    background: #f7fafc;
+}
+
+.tab-button.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media print {
+    .nav, .btn, .header p, .alert, .tabs {
+        display: none !important;
+    }
+    
+    .container {
+        box-shadow: none;
+    }
+    
+    .tab-content {
+        display: block !important;
+    }
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/modulo4.js') }}?v={{ range(1, 999999) | random }}"></script>
+
+<!-- Librería para exportar a Excel real (XLSX) -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<script>
+// Verificar si la función se cargó
+console.log('=== DIAGNÓSTICO DE CARGA ===');
+console.log('exportarAExcel existe:', typeof exportarAExcel);
+console.log('actualizarDisponibles existe:', typeof actualizarDisponibles);
+
+// Función mejorada para exportar a Excel real (XLSX)
+window.exportarAExcel = function() {
+    console.log('Ejecutando exportarAExcel');
+    
+    // Filtrar unidades no reservadas
+    const numerosReservados = unidadesReservadas.map(r => r.numero_fabrica);
+    const disponiblesFiltrados = disponiblesData.filter(item => {
+        return !numerosReservados.includes(item.numero_fabrica);
+    });
+    
+    if (disponiblesFiltrados.length === 0) {
+        showError('No hay datos para exportar');
+        return;
+    }
+    
+    // Ordenar de la misma forma que la tabla
+    disponiblesFiltrados.sort((a, b) => {
+        if (a.entrega_estimada !== b.entrega_estimada) {
+            return new Date(a.entrega_estimada) - new Date(b.entrega_estimada);
+        }
+        if (a.color !== b.color) {
+            return a.color.localeCompare(b.color);
+        }
+        return a.modelo_version.localeCompare(b.modelo_version);
+    });
+    
+    // Preparar datos para Excel
+    const datos = disponiblesFiltrados.map(item => {
+        // Formatear fecha a DD/MM/YYYY
+        let fechaFormateada = '';
+        if (item.entrega_estimada) {
+            try {
+                const fecha = new Date(item.entrega_estimada);
+                const dia = String(fecha.getDate()).padStart(2, '0');
+                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                const anio = fecha.getFullYear();
+                fechaFormateada = `${dia}/${mes}/${anio}`;
+            } catch (e) {
+                fechaFormateada = item.entrega_estimada;
+            }
+        }
+        
+        return {
+            'Nº Fábrica': item.numero_fabrica || '',
+            'Modelo/Versión': item.modelo_version || '',
+            'Color': item.color || '',
+            'Entrega Estimada': fechaFormateada,
+            'Ubicación': item.ubicacion || '',
+            'Desc. Individual': (item.descuento_individual || 0) + '%',
+            'Desc. Adicionales': (item.descuento_adicional || 0) + '%',
+            'Precio Final': '$' + (item.precio_disponible || 0).toLocaleString('es-CL')
+        };
+    });
+    
+    // Crear libro de Excel
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+    
+    // Ajustar ancho de columnas
+    const colWidths = [
+        { wch: 15 }, // Nº Fábrica
+        { wch: 35 }, // Modelo/Versión
+        { wch: 20 }, // Color
+        { wch: 15 }, // Entrega Estimada
+        { wch: 15 }, // Ubicación
+        { wch: 13 }, // Desc. Individual
+        { wch: 15 }, // Desc. Adicionales
+        { wch: 15 }  // Precio Final
+    ];
+    ws['!cols'] = colWidths;
+    
+    // Agregar hoja al libro
+    XLSX.utils.book_append_sheet(wb, ws, 'Disponibles');
+    
+    // Descargar archivo
+    const fecha = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `disponibles_${fecha}.xlsx`);
+    
+    showSuccess(`Exportados ${disponiblesFiltrados.length} vehículos a Excel`);
+};
+</script>
+{% endblock %}

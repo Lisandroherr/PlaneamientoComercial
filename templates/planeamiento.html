@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planeamiento - Sistema de Administración</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div style="background: #2D2D2D; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E;">
+        <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
+            <i class="fas fa-chart-line"></i> Planeamiento
+        </h1>
+        <a href="/" class="btn btn-secondary" style="background: #EB0A1E; color: white; padding: 8px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-arrow-left"></i> Volver al Inicio
+        </a>
+    </div>
+    
+    <div style="padding: 40px; background: #f5f5f5; min-height: calc(100vh - 65px);">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1400px; margin: 0 auto;">
+        <!-- Módulo 1: Lista de Precios -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-tags" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Lista de Precios</h3>
+            <p style="opacity: 0.9;">Gestiona precios de vehículos en ARS y USD con cotizaciones actualizadas.</p>
+            <a href="{{ url_for('modulo1') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Módulo 2: Bitácora -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-book" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Bitácora</h3>
+            <p style="opacity: 0.9;">Registra operaciones con modelo, vendedor y número de operación.</p>
+            <a href="{{ url_for('modulo2') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Módulo 3: Seguimiento -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-file-excel" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Seguimiento</h3>
+            <p style="opacity: 0.9;">Carga y limpia automáticamente tus reportes diarios de Excel.</p>
+            <a href="{{ url_for('modulo3') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Módulo 4: Disponible -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-car" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Disponible</h3>
+            <p style="opacity: 0.9;">Gestión de unidades disponibles y reservadas en tiempo real.</p>
+            <a href="{{ url_for('modulo4') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Módulo 5: Análisis de Seguimiento -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-cogs" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Análisis de Seguimiento</h3>
+            <p style="opacity: 0.9;">Procesamiento avanzado de archivos SIAC e INTEGRA con VLOOKUP.</p>
+            <a href="{{ url_for('modulo5') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Módulo 6: Dashboard -->
+        <div style="background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); padding: 30px; border-radius: 10px; color: white;">
+            <i class="fas fa-chart-bar" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px;">Dashboard</h3>
+            <p style="opacity: 0.9;">Panel de control con métricas y análisis de rendimiento.</p>
+            <a href="{{ url_for('modulo6') }}" class="btn btn-primary" style="background: white; color: #EB0A1E; margin-top: 15px;">
+                Ir al módulo <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

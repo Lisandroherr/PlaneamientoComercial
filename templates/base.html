@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}Sistema de Administración{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav" style="display: flex; align-items: center; flex-wrap: nowrap; justify-content: flex-start;">
+            <a href="{{ url_for('modulo1') }}" {% if request.endpoint == 'modulo1' %}class="active"{% endif %}>
+                <i class="fas fa-tags"></i> Lista de Precios
+            </a>
+            <a href="{{ url_for('modulo2') }}" {% if request.endpoint == 'modulo2' %}class="active"{% endif %}>
+                <i class="fas fa-book"></i> Bitácora
+            </a>
+            <a href="{{ url_for('modulo3') }}" {% if request.endpoint == 'modulo3' %}class="active"{% endif %}>
+                <i class="fas fa-clipboard-list"></i> Seguimiento Unidades
+            </a>
+            <a href="{{ url_for('modulo4') }}" {% if request.endpoint == 'modulo4' %}class="active"{% endif %}>
+                <i class="fas fa-car"></i> Disponible
+            </a>
+            <a href="{{ url_for('modulo5') }}" {% if request.endpoint == 'modulo5' %}class="active"{% endif %}>
+                <i class="fas fa-cogs"></i> Análisis de Seguimiento
+            </a>
+            <a href="{{ url_for('modulo6') }}" {% if request.endpoint == 'modulo6' %}class="active"{% endif %}>
+                <i class="fas fa-chart-bar"></i> Dashboard
+            </a>
+            <a href="{{ url_for('planeamiento') }}" style="margin-left: auto; margin-right: 10px; background: #EB0A1E !important; color: white !important; border-radius: 5px; padding: 8px 16px !important; border-bottom: none !important; font-size: 0.9em;">
+                <i class="fas fa-arrow-left"></i> Volver a Planeamiento
+            </a>
+        </nav>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

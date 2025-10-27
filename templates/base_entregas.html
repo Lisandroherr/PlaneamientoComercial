@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}Sistema de Entregas{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav" style="display: flex; align-items: center; flex-wrap: nowrap; justify-content: flex-start;">
+            <a href="{{ url_for('entregas_reportes') }}" {% if request.endpoint == 'entregas_reportes' %}class="active"{% endif %}>
+                <i class="fas fa-chart-bar"></i> Reportes
+            </a>
+            <a href="{{ url_for('home') }}" style="margin-left: auto; margin-right: 10px; background: #EB0A1E !important; color: white !important; border-radius: 5px; padding: 8px 16px !important; border-bottom: none !important; font-size: 0.9em;">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </a>
+        </nav>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

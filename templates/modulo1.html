@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Precios - Sistema de Administración{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2><i class="fas fa-tags"></i> Lista de Precios de Vehículos</h2>
+
+    <!-- Control de Descuentos por Familia -->
+    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #e2e8f0;">
+        <h3 style="margin-top: 0; color: #2d3748; font-size: 1.1em; margin-bottom: 15px;">
+            <i class="fas fa-percentage"></i> Descuentos por Familia
+        </h3>
+        <div id="familiaControls" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            <!-- Controles generados dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Control de Descuentos Adicionales -->
+    <div style="background: #fff5f5; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #feb2b2;">
+        <h3 style="margin-top: 0; color: #c53030; font-size: 1.1em; margin-bottom: 15px;">
+            <i class="fas fa-tags"></i> Descuentos Adicionales
+        </h3>
+        
+        <!-- Descuento por Stock -->
+        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 10px 0; color: #2d3748; font-size: 1em;">
+                <i class="fas fa-warehouse"></i> Descuento por unidades en Stock
+            </h4>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-weight: 600; color: #4a5568;">Descuento cuando Ubicación contiene "Stock":</label>
+                <input type="number" id="descuentoStock" min="0" max="100" step="0.5" value="0"
+                       style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                <span style="color: #718096;">%</span>
+                <button onclick="guardarDescuentosAdicionales()" class="btn-aplicar-adicional"
+                        style="background: #e53e3e; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: auto;">
+                    <i class="fas fa-save"></i> Guardar Configuración
+                </button>
+            </div>
+        </div>
+        
+        <!-- Descuento por Color -->
+        <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 10px 0; color: #2d3748; font-size: 1em;">
+                <i class="fas fa-palette"></i> Descuento por Color Específico
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Super Blanco:</label>
+                    <input type="number" id="descuento_super_blanco" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Blanco Perlado:</label>
+                    <input type="number" id="descuento_blanco_perlado" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Gris Plata:</label>
+                    <input type="number" id="descuento_gris_plata" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Gris Azulado:</label>
+                    <input type="number" id="descuento_gris_azulado" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Gris Oscuro:</label>
+                    <input type="number" id="descuento_gris_oscuro" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Rojo Metalizado:</label>
+                    <input type="number" id="descuento_rojo_metalizado" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 500; color: #4a5568; min-width: 130px;">Negro Mica:</label>
+                    <input type="number" id="descuento_negro_mica" min="0" max="100" step="0.5" value="0"
+                           style="width: 70px; padding: 6px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-size: 0.9em;">%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Descuento por Antigüedad -->
+        <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 10px 0; color: #2d3748; font-size: 1em;">
+                <i class="fas fa-calendar-alt"></i> Descuento por Antigüedad
+            </h4>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 600; color: #4a5568;">Si la Entrega Estimada es anterior a:</label>
+                    <input type="number" id="mesesAntiguedad" min="1" max="24" step="1" value="3"
+                           style="width: 70px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-weight: 500;">meses atrás respecto al día de la fecha</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 600; color: #4a5568;">Aplicar descuento de:</label>
+                    <input type="number" id="descuentoAntiguedad" min="0" max="100" step="0.5" value="0"
+                           style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+                    <span style="color: #718096; font-weight: 500;">%</span>
+                </div>
+            </div>
+            <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #718096;">
+                <i class="fas fa-info-circle"></i> Ejemplo: Si configurás 3 meses y 5%, las unidades con entrega estimada mayor a 3 meses de antigüedad tendrán 5% de descuento adicional.
+            </p>
+        </div>
+        
+        <div style="margin-top: 15px; padding: 12px; background: #fef5e7; border-left: 4px solid #f39c12; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.9em; color: #7d6608;">
+                <i class="fas fa-exclamation-triangle"></i> <strong>Nota:</strong> Estos descuentos adicionales se calcularán automáticamente en el Disponible 
+                sobre el precio base con el descuento de familia ya aplicado. Los descuentos son acumulables.
+            </p>
+        </div>
+    </div>
+
+    <!-- Pestañas -->
+    <div style="margin-bottom: 20px;">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-target="#convencionales" role="tab">
+                    Vehículos Convencionales (<span id="countConvencionales">0</span>)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-target="#sc" role="tab">
+                    Vehículos SC (<span id="countSC">0</span>)
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content">
+        <!-- Pestaña Convencionales -->
+        <div class="tab-pane fade show active" id="convencionales">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-layer-group"></i> Familia</th>
+                            <th><i class="fas fa-car"></i> Modelo</th>
+                            <th><i class="fas fa-dollar-sign"></i> Precio ARS</th>
+                            <th><i class="fas fa-money-bill"></i> Precio USD</th>
+                            <th><i class="fas fa-exchange-alt"></i> Cotización USD-ARS</th>
+                            <th><i class="fas fa-percent"></i> Descuento (%)</th>
+                            <th><i class="fas fa-ban"></i> Dado de Baja</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaConvencionales">
+                        <!-- Datos cargados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pestaña SC -->
+        <div class="tab-pane fade" id="sc">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-layer-group"></i> Familia</th>
+                            <th><i class="fas fa-car"></i> Modelo</th>
+                            <th><i class="fas fa-dollar-sign"></i> Precio ARS</th>
+                            <th><i class="fas fa-money-bill"></i> Precio USD</th>
+                            <th><i class="fas fa-exchange-alt"></i> Cotización USD-ARS</th>
+                            <th><i class="fas fa-percent"></i> Descuento (%)</th>
+                            <th><i class="fas fa-ban"></i> Dado de Baja</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaSC">
+                        <!-- Datos cargados dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 20px; background: #e6fffa; border-left: 4px solid #38b2ac; border-radius: 5px;">
+        <h3 style="color: #234e52; margin-bottom: 10px;">
+            <i class="fas fa-lightbulb"></i> Información
+        </h3>
+        <p style="color: #285e61;">
+            Los precios se actualizan regularmente según la cotización del dólar. 
+            El descuento se aplica automáticamente sobre el precio en ARS.
+        </p>
+    </div>
+    
+    <div style="margin-top: 20px; text-align: center;">
+        <button class="btn btn-primary" onclick="guardarPrecios()">
+            <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir Lista de Precios
+        </button>
+    </div>
+</div>
+
+<!-- Contenedor para alertas -->
+<div id="alertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<style>
+/* Estilos para las pestañas */
+.nav-tabs {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.nav-item {
+    margin-right: 2px;
+}
+
+.nav-link {
+    display: block;
+    padding: 12px 24px;
+    background: #f7fafc;
+    border: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #4a5568;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.show {
+    display: block;
+}
+
+.form-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #EB0A1E;
+    box-shadow: 0 0 0 3px rgba(235, 10, 30, 0.1);
+}
+
+@media print {
+    .nav, .btn, .header p, .info-box {
+        display: none !important;
+    }
+    
+    .container {
+        box-shadow: none;
+    }
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/modulo1.js') }}"></script>
+{% endblock %}

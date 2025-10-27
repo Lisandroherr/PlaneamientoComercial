@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Disponibles</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #EB0A1E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #C8102E;
+        }
+        .container {
+            background: white;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #58595B;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .precio {
+            color: #2D2D2D;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-car"></i> Disponibles</h1>
+        <a href="/" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver al Inicio
+        </a>
+    </div>
+    
+    <div class="container">
+        <div style="padding: 20px; background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: 600; color: #2D2D2D;">
+                    <i class="fas fa-filter"></i> Filtrar por Familia:
+                </label>
+                <select id="filtroFamilia" style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; min-width: 200px; cursor: pointer;">
+                    <option value="">Todas las Familias</option>
+                </select>
+                <span id="contadorResultados" style="color: #718096; font-size: 0.95em; margin-left: 10px;">
+                    Cargando...
+                </span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Nº Fábrica</th>
+                        <th><i class="fas fa-car"></i> Modelo/Versión</th>
+                        <th><i class="fas fa-palette"></i> Color</th>
+                        <th><i class="fas fa-calendar-check"></i> Entrega Estimada</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
+                        <th><i class="fas fa-percentage"></i> Desc. Individual</th>
+                        <th><i class="fas fa-tags"></i> Desc. Adicionales</th>
+                        <th><i class="fas fa-dollar-sign"></i> Precio Unidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDisponibles">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando vehículos disponibles...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let todosDisponibles = [];
+        
+        // Cargar disponibles al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarDisponibles();
+            document.getElementById('filtroFamilia').addEventListener('change', aplicarFiltro);
+        });
+        
+        function cargarDisponibles() {
+            const tbody = document.getElementById('tablaDisponibles');
+            
+            // Primero obtener las unidades reservadas
+            fetch('/api/unidades_reservadas')
+                .then(response => response.json())
+                .then(reservadas => {
+                    const reservadasSet = new Set(reservadas.map(r => r.numero_fabrica));
+                    
+                    // Luego obtener los disponibles
+                    return fetch('/api/disponibles')
+                        .then(response => response.json())
+                        .then(disponibles => {
+                            // Filtrar las unidades reservadas
+                            todosDisponibles = disponibles.filter(item => 
+                                !reservadasSet.has(item.numero_fabrica)
+                            );
+                            cargarFamilias();
+                            mostrarDisponibles(todosDisponibles);
+                        });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los datos
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function cargarFamilias() {
+            const select = document.getElementById('filtroFamilia');
+            const familias = new Set();
+            
+            todosDisponibles.forEach(item => {
+                if (item.familia) {
+                    familias.add(item.familia);
+                }
+            });
+            
+            const familiasOrdenadas = Array.from(familias).sort();
+            familiasOrdenadas.forEach(familia => {
+                const option = document.createElement('option');
+                option.value = familia;
+                option.textContent = familia;
+                select.appendChild(option);
+            });
+        }
+        
+        function aplicarFiltro() {
+            const familiaSeleccionada = document.getElementById('filtroFamilia').value;
+            
+            let disponiblesFiltrados = todosDisponibles;
+            if (familiaSeleccionada) {
+                disponiblesFiltrados = todosDisponibles.filter(item => 
+                    item.familia === familiaSeleccionada
+                );
+            }
+            
+            mostrarDisponibles(disponiblesFiltrados);
+        }
+        
+        function mostrarDisponibles(disponibles) {
+            const tbody = document.getElementById('tablaDisponibles');
+            const contador = document.getElementById('contadorResultados');
+            
+            // Actualizar contador
+            contador.textContent = `${disponibles.length} vehículo${disponibles.length !== 1 ? 's' : ''} encontrado${disponibles.length !== 1 ? 's' : ''}`;
+            
+            if (!disponibles || disponibles.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay vehículos disponibles en este momento
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            // Ordenar alfabéticamente por Modelo/Versión (A-Z)
+            disponibles.sort((a, b) => {
+                const modeloA = (a.modelo_version || '').toLowerCase();
+                const modeloB = (b.modelo_version || '').toLowerCase();
+                return modeloA.localeCompare(modeloB);
+            });
+            
+            disponibles.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                // Formatear fecha
+                let fechaFormateada = item.entrega_estimada || '-';
+                if (item.entrega_estimada) {
+                    try {
+                        const fecha = new Date(item.entrega_estimada);
+                        fechaFormateada = fecha.toLocaleDateString('es-AR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    } catch (e) {
+                        fechaFormateada = item.entrega_estimada;
+                    }
+                }
+                
+                // Formatear precio
+                const precio = item.precio_disponible || 0;
+                const precioFormateado = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(precio);
+                
+                // Formatear descuentos
+                const descIndividual = item.descuento_individual ? `${item.descuento_individual}%` : '0%';
+                const descAdicional = item.descuento_adicional && item.descuento_adicional > 0 
+                    ? `${item.descuento_adicional}%` 
+                    : '0%';
+                
+                tr.innerHTML = `
+                    <td><strong>${item.numero_fabrica || '-'}</strong></td>
+                    <td>${item.modelo_version || '-'}</td>
+                    <td>${item.color || '-'}</td>
+                    <td>${fechaFormateada}</td>
+                    <td>${item.ubicacion || '-'}</td>
+                    <td style="text-align: center;">${descIndividual}</td>
+                    <td>${descAdicional}</td>
+                    <td class="precio">${precioFormateado}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

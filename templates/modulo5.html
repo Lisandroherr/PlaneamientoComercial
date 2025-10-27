@@ -1,0 +1,400 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Análisis Seguimiento - Sistema de Administración{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2><i class="fas fa-chart-line"></i> Análisis Seguimiento</h2>
+    
+    <div id="alert-container"></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+        <div style="background: #fff5f5; padding: 20px; border-radius: 10px; border: 2px solid #feb2b2;">
+            <h3 style="color: #C8102E; margin: 0 0 10px 0;"><i class="fas fa-file-alt"></i> Archivo SIAC (Principal)</h3>
+            <p style="color: #4a5568; margin-bottom: 15px; font-size: 0.85em;">Archivo principal de trabajo con 39 columnas</p>
+            <div class="drop-zone" id="dropZoneSIAC" style="border-color: #EB0A1E; min-height: 120px; padding: 20px;"><i class="fas fa-cloud-upload-alt" style="color: #EB0A1E; font-size: 2em;"></i><p style="color: #2D2D2D; font-weight: 600; margin: 10px 0 5px 0;">Arrastra aquí el archivo SIAC</p><p class="hint" style="font-size: 0.85em;">o haz clic para seleccionar</p><input type="file" id="fileSIAC" accept=".xlsx,.xls" style="display: none;"></div>
+            <div id="siacStatus" style="display: none; margin-top: 12px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #EB0A1E;"><i class="fas fa-check-circle" style="color: #EB0A1E;"></i><span id="siacFileName" style="font-weight: 600; margin-left: 8px;"></span><p style="margin: 6px 0 0 0; font-size: 0.8em; color: #718096;" id="siacInfo"></p></div>
+        </div>
+        <div style="background: #f7fafc; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0;">
+            <h3 style="color: #2D2D2D; margin: 0 0 10px 0;"><i class="fas fa-link"></i> Archivo INTEGRA (Vinculación)</h3>
+            <p style="color: #4a5568; margin-bottom: 15px; font-size: 0.85em;">Archivo secundario para completar ubicaciones (columna 1: operac, columna 12: ubicacion)</p>
+            <div class="drop-zone" id="dropZoneINTEGRA" style="min-height: 120px; padding: 20px;"><i class="fas fa-cloud-upload-alt" style="font-size: 2em;"></i><p style="color: #2D2D2D; font-weight: 600; margin: 10px 0 5px 0;">Arrastra aquí el archivo INTEGRA</p><p class="hint" style="font-size: 0.85em;">o haz clic para seleccionar</p><input type="file" id="fileINTEGRA" accept=".xlsx,.xls" style="display: none;"></div>
+            <div id="integraStatus" style="display: none; margin-top: 12px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #58595B;"><i class="fas fa-check-circle" style="color: #58595B;"></i><span id="integraFileName" style="font-weight: 600; margin-left: 8px;"></span><p style="margin: 6px 0 0 0; font-size: 0.8em; color: #718096;" id="integraInfo"></p></div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
+        <button onclick="abrirAdministradorEjecutivos()" class="btn" style="background: linear-gradient(135deg, #2D2D2D, #58595B); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 0.95em; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"><i class="fas fa-users-cog"></i> Administrar Ejecutivos</button>
+        <button onclick="abrirConfiguradorObservaciones()" class="btn" style="background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 0.95em; display: flex; align-items: center; gap: 8px; transition: all 0.3s;"><i class="fas fa-cog"></i> Configurar Observaciones</button>
+        <button id="btnProcesar" class="btn btn-primary" disabled><i class="fas fa-cogs"></i> Procesar Archivos</button>
+        <button id="btnDescargar" class="btn btn-success" style="display: none;"><i class="fas fa-download"></i> Descargar Resultado</button>
+        <button id="btnLimpiar" class="btn btn-secondary"><i class="fas fa-trash-alt"></i> Limpiar Todo</button>
+    </div>
+    
+    <div class="spinner" id="spinner"></div>
+    
+    <div id="processingInfo" style="display: none; margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%); border-radius: 10px; color: white;">
+        <h3 style="margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Estado del Procesamiento</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div><p style="opacity: 0.9; margin: 0; font-size: 0.9em;">Filas procesadas</p><p style="font-size: 2em; margin: 5px 0; font-weight: 600;" id="rowsProcessed">0</p></div>
+            <div><p style="opacity: 0.9; margin: 0; font-size: 0.9em;">Ejecutivos asignados</p><p style="font-size: 2em; margin: 5px 0; font-weight: 600;" id="ejecutivosAsignados">0</p></div>
+            <div><p style="opacity: 0.9; margin: 0; font-size: 0.9em;">Ubicaciones encontradas</p><p style="font-size: 2em; margin: 5px 0; font-weight: 600;" id="ubicacionesEncontradas">0</p></div>
+            <div><p style="opacity: 0.9; margin: 0; font-size: 0.9em;">Clases calculadas</p><p style="font-size: 2em; margin: 5px 0; font-weight: 600;" id="clasesCalculadas">0</p></div>
+        </div>
+    </div>
+    
+    <div id="previewSection" style="display: none; margin-top: 35px;">
+        <h3 style="margin-bottom: 20px;"><i class="fas fa-table"></i> Vista Previa de Datos Procesados</h3>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; color: #2D2D2D; font-weight: 600;"><i class="fas fa-user-tie"></i> Filtrar por Ejecutivo:</label>
+                    <select id="filtroEjecutivo" onchange="aplicarFiltros()" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        <option value="">Todos los ejecutivos</option>
+                        <option value="Sin asignar">Sin asignar</option>
+                        <option value="NACHO">NACHO</option>
+                        <option value="ALDI">ALDI</option>
+                        <option value="JUANMA">JUANMA</option>
+                        <option value="FACU">FACU</option>
+                        <option value="SR.">SR.</option>
+                        <option value="SM.">SM.</option>
+                        <option value="CHOCO">CHOCO</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; color: #2D2D2D; font-weight: 600;"><i class="fas fa-tag"></i> Filtrar por Clase:</label>
+                    <select id="filtroClase" onchange="aplicarFiltros()" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;"><option value="">Todas las clases</option><option value="CLASE A">CLASE A (Solo efectivo)</option><option value="CLASE B">CLASE B (Efectivo + Usado)</option><option value="CLASE C">CLASE C (Efectivo + Crédito)</option><option value="CLASE D">CLASE D (Solo crédito)</option><option value="CLASE E">CLASE E (Efectivo + Usado + Crédito)</option><option value="CLASE X">CLASE X (No clasificadas)</option></select>
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="limpiarFiltros()" class="btn btn-secondary" style="padding: 10px 20px;"><i class="fas fa-eraser"></i> Limpiar Filtros</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; max-height: 600px; overflow-y: auto;">
+            <table id="preview-table" style="width: 100%; min-width: 2000px; border-collapse: collapse; background: white; table-layout: auto;">
+                <thead style="background: linear-gradient(135deg, #EB0A1E, #C8102E) !important; color: white !important; position: sticky; top: 0; z-index: 10; display: table-header-group !important;">
+                    <tr style="height: 50px; display: table-row !important;">
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Operación</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Cliente</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Modelo/Versión</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Vendedor</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Ejecutivo</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Ubicación Carpeta</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Est. Entrega</th>
+                        <th style="padding: 12px !important; text-align: right; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">EFECTIVO</th>
+                        <th style="padding: 12px !important; text-align: right; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">USADO</th>
+                        <th style="padding: 12px !important; text-align: right; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">CRÉDITO</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Clase</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Días Asig</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Días Stock</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Diferencia</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Secuencia</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Hold Stock</th>
+                        <th style="padding: 12px !important; text-align: left; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Observaciones (Asig.Uni)</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Zona Teórica</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">Estado Código</th>
+                        <th style="padding: 12px !important; text-align: center; border-bottom: 2px solid #C8102E; font-size: 0.9em !important; font-weight: 600 !important; text-transform: none !important; display: table-cell !important; visibility: visible !important; color: white !important; background: transparent !important;">🚨</th>
+                    </tr>
+                </thead>
+                <tbody id="previewTableBody"></tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div><i class="fas fa-database" style="color: #EB0A1E;"></i> <strong>Total de registros:</strong> <span id="totalCount">0</span></div>
+            <div><i class="fas fa-filter" style="color: #EB0A1E;"></i> <strong>Registros filtrados:</strong> <span id="filteredCount">0</span></div>
+        </div>
+        
+        <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-chart-pie"></i> Estadísticas por Clase</h4>
+                <div id="statClases" style="color: #4a5568;"></div>
+            </div>
+            <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-user-tie"></i> Estadísticas por Ejecutivo</h4>
+                <div id="statEjecutivos" style="color: #4a5568;"></div>
+            </div>
+            <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0;">
+                <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-folder"></i> Estadísticas de Ubicaciones</h4>
+                <div id="statUbicaciones" style="color: #4a5568;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-left: 4px solid #EB0A1E; border-radius: 5px;">
+        <h3 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Instrucciones de Uso</h3>
+        <ol style="color: #4a5568; line-height: 1.8;">
+            <li><strong>Cargar archivo SIAC:</strong> Es el archivo principal con 39 columnas</li>
+            <li><strong>Cargar archivo INTEGRA:</strong> Contiene las ubicaciones para vincular (columna 1: operac, columna 12: ubicacion)</li>
+            <li><strong>Procesar:</strong> El sistema ejecutará automáticamente: limpieza, asignación de ejecutivos, vinculación VLOOKUP, fechas y clasificación (A, B, C, D, E, X)</li>
+            <li><strong>Descargar:</strong> Obtendrás un archivo Excel procesado con las 39 columnas enriquecidas</li>
+        </ol>
+    </div>
+</div>
+
+<div id="modalEjecutivos" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; overflow-y: auto;">
+    <div style="background: white; max-width: 900px; margin: 50px auto; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;"><i class="fas fa-users-cog"></i> Administrador de Vendedores y Ejecutivos</h3>
+            <button onclick="cerrarAdministradorEjecutivos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">&times;</button>
+        </div>
+        <div style="padding: 30px;">
+            <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                <h4 style="color: #2D2D2D; margin: 0 0 15px 0;"><i class="fas fa-plus-circle"></i> Agregar Nueva Relación</h4>
+                <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 10px;">
+                    <input type="text" id="nuevoVendedor" placeholder="Nombre del Vendedor" style="padding: 10px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em;">
+                    <select id="nuevoEjecutivo" style="padding: 10px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em; cursor: pointer;">
+                        <option value="">Seleccionar Ejecutivo</option>
+                        <option value="NACHO">NACHO</option>
+                        <option value="ALDI">ALDI</option>
+                        <option value="JUANMA">JUANMA</option>
+                        <option value="FACU">FACU</option>
+                        <option value="SR.">SR.</option>
+                        <option value="CHOCO">CHOCO</option>
+                        <option value="SM.">SM.</option>
+                    </select>
+                    <button onclick="agregarRelacion()" style="background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: 600; transition: all 0.3s;"><i class="fas fa-plus"></i> Agregar</button>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="color: #2D2D2D; margin: 0;"><i class="fas fa-list"></i> Relaciones Actuales (<span id="totalRelaciones">0</span>)</h4>
+                    <div style="position: relative; width: 300px;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #a0aec0;"></i>
+                        <input type="text" id="searchVendedor" placeholder="Buscar vendedor..." onkeyup="filtrarRelaciones()" style="width: 100%; padding: 10px 10px 10px 40px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.9em;">
+                    </div>
+                </div>
+                <div id="listaRelaciones" style="max-height: 400px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 8px; padding: 15px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Configurador de Observaciones -->
+<div id="modalConfigObservaciones" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; overflow-y: auto;">
+    <div style="max-width: 1200px; margin: 50px auto; background: white; border-radius: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.3);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; padding: 25px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 1.5em;"><i class="fas fa-cog"></i> Configurador de Observaciones</h2>
+            <button onclick="cerrarConfiguradorObservaciones()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: all 0.3s;">&times;</button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 30px;">
+            <!-- Sección 1: Configuración de Días por Zona -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #2D2D2D; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-calendar-alt" style="color: #EB0A1E;"></i>
+                    Configuración de Días por Zona
+                </h3>
+                <p style="color: #718096; margin-bottom: 20px; font-size: 0.95em;">Define los días estándar y la desviación permitida para cada zona de observación.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Zona 1 -->
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                        <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-map-marker-alt" style="color: #EB0A1E;"></i> Zona 1</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Estándar:</label>
+                            <input type="number" id="diasEstandarZona1" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Desvío (±):</label>
+                            <input type="number" id="diasDesvioZona1" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.85em; color: #718096;"><i class="fas fa-info-circle"></i> Rango: <span id="rangoZona1" style="font-weight: 600;">-</span></p>
+                    </div>
+                    
+                    <!-- Zona 2 -->
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                        <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-map-marker-alt" style="color: #ecc94b;"></i> Zona 2</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Estándar:</label>
+                            <input type="number" id="diasEstandarZona2" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Desvío (±):</label>
+                            <input type="number" id="diasDesvioZona2" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.85em; color: #718096;"><i class="fas fa-info-circle"></i> Rango: <span id="rangoZona2" style="font-weight: 600;">-</span></p>
+                    </div>
+                    
+                    <!-- Zona 3 -->
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; border: 2px solid #e2e8f0;">
+                        <h4 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-map-marker-alt" style="color: #f56565;"></i> Zona 3</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Estándar:</label>
+                            <input type="number" id="diasEstandarZona3" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">Días Desvío (±):</label>
+                            <input type="number" id="diasDesvioZona3" min="0" style="width: 100%; padding: 10px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <p style="margin-top: 10px; font-size: 0.85em; color: #718096;"><i class="fas fa-info-circle"></i> Rango: <span id="rangoZona3" style="font-weight: 600;">-</span></p>
+                    </div>
+                </div>
+                
+                <button onclick="guardarConfigDias()" style="margin-top: 20px; background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;"><i class="fas fa-save"></i> Guardar Configuración de Días</button>
+            </div>
+            
+            <hr style="border: none; border-top: 2px solid #e2e8f0; margin: 40px 0;">
+            
+            <!-- Sección 2: Matriz de Códigos de Observación -->
+            <div>
+                <h3 style="color: #2D2D2D; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-th" style="color: #EB0A1E;"></i>
+                    Matriz de Códigos de Observación
+                </h3>
+                <p style="color: #718096; margin-bottom: 20px; font-size: 0.95em;">Configura los códigos de observación permitidos para cada combinación de clase y zona. La <strong>Zona de Arribo</strong> es donde termina el proceso para cada clase. Usa comas para separar múltiples códigos o "-" para zonas que no aplican.</p>
+                
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; border: 2px solid #e2e8f0;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white;">
+                                <th style="padding: 15px; text-align: left; border: 1px solid #C8102E; font-weight: 700;">CLASE</th>
+                                <th style="padding: 15px; text-align: center; border: 1px solid #C8102E; font-weight: 700;">ZONA 1</th>
+                                <th style="padding: 15px; text-align: center; border: 1px solid #C8102E; font-weight: 700;">ZONA 2</th>
+                                <th style="padding: 15px; text-align: center; border: 1px solid #C8102E; font-weight: 700;">ZONA 3</th>
+                                <th style="padding: 15px; text-align: center; border: 1px solid #C8102E; font-weight: 700;">ZONA 4</th>
+                                <th style="padding: 15px; text-align: center; border: 1px solid #C8102E; font-weight: 700; background: rgba(200, 16, 46, 0.3);">ZONA DE ARRIBO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrizCodigosBody">
+                            <!-- CLASE A - arribo en zona 4 -->
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #e2e8f0; font-weight: 700; background: #f7fafc;">CLASE A</td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosA1" placeholder="Ej: 1" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosA2" placeholder="Ej: 1" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosA3" placeholder="Ej: 0" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosA4" placeholder="Ej: 3" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; background: #faf5ff;">
+                                    <select id="arriboA" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px; font-weight: 600;">
+                                        <option value="1">Zona 1</option>
+                                        <option value="2">Zona 2</option>
+                                        <option value="3">Zona 3</option>
+                                        <option value="4" selected>Zona 4</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- CLASE B - arribo en zona 4 -->
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #e2e8f0; font-weight: 700; background: #f7fafc;">CLASE B</td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosB1" placeholder="Ej: 2,3" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosB2" placeholder="Ej: 3" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosB3" placeholder="Ej: 2,3" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosB4" placeholder="Ej: 4" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; background: #faf5ff;">
+                                    <select id="arriboB" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px; font-weight: 600;">
+                                        <option value="1">Zona 1</option>
+                                        <option value="2">Zona 2</option>
+                                        <option value="3">Zona 3</option>
+                                        <option value="4" selected>Zona 4</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- CLASE C - arribo en zona 3 -->
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #e2e8f0; font-weight: 700; background: #f7fafc;">CLASE C</td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosC1" placeholder="Ej: 6,4" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosC2" placeholder="Ej: 4" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosC3" placeholder="Ej: 0" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; background: #f7fafc;">
+                                    <input type="text" id="codigosC4" placeholder="-" disabled style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 4px; background: #f7fafc; color: #a0aec0;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; background: #faf5ff;">
+                                    <select id="arriboC" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px; font-weight: 600;">
+                                        <option value="1">Zona 1</option>
+                                        <option value="2">Zona 2</option>
+                                        <option value="3" selected>Zona 3</option>
+                                        <option value="4">Zona 4</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- CLASE D - arribo en zona 2 -->
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #e2e8f0; font-weight: 700; background: #f7fafc;">CLASE D</td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosD1" placeholder="Ej: 5" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosD2" placeholder="Ej: 0" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; background: #f7fafc;">
+                                    <input type="text" id="codigosD3" placeholder="-" disabled style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 4px; background: #f7fafc; color: #a0aec0;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; background: #f7fafc;">
+                                    <input type="text" id="codigosD4" placeholder="-" disabled style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 4px; background: #f7fafc; color: #a0aec0;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; background: #faf5ff;">
+                                    <select id="arriboD" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px; font-weight: 600;">
+                                        <option value="1">Zona 1</option>
+                                        <option value="2" selected>Zona 2</option>
+                                        <option value="3">Zona 3</option>
+                                        <option value="4">Zona 4</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <!-- CLASE E - arribo en zona 4 -->
+                            <tr>
+                                <td style="padding: 15px; border: 1px solid #e2e8f0; font-weight: 700; background: #f7fafc;">CLASE E</td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosE1" placeholder="Ej: 8,7" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosE2" placeholder="Ej: 7" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosE3" placeholder="Ej: 4" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0;">
+                                    <input type="text" id="codigosE4" placeholder="Ej: 0" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px;">
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; background: #faf5ff;">
+                                    <select id="arriboE" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 4px; font-weight: 600;">
+                                        <option value="1">Zona 1</option>
+                                        <option value="2">Zona 2</option>
+                                        <option value="3">Zona 3</option>
+                                        <option value="4" selected>Zona 4</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button onclick="guardarMatrizCodigos()" style="margin-top: 20px; background: linear-gradient(135deg, #EB0A1E, #C8102E); color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;"><i class="fas fa-save"></i> Guardar Matriz de Códigos</button>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background: #f7fafc; padding: 20px; border-radius: 0 0 12px 12px; display: flex; justify-content: flex-end; gap: 15px; border-top: 2px solid #e2e8f0;">
+            <button onclick="cerrarConfiguradorObservaciones()" style="background: #718096; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s;"><i class="fas fa-times"></i> Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/modulo5.js') }}"></script>
+{% endblock %}
