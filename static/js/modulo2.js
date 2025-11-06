@@ -125,24 +125,8 @@ function renderizarTabla() {
                 } else {
                     dataPreventa[idx][field] = e.target.value;
                 }
-                
-                // Resaltar vendedor si está presente
-                if (field === 'vendedor') {
-                    if (e.target.value && e.target.value.trim() !== '') {
-                        e.target.style.backgroundColor = '#fff3cd';
-                    } else {
-                        e.target.style.backgroundColor = '';
-                    }
-                }
             });
         });
-    });
-    
-    // Aplicar estilo a vendedores con valor
-    document.querySelectorAll('.vendedor-input').forEach(input => {
-        if (input.value && input.value.trim() !== '') {
-            input.style.backgroundColor = '#fff3cd';
-        }
     });
     
     actualizarContadores();

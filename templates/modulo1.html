@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block title %}Lista de Precios - Sistema de Administración{% endblock %}
+{% block icon %}tags{% endblock %}
+{% block page_title %}Lista de Precios{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2><i class="fas fa-tags"></i> Lista de Precios de Vehículos</h2>
-
     <!-- Control de Descuentos por Familia -->
     <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #e2e8f0;">
         <h3 style="margin-top: 0; color: #2d3748; font-size: 1.1em; margin-bottom: 15px;">
@@ -152,6 +152,7 @@
                             <th><i class="fas fa-money-bill"></i> Precio USD</th>
                             <th><i class="fas fa-exchange-alt"></i> Cotización USD-ARS</th>
                             <th><i class="fas fa-percent"></i> Descuento (%)</th>
+                            <th><i class="fas fa-calendar-plus"></i> Desc. Futuros (%)</th>
                             <th><i class="fas fa-ban"></i> Dado de Baja</th>
                         </tr>
                     </thead>
@@ -174,6 +175,7 @@
                             <th><i class="fas fa-money-bill"></i> Precio USD</th>
                             <th><i class="fas fa-exchange-alt"></i> Cotización USD-ARS</th>
                             <th><i class="fas fa-percent"></i> Descuento (%)</th>
+                            <th><i class="fas fa-calendar-plus"></i> Desc. Futuros (%)</th>
                             <th><i class="fas fa-ban"></i> Dado de Baja</th>
                         </tr>
                     </thead>

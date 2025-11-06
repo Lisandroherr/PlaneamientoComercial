@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bases de Datos - Business Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Dark Mode Variables */
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #2d3748;
+            --card-bg: white;
+            --nav-bg: #2D2D2D;
+            --border-color: #dee2e6;
+            --input-bg: white;
+        }
+        
+        body.dark-mode {
+            --bg-color: #0a0a0a;
+            --text-color: #ffffff;
+            --card-bg: #2a2a2a;
+            --nav-bg: #0a0a0a;
+            --border-color: #444;
+            --input-bg: #1a1a1a;
+        }
+        
+        body {
+            background: var(--bg-color);
+            transition: background 0.3s ease;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+        
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/supra.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .content-wrapper {
+            padding: 40px;
+            min-height: calc(100vh - 65px);
+            position: relative;
+            z-index: 1;
+            background: rgba(245, 245, 245, 0.95);
+        }
+        
+        body.dark-mode .content-wrapper {
+            background: rgba(10, 10, 10, 0.75);
+        }
+        
+        .data-section {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        body.dark-mode .data-section {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        body.dark-mode .info-box {
+            background: rgba(33, 150, 243, 0.15);
+            color: #90caf9;
+        }
+        
+        .info-box i {
+            color: #2196F3;
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .info-box code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body.dark-mode .info-box code {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(235, 10, 30, 0.3);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c00818 0%, #a00d25 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(235, 10, 30, 0.5);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        body.dark-mode .btn:disabled {
+            background: #555;
+            color: #888;
+        }
+        
+        #progress-log {
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .log-line {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-header {
+            color: #2196F3;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        
+        .log-success {
+            color: #4CAF50;
+        }
+        
+        .log-progress {
+            color: #FF9800;
+        }
+        
+        .log-info {
+            color: #666;
+        }
+        
+        .log-error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        
+        body.dark-mode .log-header {
+            color: #64B5F6;
+        }
+        
+        body.dark-mode .log-success {
+            color: #81C784;
+        }
+        
+        body.dark-mode .log-progress {
+            color: #FFB74D;
+        }
+        
+        body.dark-mode .log-info {
+            color: #B0B0B0;
+        }
+        
+        body.dark-mode .log-error {
+            color: #ff6b6b;
+        }
+        
+        .result-box {
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .result-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .result-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        body.dark-mode .result-success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #90ee90;
+            border-color: rgba(40, 167, 69, 0.5);
+        }
+        
+        body.dark-mode .result-error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+            border-color: rgba(220, 53, 69, 0.5);
+        }
+        
+        .result-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .result-message {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .result-details {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
+        <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
+            <i class="fas fa-database"></i> Actualización de Bases de Datos
+        </h1>
+        <a href="{{ url_for('bi_analysis') }}" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+    
+    <div class="content-wrapper">
+        <div class="data-section">
+            <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px; color: var(--text-color);">
+                <i class="fas fa-sync-alt"></i> Carga de Datos Históricos
+            </h2>
+            
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Instrucciones:</strong> 
+                <ol style="margin: 10px 0 0 20px; padding: 0; line-height: 1.8;">
+                    <li>Descarga los archivos CSV de patentamientos desde ACARA</li>
+                    <li>Guárdalos en la carpeta <code>Patentamientos/</code> del repositorio con estos nombres:
+                        <ul style="margin-top: 8px; margin-left: 20px;">
+                            <li><code>Mercado Argentino MARCA.csv</code></li>
+                            <li><code>Mercado Argentino MODELO.csv</code></li>
+                            <li><code>Mercado Mendoza MARCA.csv</code></li>
+                            <li><code>Mercado Mendoza MODELO.csv</code></li>
+                        </ul>
+                    </li>
+                    <li>Los datos se leen <strong>directamente desde los CSV</strong> (no requiere base de datos)</li>
+                    <li>Para Render: sube los CSV actualizados a GitHub y haz redeploy</li>
+                </ol>
+            </div>
+
+            <div style="margin: 40px 0; text-align: center;">
+                <button class="btn btn-primary" onclick="verificarArchivos()" id="check-btn" style="font-size: 1.2em; padding: 20px 50px;">
+                    <i class="fas fa-search"></i> Verificar Archivos CSV
+                </button>
+            </div>
+
+            <!-- Área de estado de archivos -->
+            <div id="files-status" style="display: none; margin-top: 30px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar preferencia de dark mode
+        window.addEventListener('DOMContentLoaded', () => {
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+            }
+            
+            // Verificar archivos automáticamente al cargar
+            verificarArchivos();
+        });
+        
+        async function verificarArchivos() {
+            const checkBtn = document.getElementById('check-btn');
+            const filesStatus = document.getElementById('files-status');
+            
+            checkBtn.disabled = true;
+            checkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            
+            try {
+                const response = await fetch('/api/bi/load_status');
+                const data = await response.json();
+                
+                let html = '<div style="background: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color);">';
+                html += '<h3 style="margin: 0 0 20px 0; color: var(--text-color);"><i class="fas fa-file-csv"></i> Estado de Archivos CSV</h3>';
+                
+                html += '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<thead><tr style="border-bottom: 2px solid var(--border-color);">';
+                html += '<th style="text-align: left; padding: 10px; color: var(--text-color);">Archivo</th>';
+                html += '<th style="text-align: center; padding: 10px; color: var(--text-color);">Estado</th>';
+                html += '<th style="text-align: right; padding: 10px; color: var(--text-color);">Tamaño</th>';
+                html += '<th style="text-align: right; padding: 10px; color: var(--text-color);">Última Modificación</th>';
+                html += '</tr></thead><tbody>';
+                
+                for (const archivo of data.archivos) {
+                    html += '<tr style="border-bottom: 1px solid var(--border-color);">';
+                    html += `<td style="padding: 10px; color: var(--text-color);"><code>${archivo.archivo}</code></td>`;
+                    
+                    if (archivo.existe) {
+                        html += '<td style="text-align: center; padding: 10px;"><span style="color: #4CAF50; font-weight: bold;">✅ Disponible</span></td>';
+                        html += `<td style="text-align: right; padding: 10px; color: var(--text-color);">${formatBytes(archivo.tamano)}</td>`;
+                        html += `<td style="text-align: right; padding: 10px; color: var(--text-color);">${archivo.ultima_modificacion}</td>`;
+                    } else {
+                        html += '<td style="text-align: center; padding: 10px;"><span style="color: #f44336; font-weight: bold;">❌ No encontrado</span></td>';
+                        html += '<td style="text-align: right; padding: 10px; color: var(--text-color);">-</td>';
+                        html += '<td style="text-align: right; padding: 10px; color: var(--text-color);">-</td>';
+                    }
+                    
+                    html += '</tr>';
+                }
+                
+                html += '</tbody></table>';
+                
+                if (data.cache_activo) {
+                    html += '<div style="margin-top: 20px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; border-radius: 4px;">';
+                    html += '<i class="fas fa-bolt" style="color: #4CAF50;"></i> ';
+                    html += '<strong>Caché activo:</strong> Los datos están listos para visualización rápida';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                
+                filesStatus.innerHTML = html;
+                filesStatus.style.display = 'block';
+                
+            } catch (error) {
+                filesStatus.innerHTML = `<div style="padding: 20px; background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; border-radius: 4px; color: var(--text-color);">
+                    <strong>Error:</strong> ${error.message}
+                </div>`;
+                filesStatus.style.display = 'block';
+            } finally {
+                checkBtn.disabled = false;
+                checkBtn.innerHTML = '<i class="fas fa-search"></i> Verificar Archivos CSV';
+            }
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

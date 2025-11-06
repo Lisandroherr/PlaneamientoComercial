@@ -248,9 +248,9 @@
             disponibles.forEach(item => {
                 const tr = document.createElement('tr');
                 
-                // Formatear fecha
-                let fechaFormateada = item.entrega_estimada || '-';
-                if (item.entrega_estimada) {
+                // Formatear fecha - NO mostrar si la ubicación es "Preventa"
+                let fechaFormateada = '-';
+                if (item.ubicacion !== 'Preventa' && item.entrega_estimada) {
                     try {
                         const fecha = new Date(item.entrega_estimada);
                         fechaFormateada = fecha.toLocaleDateString('es-AR', {
@@ -272,10 +272,10 @@
                     maximumFractionDigits: 0
                 }).format(precio);
                 
-                // Formatear descuentos
+                // Formatear descuentos - mostrar lo que viene del backend
                 const descIndividual = item.descuento_individual ? `${item.descuento_individual}%` : '0%';
                 const descAdicional = item.descuento_adicional && item.descuento_adicional > 0 
-                    ? `${item.descuento_adicional}%` 
+                    ? (item.detalles_descuento || `${item.descuento_adicional}%`)
                     : '0%';
                 
                 tr.innerHTML = `

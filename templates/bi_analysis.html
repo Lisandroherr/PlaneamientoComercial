@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planeamiento - Sistema de Administración</title>
+    <title>Business Intelligence - Sistema de Administración</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -60,6 +60,7 @@
             padding: 30px;
             border-radius: 10px;
             border: 2px solid var(--border-color);
+            position: relative;
         }
         
         body.dark-mode .modulo-card {
@@ -84,6 +85,14 @@
         
         .modulo-card i {
             color: #EB0A1E;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .modulo-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
         }
         
         .content-wrapper {
@@ -105,12 +114,29 @@
             max-width: 1400px;
             margin: 0 auto;
         }
+        
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #FFC107;
+            color: #2D2D2D;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        
+        .badge.construction {
+            background: #58595B;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
         <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
-            <i class="fas fa-chart-line"></i> Planeamiento
+            <i class="fas fa-chart-bar"></i> Business Intelligence
         </h1>
         <a href="/" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
             <i class="fas fa-arrow-left"></i> Volver al Inicio
@@ -120,46 +146,34 @@
     <div class="content-wrapper">
         <div class="cards-container">
         
-        <!-- Módulo 1: Lista de Precios -->
-        <a href="{{ url_for('modulo1') }}" class="modulo-card">
-            <i class="fas fa-tags" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Lista de Precios</h3>
-            <p>Gestiona precios de vehículos en ARS y USD con cotizaciones actualizadas.</p>
+        <!-- Módulo Patentamientos -->
+        <a href="{{ url_for('bi_patentamientos') }}" class="modulo-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>Patentamientos</h3>
+            <p>Análisis de patentamientos Toyota vs mercado total en Argentina y Mendoza.</p>
         </a>
         
-        <!-- Módulo 2: Bitácora -->
-        <a href="{{ url_for('modulo2') }}" class="modulo-card">
-            <i class="fas fa-book" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Bitácora</h3>
-            <p>Registra operaciones con modelo, vendedor y número de operación.</p>
+        <!-- Módulo Retail y Plan de Negocio -->
+        <a href="{{ url_for('retail_plan') }}" class="modulo-card">
+            <i class="fas fa-shopping-cart"></i>
+            <h3>Retail y Plan de Negocio</h3>
+            <p>Comparación de ventas reales vs objetivos del plan de negocio por familia y tipo de venta.</p>
         </a>
         
-        <!-- Módulo 3: Seguimiento -->
-        <a href="{{ url_for('modulo3') }}" class="modulo-card">
-            <i class="fas fa-file-excel" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Seguimiento</h3>
-            <p>Carga y limpia automáticamente tus reportes diarios de Excel.</p>
-        </a>
+        <!-- Módulo Recaudación (En construcción) -->
+        <div class="modulo-card disabled">
+            <span class="badge construction">En Construcción</span>
+            <i class="fas fa-dollar-sign"></i>
+            <h3>Recaudación</h3>
+            <p>Análisis de recaudación y facturación (Próximamente).</p>
+        </div>
         
-        <!-- Módulo 4: Disponible -->
-        <a href="{{ url_for('modulo4') }}" class="modulo-card">
-            <i class="fas fa-car" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Disponible</h3>
-            <p>Gestión de unidades disponibles y reservadas en tiempo real.</p>
-        </a>
-        
-        <!-- Módulo 5: Análisis de Seguimiento -->
-        <a href="{{ url_for('modulo5') }}" class="modulo-card">
-            <i class="fas fa-cogs" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Análisis de Seguimiento</h3>
-            <p>Procesamiento avanzado de archivos SIAC e INTEGRA con VLOOKUP.</p>
-        </a>
-        
-        <!-- Módulo 6: Dashboard -->
-        <a href="{{ url_for('modulo6') }}" class="modulo-card">
-            <i class="fas fa-chart-bar" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Dashboard</h3>
-            <p>Panel de control con métricas y análisis de rendimiento.</p>
+        <!-- Módulo Bases de Datos -->
+        <a href="{{ url_for('bi_bases_datos') }}" class="modulo-card">
+            <span class="badge">Configuración</span>
+            <i class="fas fa-database"></i>
+            <h3>Bases de Datos</h3>
+            <p>Carga de archivos Excel de SIOMAA para alimentar los reportes.</p>
         </a>
         
         </div>

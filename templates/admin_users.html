@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+    .admin-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid #EB0A1E;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .user-avatar-small {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.95em;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(235, 10, 30, 0.3);
+    }
+    
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-warning {
+        background: #ffc107;
+        color: #000;
+    }
+    
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.85em;
+    }
+    
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .users-table thead {
+        background: #2D2D2D;
+        color: white;
+    }
+    
+    .users-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .users-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .users-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+    
+    .badge-admin {
+        background: #EB0A1E;
+        color: white;
+    }
+    
+    .badge-user {
+        background: #007bff;
+        color: white;
+    }
+    
+    .badge-active {
+        background: #28a745;
+        color: white;
+    }
+    
+    .badge-inactive {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        overflow: auto;
+    }
+    
+    .modal-content {
+        background: white;
+        margin: 50px auto;
+        padding: 0;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+        background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-body {
+        padding: 30px;
+    }
+    
+    .modal-footer {
+        padding: 15px 30px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+    }
+    
+    .close:hover {
+        opacity: 0.8;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #EB0A1E;
+        box-shadow: 0 0 0 3px rgba(235, 10, 30, 0.1);
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .alert {
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        color: #155724;
+    }
+    
+    .alert-danger {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+    }
+    
+    .user-avatar-table {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    
+    .actions-cell {
+        display: flex;
+        gap: 5px;
+    }
+    
+    body.dark-mode .admin-info {
+        background: rgba(30, 30, 30, 0.95);
+    }
+    
+    body.dark-mode .user-info strong {
+        color: #f0f0f0;
+    }
+    
+    body.dark-mode .user-info div {
+        color: #b0b0b0;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+    }
+    
+    .page-header {
+        background: #2D2D2D;
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 4px solid #EB0A1E;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.3em;
+        font-weight: 600;
+    }
+    
+    .btn-home {
+        background: #58595B;
+        color: white;
+        padding: 8px 18px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85em;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn-home:hover {
+        background: #EB0A1E;
+    }
+    
+    .main-container {
+        padding: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+</style>
+
+<div class="page-header">
+    <h1><i class="fas fa-users-cog"></i> Gestión de Usuarios</h1>
+    <a href="/" class="btn-home">
+        <i class="fas fa-arrow-left"></i> Volver al Inicio
+    </a>
+</div>
+
+<div class="main-container">
+
+<div class="admin-info">
+    <div class="user-info">
+        <div class="user-avatar-small">{{ current_user.username[0].upper() }}</div>
+        <div>
+            <strong>{{ current_user.full_name or current_user.username }}</strong>
+            <div style="font-size: 0.85em; color: #666;">Administrador del Sistema</div>
+        </div>
+    </div>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <i class="fas fa-user-plus"></i> Crear Usuario
+    </button>
+</div>
+
+<!-- Mensajes flash -->
+<div id="alertContainer"></div>
+
+<!-- Tabla de usuarios -->
+<table class="users-table">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Nombre Completo</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th style="text-align: center;">Permisos</th>
+            <th>Estado</th>
+            <th>Último Login</th>
+            <th style="text-align: center;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="usersTableBody">
+        <tr>
+            <td colspan="8" style="text-align: center; padding: 30px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #EB0A1E;"></i>
+                <p style="margin-top: 10px;">Cargando usuarios...</p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Modal Crear Usuario -->
+<div id="createUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Crear Nuevo Usuario</h3>
+            <button class="close" onclick="closeModal('createUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createUserForm">
+                <div class="form-group">
+                    <label for="create_username">Usuario *</label>
+                    <input type="text" class="form-control" id="create_username" required>
+                </div>
+                <div class="form-group">
+                    <label for="create_password">Contraseña *</label>
+                    <input type="password" class="form-control" id="create_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="create_full_name">Nombre Completo</label>
+                    <input type="text" class="form-control" id="create_full_name">
+                </div>
+                <div class="form-group">
+                    <label for="create_email">Email</label>
+                    <input type="email" class="form-control" id="create_email">
+                </div>
+                <div class="form-group">
+                    <label for="create_role">Rol *</label>
+                    <select class="form-control" id="create_role" required>
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                        <i class="fas fa-key" style="color: #EB0A1E;"></i> Permisos de Módulos
+                    </label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_planeamiento">
+                            <label for="create_permiso_planeamiento">
+                                <i class="fas fa-chart-line"></i> Planeamiento
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_ventas">
+                            <label for="create_permiso_ventas">
+                                <i class="fas fa-handshake"></i> Ventas
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_gestoria">
+                            <label for="create_permiso_gestoria">
+                                <i class="fas fa-file-contract"></i> Gestoría
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_entregas">
+                            <label for="create_permiso_entregas">
+                                <i class="fas fa-truck"></i> Entregas
+                            </label>
+                        </div>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 8px;">
+                        <i class="fas fa-info-circle"></i> Los administradores tienen acceso a todos los módulos automáticamente
+                    </small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger btn-sm" onclick="closeModal('createUserModal')">Cancelar</button>
+            <button class="btn btn-success btn-sm" onclick="createUser()">Crear Usuario</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Editar Usuario</h3>
+            <button class="close" onclick="closeModal('editUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editUserForm">
+                <input type="hidden" id="edit_user_id">
+                <div class="form-group">
+                    <label for="edit_username">Usuario</label>
+                    <input type="text" class="form-control" id="edit_username">
+                </div>
+                <div class="form-group">
+                    <label for="edit_password">Nueva Contraseña (dejar vacío para no cambiar)</label>
+                    <input type="password" class="form-control" id="edit_password">
+                </div>
+                <div class="form-group">
+                    <label for="edit_full_name">Nombre Completo</label>
+                    <input type="text" class="form-control" id="edit_full_name">
+                </div>
+                <div class="form-group">
+                    <label for="edit_email">Email</label>
+                    <input type="email" class="form-control" id="edit_email">
+                </div>
+                <div class="form-group">
+                    <label for="edit_role">Rol</label>
+                    <select class="form-control" id="edit_role">
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 10px; font-weight: 600;">
+                        <i class="fas fa-key" style="color: #EB0A1E;"></i> Permisos de Módulos
+                    </label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_planeamiento">
+                            <label for="edit_permiso_planeamiento">
+                                <i class="fas fa-chart-line"></i> Planeamiento
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_ventas">
+                            <label for="edit_permiso_ventas">
+                                <i class="fas fa-handshake"></i> Ventas
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_gestoria">
+                            <label for="edit_permiso_gestoria">
+                                <i class="fas fa-file-contract"></i> Gestoría
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_entregas">
+                            <label for="edit_permiso_entregas">
+                                <i class="fas fa-truck"></i> Entregas
+                            </label>
+                        </div>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 8px;">
+                        <i class="fas fa-info-circle"></i> Los administradores tienen acceso a todos los módulos automáticamente
+                    </small>
+                </div>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" id="edit_active">
+                        <label for="edit_active">Usuario Activo</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger btn-sm" onclick="closeModal('editUserModal')">Cancelar</button>
+            <button class="btn btn-success btn-sm" onclick="updateUser()">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar usuarios al inicio
+document.addEventListener('DOMContentLoaded', loadUsers);
+
+function showAlert(message, type = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.innerHTML = message;
+    
+    const container = document.getElementById('alertContainer');
+    container.innerHTML = '';
+    container.appendChild(alertDiv);
+    
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showCreateModal() {
+    document.getElementById('createUserForm').reset();
+    showModal('createUserModal');
+}
+
+function loadUsers() {
+    fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderUsers(data.users);
+            } else {
+                showAlert('Error al cargar usuarios: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error de conexión: ' + error, 'danger');
+        });
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = '';
+
+    if (users.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: #666;">
+                    <i class="fas fa-users" style="font-size: 48px; opacity: 0.3;"></i>
+                    <p style="margin-top: 10px;">No hay usuarios registrados</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+        
+        const roleClass = user.role === 'admin' ? 'badge-admin' : 'badge-user';
+        const roleText = user.role === 'admin' ? 'Administrador' : 'Usuario';
+        const statusClass = user.active ? 'badge-active' : 'badge-inactive';
+        const statusText = user.active ? 'Activo' : 'Inactivo';
+        const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('es-AR') : 'Nunca';
+        
+        const avatar = user.full_name ? user.full_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase();
+        
+        // Crear badges de permisos
+        let permisosHTML = '';
+        if (user.role === 'admin') {
+            permisosHTML = '<span class="badge-permission" style="background: #28a745; font-size: 0.75em; padding: 3px 6px;">Todos</span>';
+        } else {
+            const permisos = [];
+            if (user.permiso_planeamiento) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">P</span>');
+            if (user.permiso_ventas) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">V</span>');
+            if (user.permiso_gestoria) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">G</span>');
+            if (user.permiso_entregas) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">E</span>');
+            permisosHTML = permisos.length > 0 ? permisos.join('') : '<span style="color: #999; font-size: 0.85em;">Sin permisos</span>';
+        }
+        
+        tr.innerHTML = `
+            <td>
+                <span class="user-avatar-table">${avatar}</span>
+                <strong>${user.username}</strong>
+            </td>
+            <td>${user.full_name || '-'}</td>
+            <td>${user.email || '-'}</td>
+            <td><span class="badge ${roleClass}">${roleText}</span></td>
+            <td style="text-align: center;">${permisosHTML}</td>
+            <td><span class="badge ${statusClass}">${statusText}</span></td>
+            <td><small style="color: #666;">${lastLogin}</small></td>
+            <td>
+                <div class="actions-cell" style="justify-content: center;">
+                    <button class="btn btn-warning btn-sm" onclick="editUser(${user.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id}, '${user.username}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
+}
+
+function createUser() {
+    const username = document.getElementById('create_username').value.trim();
+    const password = document.getElementById('create_password').value;
+    const full_name = document.getElementById('create_full_name').value.trim();
+    const email = document.getElementById('create_email').value.trim();
+    const role = document.getElementById('create_role').value;
+    const permiso_planeamiento = document.getElementById('create_permiso_planeamiento').checked;
+    const permiso_ventas = document.getElementById('create_permiso_ventas').checked;
+    const permiso_gestoria = document.getElementById('create_permiso_gestoria').checked;
+    const permiso_entregas = document.getElementById('create_permiso_entregas').checked;
+
+    if (!username || !password) {
+        showAlert('Usuario y contraseña son obligatorios', 'danger');
+        return;
+    }
+
+    fetch('/api/users', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username, password, full_name, email, role,
+            permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal('createUserModal');
+            document.getElementById('createUserForm').reset();
+            loadUsers();
+            showAlert('✅ Usuario creado exitosamente', 'success');
+        } else {
+            showAlert('❌ Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('❌ Error de conexión: ' + error, 'danger');
+    });
+}
+
+function editUser(userId) {
+    fetch(`/api/users/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                document.getElementById('edit_user_id').value = user.id;
+                document.getElementById('edit_username').value = user.username;
+                document.getElementById('edit_full_name').value = user.full_name || '';
+                document.getElementById('edit_email').value = user.email || '';
+                document.getElementById('edit_role').value = user.role;
+                document.getElementById('edit_active').checked = user.active;
+                document.getElementById('edit_password').value = '';
+                document.getElementById('edit_permiso_planeamiento').checked = user.permiso_planeamiento || false;
+                document.getElementById('edit_permiso_ventas').checked = user.permiso_ventas || false;
+                document.getElementById('edit_permiso_gestoria').checked = user.permiso_gestoria || false;
+                document.getElementById('edit_permiso_entregas').checked = user.permiso_entregas || false;
+                
+                showModal('editUserModal');
+            } else {
+                showAlert('Error al cargar usuario: ' + data.error, 'danger');
+            }
+        });
+}
+
+function updateUser() {
+    const userId = document.getElementById('edit_user_id').value;
+    const username = document.getElementById('edit_username').value.trim();
+    const password = document.getElementById('edit_password').value;
+    const full_name = document.getElementById('edit_full_name').value.trim();
+    const email = document.getElementById('edit_email').value.trim();
+    const role = document.getElementById('edit_role').value;
+    const active = document.getElementById('edit_active').checked;
+    const permiso_planeamiento = document.getElementById('edit_permiso_planeamiento').checked;
+    const permiso_ventas = document.getElementById('edit_permiso_ventas').checked;
+    const permiso_gestoria = document.getElementById('edit_permiso_gestoria').checked;
+    const permiso_entregas = document.getElementById('edit_permiso_entregas').checked;
+
+    const data = {
+        username, full_name, email, role, active,
+        permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+    };
+    if (password) {
+        data.password = password;
+    }
+
+    fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal('editUserModal');
+            loadUsers();
+            showAlert('✅ Usuario actualizado exitosamente', 'success');
+        } else {
+            showAlert('❌ Error: ' + data.error, 'danger');
+        }
+    });
+}
+
+function deleteUser(userId, username) {
+    if (!confirm(`¿Estás seguro de eliminar el usuario "${username}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    fetch(`/api/users/${userId}`, {method: 'DELETE'})
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadUsers();
+                showAlert('✅ Usuario eliminado exitosamente', 'success');
+            } else {
+                showAlert('❌ Error: ' + data.error, 'danger');
+            }
+        });
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block title %}Bitácora - Sistema de Administración{% endblock %}
+{% block icon %}book{% endblock %}
+{% block page_title %}Bitácora: Preventa del Mes Siguiente{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2><i class="fas fa-book"></i> Bitácora: Preventa del Mes Siguiente</h2>
-    
     <!-- Alertas -->
     <div id="alert-container" style="margin-bottom: 1rem;"></div>
     
@@ -30,7 +30,7 @@
         <button id="btn-pegar" class="btn btn-primary">
             <i class="fas fa-paste"></i> Pegar desde Excel
         </button>
-        <button id="btn-editar" class="btn btn-warning">
+        <button id="btn-editar" class="btn btn-secondary">
             <i class="fas fa-edit"></i> Editar
         </button>
         <button id="btn-guardar" class="btn btn-success" style="display: none;">
@@ -39,23 +39,12 @@
         <button id="btn-cancelar" class="btn btn-secondary" style="display: none;">
             <i class="fas fa-times"></i> Cancelar
         </button>
-        <button id="btn-convertir" class="btn btn-info">
+        <button id="btn-convertir" class="btn btn-danger">
             <i class="fas fa-exchange-alt"></i> Convertir a Disponible
         </button>
         <button id="btn-limpiar" class="btn btn-danger">
             <i class="fas fa-trash"></i> Limpiar Tabla
         </button>
-    </div>
-    
-    <!-- Información -->
-    <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #2196f3;">
-        <strong><i class="fas fa-info-circle"></i> Instrucciones:</strong>
-        <ul style="margin: 0.5rem 0 0 1.5rem;">
-            <li>Use el botón "Pegar desde Excel" para cargar datos masivos (Modelo/Versión, Operación, Vendedor, Color)</li>
-            <li><strong>Unidades CON vendedor:</strong> Están vendidas y NO se agregarán al disponible</li>
-            <li><strong>Unidades SIN vendedor:</strong> Se pueden convertir a disponible con fecha +3 meses y ubicación "Preventa"</li>
-            <li>Las columnas Informado, Cancelado y Asignado son checkboxes opcionales</li>
-        </ul>
     </div>
     
     <!-- Tabla -->
@@ -65,7 +54,7 @@
                 <tr>
                     <th>Modelo/Versión</th>
                     <th>Operación</th>
-                    <th style="background: #fff3cd;">Vendedor</th>
+                    <th>Vendedor</th>
                     <th>Color</th>
                     <th style="text-align: center;">Informado</th>
                     <th style="text-align: center;">Cancelado</th>
@@ -152,6 +141,12 @@
     color: #2d3748;
 }
 
+body.dark-mode .table th {
+    background: #2a2a2a;
+    color: #f0f0f0;
+    border-bottom-color: #3a3a3a;
+}
+
 .form-control-sm {
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -209,33 +204,27 @@
 }
 
 .btn-primary {
-    background: #007bff;
+    background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
     color: white;
-}
-
-.btn-warning {
-    background: #ffc107;
-    color: #212529;
+    border: none;
 }
 
 .btn-success {
-    background: #28a745;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
+    border: none;
 }
 
 .btn-secondary {
-    background: #6c757d;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
-}
-
-.btn-info {
-    background: #17a2b8;
-    color: white;
+    border: none;
 }
 
 .btn-danger {
-    background: #dc3545;
+    background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
     color: white;
+    border: none;
 }
 
 .btn-sm {

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patentamientos - Business Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@2.0.0/dist/chartjs-plugin-crosshair.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #2d3748;
+            --card-bg: white;
+            --nav-bg: #2D2D2D;
+        }
+        
+        body.dark-mode {
+            --bg-color: #0a0a0a;
+            --text-color: #ffffff;
+            --card-bg: #2a2a2a;
+            --nav-bg: #0a0a0a;
+        }
+        
+        body {
+            background: var(--bg-color);
+            transition: background 0.3s ease;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+        
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/supra.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .content-wrapper {
+            padding: 40px;
+            min-height: calc(100vh - 65px);
+            position: relative;
+            z-index: 1;
+            background: rgba(245, 245, 245, 0.95);
+        }
+        
+        body.dark-mode .content-wrapper {
+            background: rgba(10, 10, 10, 0.75);
+        }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        body.dark-mode .chart-container {
+            background: rgba(30, 30, 30, 0.9);
+            border-color: #2d2d2d;
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            color: var(--text-color);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-title i {
+            color: #EB0A1E;
+        }
+        
+        .chart-subtitle {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        
+        body.dark-mode .chart-subtitle {
+            color: #aaaaaa;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-color);
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #EB0A1E;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+        }
+        
+        body.dark-mode .error-message {
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+            border-color: rgba(220, 53, 69, 0.5);
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .zoom-btn {
+            padding: 8px 16px;
+            background: #EB0A1E;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .zoom-btn:hover {
+            background: #c00818;
+            transform: translateY(-2px);
+        }
+        
+        .date-filter {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        body.dark-mode .date-filter {
+            background: rgba(40, 40, 40, 0.8);
+        }
+        
+        .date-filter label {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .date-filter select,
+        .date-filter input {
+            padding: 8px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+        
+        .date-filter button {
+            padding: 8px 20px;
+            background: #EB0A1E;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .date-filter button:hover {
+            background: #c00818;
+            transform: translateY(-2px);
+        }
+        
+        .top-modelos-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 30px auto;
+        }
+        
+        .top-modelos-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+        }
+        
+        body.dark-mode .top-modelos-card {
+            background: rgba(30, 30, 30, 0.9);
+            border-color: #2d2d2d;
+        }
+        
+        .top-modelos-title {
+            font-size: 1.2em;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .top-modelos-title i {
+            color: #EB0A1E;
+        }
+        
+        .top-modelos-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .top-modelos-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+        
+        .top-modelos-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .modelo-rank {
+            background: #EB0A1E;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-right: 12px;
+        }
+        
+        .modelo-nombre {
+            flex: 1;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .modelo-cantidad {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #EB0A1E;
+        }
+    </style>
+</head>
+<body>
+    <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
+        <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
+            <i class="fas fa-chart-line"></i> Patentamientos
+        </h1>
+        <a href="{{ url_for('bi_analysis') }}" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+    
+    <div class="content-wrapper">
+        <div id="loading-container" class="loading">
+            <div class="spinner"></div>
+            <p>Cargando datos de patentamientos...</p>
+        </div>
+        
+        <div id="error-container"></div>
+        
+        <!-- INDICADOR DE CACHÉ -->
+        <div id="cache-indicator" style="display: none; background: #d4edda; color: #155724; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px; text-align: center; max-width: 1400px; margin-left: auto; margin-right: auto; border: 1px solid #c3e6cb;">
+            <i class="fas fa-bolt"></i> <strong>Carga Rápida:</strong> Datos servidos desde caché. 
+            <button onclick="refreshData()" style="background: #28a745; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; margin-left: 10px; font-size: 0.9em;">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+        
+        <!-- SEGMENTADOR DE FECHAS -->
+        <div id="date-filter" class="date-filter" style="display: none;">
+            <label><i class="fas fa-calendar-alt"></i> Filtrar período:</label>
+            <label>Desde:</label>
+            <input type="month" id="date-from" onchange="aplicarFiltroPersonalizado()">
+            <label style="margin-left: 10px;">Hasta:</label>
+            <input type="month" id="date-to" onchange="aplicarFiltroPersonalizado()">
+            
+            <button onclick="resetFiltroFecha()">
+                <i class="fas fa-redo"></i> Restablecer
+            </button>
+        </div>
+        
+        <div id="charts-container" style="display: none;">
+            <!-- Gráfico 1: Patentamientos - Argentina -->
+            <div class="chart-container">
+                <h2 class="chart-title">
+                    <i class="fas fa-chart-line"></i>
+                    Patentamientos Argentina - Principales Competidores
+                </h2>
+                <p class="chart-subtitle">Cantidad de patentamientos mensuales por marca</p>
+                <div class="chart-wrapper">
+                    <canvas id="chart-toyota-argentina"></canvas>
+                </div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="resetZoom('chart-toyota-argentina')">
+                        <i class="fas fa-search-minus"></i> Restablecer Zoom
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Gráfico 2: Patentamientos - Mendoza -->
+            <div class="chart-container">
+                <h2 class="chart-title">
+                    <i class="fas fa-chart-line"></i>
+                    Patentamientos Mendoza - Principales Competidores
+                </h2>
+                <p class="chart-subtitle">Cantidad de patentamientos mensuales por marca</p>
+                <div class="chart-wrapper">
+                    <canvas id="chart-toyota-mendoza"></canvas>
+                </div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="resetZoom('chart-toyota-mendoza')">
+                        <i class="fas fa-search-minus"></i> Restablecer Zoom
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Gráfico 3: Participación Comparativa Argentina vs Mendoza -->
+            <div class="chart-container">
+                <h2 class="chart-title">
+                    <i class="fas fa-percentage"></i>
+                    Participación Toyota: Argentina vs Mendoza
+                </h2>
+                <p class="chart-subtitle">Comparación del porcentaje de participación de Toyota en ambos mercados</p>
+                <div class="chart-wrapper">
+                    <canvas id="chart-participacion-comparativa"></canvas>
+                </div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="resetZoom('chart-participacion-comparativa')">
+                        <i class="fas fa-search-minus"></i> Restablecer Zoom
+                    </button>
+                </div>
+            </div>
+            
+            <!-- TOP 5 MODELOS -->
+            <div class="top-modelos-container">
+                <div class="top-modelos-card">
+                    <h3 class="top-modelos-title">
+                        <i class="fas fa-trophy"></i>
+                        Top 5 Modelos - Argentina
+                    </h3>
+                    <ul class="top-modelos-list" id="top-argentina"></ul>
+                </div>
+                
+                <div class="top-modelos-card">
+                    <h3 class="top-modelos-title">
+                        <i class="fas fa-trophy"></i>
+                        Top 5 Modelos - Mendoza
+                    </h3>
+                    <ul class="top-modelos-list" id="top-mendoza"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+        
+        let allData = null;
+        let filteredData = null;
+        let charts = {};
+        let dateRange = { start: null, end: null };
+        
+        window.addEventListener('DOMContentLoaded', loadData);
+        
+        async function loadData(forceRefresh = false) {
+            try {
+                const url = forceRefresh ? '/api/bi/patentamientos?refresh=true' : '/api/bi/patentamientos';
+                const startTime = performance.now();
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                const loadTime = ((performance.now() - startTime) / 1000).toFixed(2);
+                console.log(`⏱️ Datos cargados en ${loadTime}s`);
+                
+                if (result.success) {
+                    allData = result.data;
+                    filteredData = JSON.parse(JSON.stringify(allData)); // Deep copy
+                    
+                    document.getElementById('loading-container').style.display = 'none';
+                    
+                    // Mostrar indicador de caché
+                    if (result.from_cache) {
+                        document.getElementById('cache-indicator').style.display = 'block';
+                    } else {
+                        document.getElementById('cache-indicator').style.display = 'none';
+                    }
+                    
+                    document.getElementById('date-filter').style.display = 'flex';
+                    document.getElementById('charts-container').style.display = 'block';
+                    
+                    // Configurar rango de fechas
+                    if (allData.argentina_marca && allData.argentina_marca.labels.length > 0) {
+                        const labels = allData.argentina_marca.labels;
+                        dateRange.start = 0;
+                        dateRange.end = labels.length - 1;
+                        
+                        // Configurar inputs de fecha personalizada
+                        const firstDate = convertToYearMonth(labels[0]);
+                        const lastDate = convertToYearMonth(labels[labels.length - 1]);
+                        document.getElementById('date-from').value = firstDate;
+                        document.getElementById('date-to').value = lastDate;
+                        document.getElementById('date-from').min = firstDate;
+                        document.getElementById('date-from').max = lastDate;
+                        document.getElementById('date-to').min = firstDate;
+                        document.getElementById('date-to').max = lastDate;
+                    }
+                    
+                    renderCharts();
+                    renderTopModelos();
+                } else {
+                    showError(result.error || 'Error al cargar los datos');
+                }
+            } catch (error) {
+                showError('Error de conexión: ' + error.message);
+            }
+        }
+        
+        function convertToYearMonth(label) {
+            // Convertir "01/15" a "2015-01"
+            const [month, year] = label.split('/');
+            const fullYear = '20' + year;
+            return `${fullYear}-${month}`;
+        }
+        
+        function showError(message) {
+            document.getElementById('loading-container').style.display = 'none';
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `<div class="error-message"><strong>Error:</strong> ${message}</div>`;
+        }
+        
+        function aplicarFiltroPersonalizado() {
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            
+            if (!dateFrom || !dateTo) return;
+            
+            filteredData = filterDataByCustomRange(dateFrom, dateTo);
+            renderCharts();
+            renderTopModelos();
+        }
+        
+        function resetFiltroFecha() {
+            const labels = allData.argentina_marca.labels;
+            const firstDate = convertToYearMonth(labels[0]);
+            const lastDate = convertToYearMonth(labels[labels.length - 1]);
+            document.getElementById('date-from').value = firstDate;
+            document.getElementById('date-to').value = lastDate;
+            filteredData = JSON.parse(JSON.stringify(allData));
+            renderCharts();
+            renderTopModelos();
+        }
+        
+        function filterDataByCustomRange(dateFrom, dateTo) {
+            const filtered = {};
+            
+            ['argentina_marca', 'argentina_modelo', 'mendoza_marca', 'mendoza_modelo'].forEach(key => {
+                if (allData[key]) {
+                    const labels = allData[key].labels;
+                    const indices = [];
+                    
+                    labels.forEach((label, idx) => {
+                        const labelDate = convertToYearMonth(label);
+                        if (labelDate >= dateFrom && labelDate <= dateTo) {
+                            indices.push(idx);
+                        }
+                    });
+                    
+                    if (indices.length > 0) {
+                        filtered[key] = {
+                            labels: indices.map(i => labels[i])
+                        };
+                        
+                        // Copiar todas las marcas disponibles
+                        const marcas = ['toyota', 'ford', 'fiat', 'volkswagen', 'chevrolet', 'peugeot', 'otros'];
+                        marcas.forEach(marca => {
+                            if (allData[key][marca]) {
+                                filtered[key][marca] = indices.map(i => allData[key][marca][i]);
+                            }
+                        });
+                        
+                        if (allData[key].modelos) {
+                            filtered[key].modelos = allData[key].modelos.map(modelo => ({
+                                nombre: modelo.nombre,
+                                valores: indices.map(i => modelo.valores[i])
+                            }));
+                        }
+                    }
+                }
+            });
+            
+            return filtered;
+        }
+        
+        function renderCharts() {
+            if (!filteredData) return;
+            Object.values(charts).forEach(chart => chart && chart.destroy());
+            charts = {};
+            
+            if (filteredData.argentina_marca) {
+                renderToyotaAbsolutos('chart-toyota-argentina', filteredData.argentina_marca, 'Argentina');
+            }
+            
+            if (filteredData.mendoza_marca) {
+                renderToyotaAbsolutos('chart-toyota-mendoza', filteredData.mendoza_marca, 'Mendoza');
+            }
+            
+            if (filteredData.argentina_marca && filteredData.mendoza_marca) {
+                renderParticipacionComparativa();
+            }
+        }
+        
+        function renderToyotaAbsolutos(canvasId, data, region) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            const colors = {
+                toyota: { border: '#EB0A1E', bg: 'rgba(235, 10, 30, 0.1)' },
+                ford: { border: '#003478', bg: 'rgba(0, 52, 120, 0.1)' },
+                fiat: { border: '#A71930', bg: 'rgba(167, 25, 48, 0.1)' },
+                volkswagen: { border: '#001E50', bg: 'rgba(0, 30, 80, 0.1)' },
+                chevrolet: { border: '#FFC933', bg: 'rgba(255, 201, 51, 0.1)' },
+                peugeot: { border: '#004C97', bg: 'rgba(0, 76, 151, 0.1)' }
+            };
+            
+            const datasets = [];
+            const marcas = ['toyota', 'ford', 'fiat', 'volkswagen', 'chevrolet', 'peugeot'];
+            
+            marcas.forEach(marca => {
+                if (data[marca]) {
+                    datasets.push({
+                        label: marca.charAt(0).toUpperCase() + marca.slice(1),
+                        data: data[marca],
+                        borderColor: colors[marca].border,
+                        backgroundColor: colors[marca].bg,
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        hidden: marca !== 'toyota'  // Solo Toyota visible por defecto
+                    });
+                }
+            });
+            
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: datasets
+                },
+                options: getChartOptions('cantidad')
+            });
+        }
+        
+        function renderParticipacionComparativa() {
+            const ctx = document.getElementById('chart-participacion-comparativa').getContext('2d');
+            
+            const argData = filteredData.argentina_marca;
+            const mdzData = filteredData.mendoza_marca;
+            
+            // Calcular participación Argentina
+            const argPorcentajes = argData.labels.map((label, index) => {
+                const toyota = argData.toyota[index];
+                const totalMercado = (argData.toyota[index] || 0) + 
+                                    (argData.ford[index] || 0) + 
+                                    (argData.fiat[index] || 0) + 
+                                    (argData.volkswagen[index] || 0) + 
+                                    (argData.chevrolet[index] || 0) + 
+                                    (argData.peugeot[index] || 0) + 
+                                    (argData.otros[index] || 0);
+                return totalMercado > 0 ? ((toyota / totalMercado) * 100) : 0;
+            });
+            
+            // Calcular participación Mendoza
+            const mdzPorcentajes = mdzData.labels.map((label, index) => {
+                const toyota = mdzData.toyota[index];
+                const totalMercado = (mdzData.toyota[index] || 0) + 
+                                    (mdzData.ford[index] || 0) + 
+                                    (mdzData.fiat[index] || 0) + 
+                                    (mdzData.volkswagen[index] || 0) + 
+                                    (mdzData.chevrolet[index] || 0) + 
+                                    (mdzData.peugeot[index] || 0) + 
+                                    (mdzData.otros[index] || 0);
+                return totalMercado > 0 ? ((toyota / totalMercado) * 100) : 0;
+            });
+            
+            charts['chart-participacion-comparativa'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: argData.labels,
+                    datasets: [
+                        {
+                            label: 'Argentina',
+                            data: argPorcentajes,
+                            borderColor: '#EB0A1E',
+                            backgroundColor: 'rgba(235, 10, 30, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        },
+                        {
+                            label: 'Mendoza',
+                            data: mdzPorcentajes,
+                            borderColor: '#FF6B35',
+                            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }
+                    ]
+                },
+                options: getChartOptions('porcentaje')
+            });
+        }
+        
+        function getChartOptions(type) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 14, weight: 'bold' },
+                            padding: 15,
+                            color: document.body.classList.contains('dark-mode') ? '#fff' : '#2d3748'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                        titleFont: { size: 15, weight: 'bold' },
+                        bodyFont: { size: 14 },
+                        padding: 15,
+                        displayColors: true,
+                        boxWidth: 15,
+                        boxHeight: 15,
+                        usePointStyle: true,
+                        callbacks: type === 'porcentaje' ? {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                            }
+                        } : {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toLocaleString('es-AR') + ' patentamientos';
+                            }
+                        }
+                    },
+                    crosshair: {
+                        line: {
+                            color: '#EB0A1E',
+                            width: 2,
+                            dashPattern: [5, 5]
+                        },
+                        sync: {
+                            enabled: false
+                        },
+                        zoom: {
+                            enabled: false
+                        }
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'x'
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'x'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            color: document.body.classList.contains('dark-mode') ? '#aaa' : '#666',
+                            font: { size: 10 }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: type === 'porcentaje' ? 30 : undefined,
+                        grid: { color: 'rgba(200, 200, 200, 0.2)' },
+                        ticks: {
+                            color: document.body.classList.contains('dark-mode') ? '#aaa' : '#666',
+                            callback: function(value) {
+                                return type === 'porcentaje' 
+                                    ? value + '%' 
+                                    : value.toLocaleString('es-AR');
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        function renderTopModelos() {
+            if (!filteredData.argentina_modelo || !filteredData.mendoza_modelo) return;
+            
+            // Calcular Top 5 basándose en los datos filtrados (rango seleccionado)
+            const argTop = calcularTop5Filtrado(filteredData.argentina_modelo);
+            const mdzTop = calcularTop5Filtrado(filteredData.mendoza_modelo);
+            
+            renderTopList('top-argentina', argTop);
+            renderTopList('top-mendoza', mdzTop);
+        }
+        
+        function calcularTop5Filtrado(modeloData) {
+            if (!modeloData.modelos) return [];
+            
+            // Sumar los valores del rango filtrado para cada modelo
+            const totales = modeloData.modelos.map(modelo => {
+                const total = modelo.valores.reduce((sum, val) => sum + val, 0);
+                return { nombre: modelo.nombre, cantidad: total };
+            });
+            
+            // Filtrar modelos con cantidad > 0 y tomar top 5
+            return totales
+                .filter(item => item.cantidad > 0)
+                .sort((a, b) => b.cantidad - a.cantidad)
+                .slice(0, 5);
+        }
+        
+        function renderTopList(elementId, topList) {
+            const ul = document.getElementById(elementId);
+            ul.innerHTML = '';
+            
+            if (topList.length === 0) {
+                ul.innerHTML = '<li style="text-align: center; color: #999;">No hay datos disponibles</li>';
+                return;
+            }
+            
+            topList.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div style="display: flex; align-items: center; flex: 1;">
+                        <span class="modelo-rank">${index + 1}</span>
+                        <span class="modelo-nombre">${item.nombre}</span>
+                    </div>
+                    <span class="modelo-cantidad">${item.cantidad.toLocaleString('es-AR')}</span>
+                `;
+                ul.appendChild(li);
+            });
+        }
+        
+        function resetZoom(chartId) {
+            if (charts[chartId]) {
+                charts[chartId].resetZoom();
+            }
+        }
+        
+        function refreshData() {
+            document.getElementById('cache-indicator').style.display = 'none';
+            document.getElementById('loading-container').style.display = 'block';
+            document.getElementById('date-filter').style.display = 'none';
+            document.getElementById('charts-container').style.display = 'none';
+            loadData(true);  // Forzar recarga desde BD
+        }
+    </script>
+</body>
+</html>

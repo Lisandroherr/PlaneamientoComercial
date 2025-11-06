@@ -5,11 +5,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const resultContainer = document.getElementById('resultContainer');
 const successAlert = document.getElementById('successAlert');
 const errorAlert = document.getElementById('errorAlert');
-const infoAlert = document.getElementById('infoAlert');
 const errorMessage = document.getElementById('errorMessage');
-
-// Inicialización
-infoAlert.classList.add('show');
 
 // Función simple para manejar pestañas (sin Bootstrap)
 function initTabs() {
@@ -257,7 +253,6 @@ function showError(message) {
 
 // Función para ocultar todas las alertas
 function hideAlerts() {
-    infoAlert.classList.remove('show');
     successAlert.classList.remove('show');
     errorAlert.classList.remove('show');
 }
@@ -727,6 +722,7 @@ function convertirADisponible() {
     // 4: Fecha Finanzas, 5: Despacho Estimado, 6: Entrega Estimada,
     // 7: Fecha Recepción, 8: Ubicación, 9: Días Stock, 10: Precio p/ Disponible,
     // 11: Cód. Cliente, 12: Cliente, 13: Vendedor, 14: Operación
+    // 15: Precio Base, 16: Descuento Aplicado (%)
     const disponibles = filasFiltradas.map(row => {
         return {
             numero_fabrica: row[0] || '',
@@ -739,11 +735,13 @@ function convertirADisponible() {
             fecha_recepcion: row[7] || '',
             ubicacion: row[8] || '',
             dias_stock: row[9] || '',
-            precio_disponible: row[10] || '',
+            precio_disponible: row[10] || 0,
             cod_cliente: row[11] || '',
             cliente: row[12] || '',
             vendedor: row[13] || '',
-            operacion: row[14] || ''
+            operacion: row[14] || '',
+            precio_base: row[15] || 0,
+            descuento_aplicado: row[16] || 0
         };
     });
     

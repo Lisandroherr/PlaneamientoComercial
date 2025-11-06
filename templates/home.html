@@ -7,29 +7,109 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-gradient-start: #b4afaf;
+            --bg-gradient-end: #58595B;
+            --container-bg: #f5f5f5;
+            --header-bg: #2D2D2D;
+            --header-border: #EB0A1E;
+            --text-color: #2D2D2D;
+            --text-secondary: #718096;
+            --card-shadow: rgba(0,0,0,0.3);
+            --border-color: #e2e8f0;
+        }
+        
+        body.dark-mode {
+            --bg-gradient-start: #1a1a1a;
+            --bg-gradient-end: #0a0a0a;
+            --container-bg: #1e1e1e;
+            --header-bg: #0a0a0a;
+            --header-border: #EB0A1E;
+            --text-color: #ffffff;
+            --text-secondary: #aaa;
+            --card-shadow: rgba(255,255,255,0.1);
+            --border-color: #2d2d2d;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #b4afaf 0%, #58595B 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0%;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('/static/supra.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none;
         }
         .container {
-            max-width: 100%;
-            width: 100%;
-            background: white;
-            box-shadow: none;
-            border-radius: 0;
-            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            background: var(--container-bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        body.dark-mode .container {
+            background: transparent;
+        }
+        
+        body.dark-mode .content {
+            background: rgba(10, 10, 10, 0.75);
         }
         .header {
-            background: #2D2D2D;
+            background: var(--header-bg);
             color: white;
             padding: 20px 40px;
-            text-align: left;
-            border-bottom: 4px solid #EB0A1E;
+            border-bottom: 4px solid var(--header-border);
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: flex-start;
+        }
+        .header-center {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: flex-end;
         }
         .header h1 {
             font-size: 1.5em;
@@ -37,79 +117,188 @@
             text-shadow: none;
             font-weight: 600;
         }
+        .user-welcome {
+            font-size: 0.95em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        .user-welcome strong {
+            color: #EB0A1E;
+            font-weight: 600;
+        }
+        
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        .dark-mode-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            transition: background 0.3s;
+        }
+        .toggle-switch.active {
+            background: #EB0A1E;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 2px;
+        }
+        .toggle-slider img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+        .dark-mode-icon {
+            font-size: 1.1em;
+        }
+        .icon-btn {
+            background: #EB0A1E;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 1.1em;
+        }
+        .icon-btn:hover {
+            background: #C8102E;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(235, 10, 30, 0.4);
+        }
+        .btn-logout {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-logout:hover {
+            background: #2D2D2D;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
         .content {
-            padding: 40px;
+            flex: 1;
+            padding: 30px 40px;
+            overflow-y: auto;
+            background: var(--container-bg);
+            transition: background 0.3s ease;
         }
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 18px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
         .app-card {
             padding: 30px;
             border-radius: 10px;
-            color: white;
+            color: var(--text-color);
+            background: white;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 160px;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            border: 2px solid var(--border-color);
+        }
+        
+        body.dark-mode .app-card {
+            background: rgba(30, 30, 30, 0.7);
+        }
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(235, 10, 30, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .app-card:hover::before {
+            width: 500px;
+            height: 500px;
         }
         .app-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .app-card.planeamiento {
-            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
-        }
-        .app-card.ventas {
-            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
-        }
-        .app-card.gestoria {
-            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
-        }
-        .app-card.entregas {
-            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(235, 10, 30, 0.3);
+            border-color: #EB0A1E;
         }
         .app-icon {
-            font-size: 2.5em;
-            margin-bottom: 15px;
+            font-size: 2em;
+            margin-bottom: 10px;
             display: block;
+            position: relative;
+            z-index: 1;
+            color: #EB0A1E;
         }
         .app-title {
-            font-size: 1.3em;
-            margin-bottom: 10px;
+            font-size: 1.2em;
+            margin-bottom: 8px;
             font-weight: 600;
+            position: relative;
+            z-index: 1;
+            color: var(--text-color);
         }
         .app-description {
-            font-size: 0.95em;
+            font-size: 0.88em;
             opacity: 0.9;
-            margin-bottom: 15px;
-            line-height: 1.5;
-        }
-        .btn-card {
-            display: inline-block;
-            background: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: all 0.3s;
-        }
-        .app-card.planeamiento .btn-card {
-            color: #EB0A1E;
-        }
-        .app-card.ventas .btn-card {
-            color: #EB0A1E;
-        }
-        .app-card.gestoria .btn-card {
-            color: #EB0A1E;
-        }
-        .app-card.entregas .btn-card {
-            color: #EB0A1E;
-        }
-        .btn-card:hover {
-            transform: scale(1.05);
+            margin-bottom: 0;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+            color: var(--text-secondary);
         }
         .lock-icon {
             float: right;
@@ -118,7 +307,13 @@
         }
         
         /* Responsive */
-        @media (max-width: 1024px) {
+        @media (min-width: 1200px) {
+            .apps-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1199px) and (min-width: 769px) {
             .apps-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -128,269 +323,155 @@
             .apps-grid {
                 grid-template-columns: 1fr;
             }
-            .header h1 {
-                font-size: 2em;
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
             }
-        }
-        
-        /* Modal de Contraseña */
-        .password-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        .password-modal.active {
-            display: flex;
-        }
-        .password-content {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .password-content h2 {
-            color: #2D2D2D;
-            margin-bottom: 10px;
-            font-size: 1.8em;
-        }
-        .password-content p {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .password-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1.1em;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-            letter-spacing: 3px;
-        }
-        .password-input:focus {
-            outline: none;
-            border-color: #EB0A1E;
-        }
-        .password-buttons {
-            display: flex;
-            gap: 15px;
-        }
-        .btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #EB0A1E, #C8102E);
-            color: white;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(235, 10, 30, 0.3);
-        }
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #2D2D2D;
-        }
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-        .error-message {
-            color: #EB0A1E;
-            margin-top: 15px;
-            font-weight: 600;
-            display: none;
-        }
-        .error-message.active {
-            display: block;
+            .header-left,
+            .header-right {
+                width: 100%;
+                justify-content: center;
+            }
+            .header-center h1 {
+                font-size: 1.3em;
+            }
+            .user-welcome {
+                font-size: 0.85em;
+            }
+            body {
+                overflow: auto;
+            }
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Planeamiento Comercial TOYOTA</h1>
+            <div class="header-left">
+                {% if current_user.is_authenticated and current_user.is_admin() %}
+                <a href="{{ url_for('admin_users') }}" class="icon-btn" title="Panel de Administración">
+                    <i class="fas fa-cog"></i>
+                </a>
+                {% endif %}
+            </div>
+            
+            <div class="header-center">
+                <h1>Planeamiento Comercial TOYOTA</h1>
+                {% if current_user.is_authenticated %}
+                <p class="user-welcome">
+                    Bienvenido, <strong>{{ current_user.full_name or current_user.username }}</strong>
+                </p>
+                {% endif %}
+            </div>
+            
+            <div class="header-right">
+                <div class="dark-mode-toggle" onclick="toggleDarkMode()">
+                    <span style="color: white; font-size: 0.9em; font-weight: 500;">GR Mode</span>
+                    <div class="toggle-switch" id="darkModeSwitch">
+                        <div class="toggle-slider">
+                            <img src="/static/gr-logo.jpg" alt="GR" id="grLogo">
+                        </div>
+                    </div>
+                </div>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('logout') }}" class="btn-logout" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </a>
+                {% endif %}
+            </div>
         </div>
         
         <div class="content">
             <div class="apps-grid">
                 <!-- Aplicación PLANEAMIENTO -->
-                <div class="app-card planeamiento" onclick="solicitarPassword()">
-                    <i class="fas fa-lock lock-icon"></i>
+                {% if current_user.has_permission('planeamiento') %}
+                <a href="/planeamiento" class="app-card planeamiento">
                     <i class="fas fa-chart-line app-icon"></i>
                     <h3 class="app-title">PLANEAMIENTO</h3>
                     <p class="app-description">
                         Sistema completo de administración, precios, disponibilidad y análisis de seguimiento.
                     </p>
-                    <span class="btn-card">
-                        Ir al módulo <i class="fas fa-arrow-right"></i>
-                    </span>
-                </div>
+                </a>
+                {% endif %}
                 
                 <!-- Aplicación VENTAS -->
-                <div class="app-card ventas" onclick="irAVentas()">
+                {% if current_user.has_permission('ventas') %}
+                <a href="/ventas" class="app-card ventas">
                     <i class="fas fa-handshake app-icon"></i>
                     <h3 class="app-title">VENTAS</h3>
                     <p class="app-description">
                         Módulo dedicado para vendedores. Consulta de disponibilidad en tiempo real.
                     </p>
-                    <span class="btn-card">
-                        Ir al módulo <i class="fas fa-arrow-right"></i>
-                    </span>
-                </div>
+                </a>
+                {% endif %}
+                
+                <!-- Aplicación BUSINESS INTELLIGENCE ANALYSIS -->
+                {% if current_user.has_permission('planeamiento') %}
+                <a href="/bi_analysis" class="app-card bi-analysis">
+                    <i class="fas fa-chart-bar app-icon"></i>
+                    <h3 class="app-title">BUSINESS INTELLIGENCE</h3>
+                    <p class="app-description">
+                        Análisis de patentamientos, entregas y reportes estratégicos del negocio.
+                    </p>
+                </a>
+                {% endif %}
                 
                 <!-- Aplicación GESTORÍA -->
-                <div class="app-card gestoria" onclick="irAGestoria()">
+                {% if current_user.has_permission('gestoria') %}
+                <div class="app-card gestoria" style="cursor: not-allowed; opacity: 0.7;">
                     <i class="fas fa-file-contract app-icon"></i>
                     <h3 class="app-title">GESTORÍA</h3>
                     <p class="app-description">
                         Gestión de trámites, documentación y patentamiento de vehículos.
                     </p>
-                    <span class="btn-card">
-                        Próximamente <i class="fas fa-clock"></i>
-                    </span>
+                    <span style="font-size: 0.85em; opacity: 0.8;"><i class="fas fa-clock"></i> Próximamente</span>
                 </div>
+                {% endif %}
                 
                 <!-- Aplicación ENTREGAS -->
-                <div class="app-card entregas" onclick="irAEntregas()">
+                {% if current_user.has_permission('entregas') %}
+                <a href="/entregas" class="app-card entregas">
                     <i class="fas fa-truck app-icon"></i>
                     <h3 class="app-title">ENTREGAS</h3>
                     <p class="app-description">
                         Control de entregas programadas, logística y coordinación de recepción.
                     </p>
-                    <span class="btn-card">
-                        Ir al módulo <i class="fas fa-arrow-right"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de Contraseña -->
-    <div class="password-modal" id="passwordModal">
-        <div class="password-content">
-            <h2><i class="fas fa-lock"></i> Acceso Restringido</h2>
-            <p>Ingrese la contraseña de administrador para acceder a PLANEAMIENTO</p>
-            <input 
-                type="password" 
-                id="passwordInput" 
-                class="password-input" 
-                placeholder="••••••" 
-                maxlength="20"
-                onkeypress="handleEnter(event)"
-            >
-            <div class="password-buttons">
-                <button class="btn btn-secondary" onclick="cerrarModal()">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button class="btn btn-primary" onclick="verificarPassword()">
-                    <i class="fas fa-sign-in-alt"></i> Ingresar
-                </button>
-            </div>
-            <div class="error-message" id="errorMessage">
-                <i class="fas fa-exclamation-triangle"></i> Contraseña incorrecta
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
     
     <script>
-        // Contraseña de administrador (puedes cambiarla)
-        const PASSWORD_ADMIN = 'admin2025';
-        
-        function solicitarPassword() {
-            const modal = document.getElementById('passwordModal');
-            const input = document.getElementById('passwordInput');
-            const error = document.getElementById('errorMessage');
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const body = document.body;
+            const darkModeSwitch = document.getElementById('darkModeSwitch');
             
-            modal.classList.add('active');
-            input.value = '';
-            error.classList.remove('active');
+            body.classList.toggle('dark-mode');
+            darkModeSwitch.classList.toggle('active');
             
-            // Focus en el input después de un momento
-            setTimeout(() => input.focus(), 100);
-        }
-        
-        function cerrarModal() {
-            const modal = document.getElementById('passwordModal');
-            modal.classList.remove('active');
-        }
-        
-        function verificarPassword() {
-            const input = document.getElementById('passwordInput');
-            const error = document.getElementById('errorMessage');
-            const password = input.value;
-            
-            if (password === PASSWORD_ADMIN) {
-                // Contraseña correcta - redirigir a planeamiento
-                window.location.href = '/planeamiento';
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'enabled');
             } else {
-                // Contraseña incorrecta - mostrar error
-                error.classList.add('active');
-                input.value = '';
-                input.focus();
-                
-                // Shake animation
-                input.style.animation = 'shake 0.5s';
-                setTimeout(() => input.style.animation = '', 500);
+                localStorage.setItem('darkMode', 'disabled');
             }
         }
         
-        function handleEnter(event) {
-            if (event.key === 'Enter') {
-                verificarPassword();
-            }
-        }
-        
-        function irAVentas() {
-            window.location.href = '/ventas';
-        }
-        
-        function irAGestoria() {
-            alert('🚧 Módulo GESTORÍA en construcción\n\nEste módulo estará disponible próximamente para la gestión de trámites.');
-        }
-        
-        function irAEntregas() {
-            window.location.href = '/entregas';
-        }
-        
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                cerrarModal();
+        // Cargar preferencia guardada
+        window.addEventListener('DOMContentLoaded', () => {
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeSwitch').classList.add('active');
             }
         });
-        
-        // Agregar animación de shake al CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-                20%, 40%, 60%, 80% { transform: translateX(10px); }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

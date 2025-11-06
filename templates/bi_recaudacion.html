@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recaudación - BI Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #b4afaf 0%, #58595B 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            border-bottom: 4px solid #EB0A1E;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 1.6em;
+            margin: 0;
+        }
+        
+        .header p {
+            color: #ccc;
+            font-size: 0.85em;
+            margin: 5px 0 0 0;
+        }
+        
+        .btn-back {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-back:hover {
+            background: #c40818;
+            transform: translateY(-2px);
+        }
+        
+        .content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .construction-box {
+            background: white;
+            border-radius: 15px;
+            padding: 60px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+        }
+        
+        .construction-icon {
+            font-size: 5em;
+            color: #FFC107;
+            margin-bottom: 20px;
+        }
+        
+        .construction-title {
+            font-size: 2em;
+            color: #2D2D2D;
+            margin-bottom: 15px;
+        }
+        
+        .construction-text {
+            color: #718096;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <a href="{{ url_for('bi_analysis') }}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Volver</span>
+                </a>
+            </div>
+            
+            <div style="text-align: center; flex: 1;">
+                <h1>Recaudación</h1>
+                <p>Análisis de recaudación y facturación</p>
+            </div>
+            
+            <div></div>
+        </div>
+        
+        <div class="content">
+            <div class="construction-box">
+                <div class="construction-icon">
+                    <i class="fas fa-hard-hat"></i>
+                </div>
+                <h2 class="construction-title">En Construcción</h2>
+                <p class="construction-text">
+                    Este módulo estará disponible próximamente.<br>
+                    Por el momento no contamos con datos de recaudación.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

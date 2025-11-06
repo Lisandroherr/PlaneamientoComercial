@@ -325,126 +325,71 @@ function crearFilaConvencional(modelo, index) {
     const precioUsd = modelo.precio_usd || 0;
     const cotizacion = modelo.cotizacion || 1000;
     const descuento = modelo.descuento || 0;
+    const descuentoFuturo = modelo.descuento_futuro || 0;
     const dadoBaja = modelo.dado_baja || 0;
     const familia = modelo.familia || 'OTROS';
     
-    // Aplicar estilo si está dado de baja
-    if (dadoBaja === 1) {
-        tr.style.cssText = 'background-color: #fff5f5; opacity: 0.7;';
-    }
+    // Clase para filas deshabilitadas (sin color de fondo, solo opacidad de texto)
+    const estiloDeshabilitado = dadoBaja === 1 ? 'opacity: 0.5;' : '';
     
     tr.innerHTML = `
-        <td style="background: #f7fafc; font-weight: 600; color: #4a5568; font-size: 0.85em;">${familia}</td>
-        <td><strong>${modelo.nombre}</strong></td>
+        <td style="font-weight: 500; color: #718096; ${estiloDeshabilitado}">
+            <span style="background: #edf2f7; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">
+                ${familia}
+            </span>
+        </td>
+        <td style="font-weight: 600; ${estiloDeshabilitado}">${modelo.nombre}</td>
         <td>
             <input type="number" 
-                   class="form-input input-precio-ars" 
+                   class="form-input" 
                    value="${precioArs}" 
-                   data-index="${index}"
-                   data-campo="precio_ars"
-                   style="width: 100%; padding: 8px;">
+                   onchange="actualizarPrecio(${index}, 'precio_ars', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
         <td>
             <input type="number" 
-                   class="form-input input-precio-usd" 
+                   class="form-input" 
                    value="${precioUsd}" 
-                   data-index="${index}"
-                   data-campo="precio_usd"
-                   style="width: 100%; padding: 8px;">
+                   onchange="actualizarPrecio(${index}, 'precio_usd', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
         <td>
             <input type="number" 
-                   class="form-input input-cotizacion" 
+                   class="form-input" 
                    value="${cotizacion}" 
-                   data-index="${index}"
-                   data-campo="cotizacion"
-                   style="width: 100%; padding: 8px;">
+                   onchange="actualizarPrecio(${index}, 'cotizacion', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
         <td>
             <input type="number" 
                    class="form-input" 
                    value="${descuento}" 
-                   data-index="${index}"
-                   data-campo="descuento"
-                   style="width: 100%; padding: 8px;" 
                    min="0" 
-                   max="100">
+                   max="100" 
+                   step="0.5"
+                   onchange="actualizarPrecio(${index}, 'descuento', this.value)"
+                   style="width: 100%; padding: 8px; text-align: center; ${estiloDeshabilitado}">
+        </td>
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${descuentoFuturo}" 
+                   min="0" 
+                   max="100" 
+                   step="0.5"
+                   onchange="actualizarPrecio(${index}, 'descuento_futuro', this.value)"
+                   style="width: 100%; padding: 8px; text-align: center; background: #fef5e7; ${estiloDeshabilitado}"
+                   title="Descuento aplicado a unidades con entrega en meses futuros">
         </td>
         <td style="text-align: center;">
-            <input type="checkbox" 
-                   class="checkbox-baja"
-                   ${dadoBaja === 1 ? 'checked' : ''}
-                   data-index="${index}"
-                   style="width: 20px; height: 20px; cursor: pointer;"
-                   title="Marcar como dado de baja">
+            <label class="toggle-switch">
+                <input type="checkbox" 
+                       ${dadoBaja === 1 ? 'checked' : ''} 
+                       onchange="toggleDadoBaja(${index}, this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
         </td>
     `;
-    
-    // Agregar event listeners específicos
-    const inputPrecioUsd = tr.querySelector('.input-precio-usd');
-    const inputCotizacion = tr.querySelector('.input-cotizacion');
-    const inputPrecioArs = tr.querySelector('.input-precio-ars');
-    
-    // Cuando cambia el precio USD, calcular ARS automáticamente
-    inputPrecioUsd.addEventListener('change', function() {
-        const idx = parseInt(this.dataset.index);
-        const valorUsd = parseFloat(this.value) || 0;
-        const cotizacion = parseFloat(inputCotizacion.value) || 1000;
-        
-        // Calcular precio ARS = USD × Cotización
-        const precioArs = valorUsd * cotizacion;
-        
-        // Actualizar el input de ARS
-        inputPrecioArs.value = precioArs;
-        
-        // Guardar ambos valores
-        preciosData.modelos[idx].precio_usd = valorUsd;
-        preciosData.modelos[idx].precio_ars = precioArs;
-        
-        // Sincronizar con modelo SC si existe
-        sincronizarModeloSC(idx);
-    });
-    
-    // Cuando cambia la cotización, recalcular ARS si hay USD
-    inputCotizacion.addEventListener('change', function() {
-        const idx = parseInt(this.dataset.index);
-        const cotizacion = parseFloat(this.value) || 1000;
-        const valorUsd = parseFloat(inputPrecioUsd.value) || 0;
-        
-        // Si hay un precio USD, recalcular ARS
-        if (valorUsd > 0) {
-            const precioArs = valorUsd * cotizacion;
-            inputPrecioArs.value = precioArs;
-            preciosData.modelos[idx].precio_ars = precioArs;
-        }
-        
-        preciosData.modelos[idx].cotizacion = cotizacion;
-        sincronizarModeloSC(idx);
-    });
-    
-    // Para precio ARS y descuento, solo actualizar sin calcular nada
-    inputPrecioArs.addEventListener('change', function() {
-        const idx = parseInt(this.dataset.index);
-        const valor = parseFloat(this.value) || 0;
-        preciosData.modelos[idx].precio_ars = valor;
-        sincronizarModeloSC(idx);
-    });
-    
-    tr.querySelectorAll('[data-campo="descuento"]').forEach(input => {
-        input.addEventListener('change', function() {
-            const idx = parseInt(this.dataset.index);
-            const valor = parseFloat(this.value) || 0;
-            preciosData.modelos[idx].descuento = valor;
-            sincronizarModeloSC(idx);
-        });
-    });
-    
-    // Agregar event listener al checkbox
-    const checkbox = tr.querySelector('.checkbox-baja');
-    checkbox.addEventListener('change', function() {
-        const idx = parseInt(this.dataset.index);
-        toggleDadoBaja(idx, this.checked);
-    });
     
     return tr;
 }
@@ -462,27 +407,28 @@ function crearFilaSC(modelo, index) {
     const dadoBaja = modelo.dado_baja || 0;
     const familia = modelo.familia || 'OTROS';
     
-    // Aplicar estilo si está dado de baja
-    if (dadoBaja === 1) {
-        tr.style.cssText = 'background-color: #fff5f5; opacity: 0.7;';
-    }
+    // Clase para filas deshabilitadas (sin color de fondo, solo opacidad de texto)
+    const estiloDeshabilitado = dadoBaja === 1 ? 'opacity: 0.5;' : '';
     
     tr.innerHTML = `
-        <td style="background: #f7fafc; font-weight: 600; color: #4a5568; font-size: 0.85em;">${familia}</td>
-        <td><strong>${modelo.nombre}</strong></td>
-        <td style="background: #f7fafc; color: #2d3748;">
+        <td style="font-weight: 600; color: #4a5568; font-size: 0.85em; ${estiloDeshabilitado}">${familia}</td>
+        <td style="${estiloDeshabilitado}"><strong>${modelo.nombre}</strong></td>
+        <td style="color: #2d3748; ${estiloDeshabilitado}">
             $ ${formatearNumero(datos.precio_ars || 0)}
         </td>
-        <td style="background: #f7fafc; color: #2d3748;">
+        <td style="color: #2d3748; ${estiloDeshabilitado}">
             US$ ${formatearNumero(datos.precio_usd || 0)}
         </td>
-        <td style="background: #f7fafc; color: #2d3748;">
+        <td style="color: #2d3748; ${estiloDeshabilitado}">
             $ ${formatearNumero(datos.cotizacion || 1000)}
         </td>
-        <td style="background: #f7fafc; color: #2d3748;">
+        <td style="color: #2d3748; ${estiloDeshabilitado}">
             ${datos.descuento || 0}%
         </td>
-        <td style="text-align: center; background: #f7fafc;">
+        <td style="color: #2d3748; background: #fef5e7; ${estiloDeshabilitado}">
+            ${datos.descuento_futuro || 0}%
+        </td>
+        <td style="text-align: center; ${estiloDeshabilitado}">
             <input type="checkbox" 
                    class="checkbox-baja"
                    ${dadoBaja === 1 ? 'checked' : ''}

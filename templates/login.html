@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Plan Comercial Toyota</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #b4afaf 0%, #58595B 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+            overflow: hidden;
+            width: 100%;
+            max-width: 440px;
+        }
+        
+        .login-header {
+            background: #2D2D2D;
+            color: white;
+            padding: 40px 35px;
+            text-align: center;
+            border-bottom: 5px solid #EB0A1E;
+        }
+        
+        .login-header .logo-icon {
+            font-size: 55px;
+            margin-bottom: 18px;
+            color: #EB0A1E;
+            display: block;
+        }
+        
+        .login-header h1 {
+            font-size: 1.75em;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-header p {
+            font-size: 1em;
+            opacity: 0.8;
+            margin: 0;
+            font-weight: 400;
+        }
+        
+        .login-body {
+            padding: 40px 35px;
+            background: #ffffff;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #2D2D2D;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        
+        .form-label i {
+            margin-right: 8px;
+            color: #EB0A1E;
+            width: 18px;
+            text-align: center;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #EB0A1E;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(235, 10, 30, 0.08);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: #EB0A1E;
+            color: white;
+            border: none;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+            letter-spacing: 0.3px;
+        }
+        
+        .btn-login:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(235, 10, 30, 0.35);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .btn-login i {
+            margin-right: 10px;
+        }
+        
+        .alert {
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            font-size: 0.92em;
+            border-left: 5px solid;
+            border-radius: 0;
+            line-height: 1.5;
+        }
+        
+        .alert-danger,
+        .alert-error {
+            background: #ffebee;
+            border-left-color: #EB0A1E;
+            color: #c62828;
+        }
+        
+        .alert-success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            color: #1565c0;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+            color: #e65100;
+        }
+        
+        @media (max-width: 480px) {
+            .login-header {
+                padding: 35px 25px;
+            }
+            
+            .login-header .logo-icon {
+                font-size: 48px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.5em;
+            }
+            
+            .login-body {
+                padding: 30px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-lock logo-icon"></i>
+            <h1>Plan Comercial</h1>
+            <p>Sistema de Gestión Toyota</p>
+        </div>
+        
+        <div class="login-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('login') }}" autocomplete="on">
+                <div class="form-group">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user"></i>Usuario
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               required 
+                               autofocus
+                               autocomplete="username"
+                               placeholder="Ingresa tu usuario">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-key"></i>Contraseña
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               required
+                               autocomplete="current-password"
+                               placeholder="Ingresa tu contraseña">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i>Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

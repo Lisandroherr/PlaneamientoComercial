@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Cargar unidades disponibles desde el servidor
 function cargarDisponibles() {
     console.log('🔄 Cargando unidades disponibles...');
+    
     fetch('/api/disponibles')
         .then(response => {
             if (!response.ok) {
@@ -28,6 +29,35 @@ function cargarDisponibles() {
             disponiblesData = data || [];
             disponiblesLoaded = true;
             console.log('✅ Unidades disponibles cargadas:', disponiblesData.length);
+            
+            // DEBUG: Mostrar qué recibimos del backend
+            console.log('\n🔍 ============ DATOS RECIBIDOS EN JAVASCRIPT (MÓDULO 4) ============');
+            console.log('   Total unidades recibidas:', disponiblesData.length);
+            if (disponiblesData.length > 0) {
+                console.log('\n   📥 Primera unidad recibida:');
+                console.log('      Nº Fábrica:', disponiblesData[0].numero_fabrica);
+                console.log('      Modelo:', disponiblesData[0].modelo_version);
+                console.log('      Precio Base:', disponiblesData[0].precio_base);
+                console.log('      Descuento Individual:', disponiblesData[0].descuento_individual, '%');
+                console.log('      Descuento Adicional:', disponiblesData[0].descuento_adicional, '%');
+                console.log('      Precio Final:', disponiblesData[0].precio_disponible);
+                
+                if (disponiblesData.length > 1) {
+                    console.log('\n   📥 Segunda unidad recibida:');
+                    console.log('      Nº Fábrica:', disponiblesData[1].numero_fabrica);
+                    console.log('      Modelo:', disponiblesData[1].modelo_version);
+                    console.log('      Descuento Individual:', disponiblesData[1].descuento_individual, '%');
+                }
+                
+                if (disponiblesData.length > 2) {
+                    console.log('\n   📥 Tercera unidad recibida:');
+                    console.log('      Nº Fábrica:', disponiblesData[2].numero_fabrica);
+                    console.log('      Modelo:', disponiblesData[2].modelo_version);
+                    console.log('      Descuento Individual:', disponiblesData[2].descuento_individual, '%');
+                }
+            }
+            console.log('   ====================================================================\n');
+            
             if (reservadasLoaded) {
                 renderizarTabla();
             }
@@ -92,12 +122,6 @@ function renderizarTabla() {
     
     console.log('✅ Unidades filtradas (sin reservar):', disponiblesFiltrados.length);
     
-    // Actualizar contador
-    const totalElement = document.getElementById('totalDisponibles');
-    if (totalElement) {
-        totalElement.textContent = disponiblesFiltrados.length;
-    }
-    
     if (disponiblesFiltrados.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -139,35 +163,53 @@ function renderizarTabla() {
     disponiblesFiltrados.forEach((item, index) => {
         const tr = document.createElement('tr');
         
-        // Determinar estilo de descuento individual
-        let descIndividualStyle = '';
-        let descIndividualText = '-';
-        if (item.descuento_individual && item.descuento_individual > 0) {
-            descIndividualStyle = 'background: #e6f7ff; color: #0066cc; font-weight: 600; text-align: center;';
-            descIndividualText = `${item.descuento_individual}%`;
-        } else {
-            descIndividualStyle = 'color: #a0aec0; font-size: 0.9em; text-align: center;';
-            descIndividualText = '0%';
+        // DEBUG: Log para ver qué descuentos tiene cada item
+        if (index === 0) {
+            console.log('\n📋 ============ PRIMERA FILA QUE SE VA A MOSTRAR ============');
+            console.log('   Nº Fábrica:', item.numero_fabrica);
+            console.log('   Modelo:', item.modelo_version);
+            console.log('   Descuento Individual (del objeto):', item.descuento_individual);
+            console.log('   Descuento Adicional (del objeto):', item.descuento_adicional);
+            console.log('   Precio Base:', item.precio_base);
+            console.log('   Precio Final:', item.precio_disponible);
         }
         
-        // Determinar estilo de descuentos adicionales
-        let descAdicionalStyle = '';
-        let descAdicionalText = item.detalles_descuento || 'Sin descuentos';
+        // Descuento individual - mostrar el valor que viene del backend
+        // (el backend ya consideró si califica o no para descuentos)
+        let descIndividualText = '0%';
+        if (item.descuento_individual && item.descuento_individual > 0) {
+            descIndividualText = `${item.descuento_individual}%`;
+        }
+        
+        if (index === 0) {
+            console.log('   Texto que se mostrará (Desc. Individual):', descIndividualText);
+        }
+        
+        // Descuentos adicionales - mostrar solo los detalles (sin incluir individual)
+        let descAdicionalText = 'Sin descuentos';
         if (item.descuento_adicional && item.descuento_adicional > 0) {
-            descAdicionalStyle = 'background: #fef5e7; color: #d68910; font-weight: 600;';
-            descAdicionalText = `${item.descuento_adicional}% (${item.detalles_descuento})`;
-        } else {
-            descAdicionalStyle = 'color: #a0aec0; font-size: 0.9em;';
+            descAdicionalText = item.detalles_descuento || `${item.descuento_adicional}%`;
+        }
+        
+        if (index === 0) {
+            console.log('   Texto que se mostrará (Desc. Adicional):', descAdicionalText);
+            console.log('   ============================================================\n');
+        }
+        
+        // Formatear fecha - NO mostrar si la ubicación es "Preventa"
+        let fechaFormateada = '';
+        if (item.ubicacion !== 'Preventa') {
+            fechaFormateada = formatearFecha(item.entrega_estimada);
         }
         
         tr.innerHTML = `
             <td>${item.numero_fabrica || ''}</td>
             <td><strong>${item.modelo_version || ''}</strong></td>
             <td>${item.color || ''}</td>
-            <td>${formatearFecha(item.entrega_estimada)}</td>
+            <td>${fechaFormateada}</td>
             <td>${item.ubicacion || ''}</td>
-            <td style="${descIndividualStyle}">${descIndividualText}</td>
-            <td style="${descAdicionalStyle}">${descAdicionalText}</td>
+            <td style="text-align: center;">${descIndividualText}</td>
+            <td>${descAdicionalText}</td>
             <td style="color: #48bb78; font-weight: 600;">$ ${formatearNumero(item.precio_disponible || 0)}</td>
         `;
         
@@ -182,8 +224,6 @@ function renderizarTabla() {
     console.log('📊 Tbody children count:', tbody.children.length);
     console.log('📊 Tab detalle display:', window.getComputedStyle(document.getElementById('tab-detalle')).display);
     console.log('📊 Tab detalle tiene clase active:', document.getElementById('tab-detalle').classList.contains('active'));
-    
-    document.getElementById('totalDisponibles').textContent = disponiblesFiltrados.length;
 }
 
 // Actualizar disponibles (recargar desde servidor)
@@ -513,11 +553,17 @@ function exportarAExcel() {
         const descAdicional = item.descuento_adicional || 0;
         const detalleDesc = item.detalles_descuento || 'Sin descuentos';
         
+        // NO mostrar fecha si la ubicación es "Preventa"
+        let fechaParaExcel = '';
+        if (item.ubicacion !== 'Preventa') {
+            fechaParaExcel = formatearFecha(item.entrega_estimada);
+        }
+        
         const row = [
             item.numero_fabrica || '',
             `"${(item.modelo_version || '').replace(/"/g, '""')}"`,
             item.color || '',
-            formatearFecha(item.entrega_estimada),
+            fechaParaExcel,
             item.ubicacion || '',
             `${descIndividual}%`,
             descAdicional > 0 ? `${descAdicional}% (${detalleDesc})` : 'Sin descuentos',

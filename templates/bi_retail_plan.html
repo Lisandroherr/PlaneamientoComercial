@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail y Plan de Negocio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Light mode por defecto */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #2D2D2D;
+        }
+        
+        /* Dark mode - GR Mode */
+        body.dark-mode {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        .container {
+            background: white;
+            padding: 20px 30px;
+        }
+        
+        body.dark-mode .container {
+            background: #2d2d2d;
+        }
+        
+        .ultima-actualizacion {
+            color: #718096;
+            font-size: 0.85em;
+            font-style: italic;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        body.dark-mode .ultima-actualizacion {
+            color: #a0a0a0;
+        }
+        
+        .table-section {
+            margin-bottom: 25px;
+        }
+        
+        .table-section h2 {
+            color: #2D2D2D;
+            font-size: 1em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        body.dark-mode .table-section h2 {
+            color: #f0f0f0;
+        }
+        
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 1200px) {
+            .tables-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        body.dark-mode table {
+            background: #3a3a3a;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        th {
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #58595B;
+            font-size: 0.85em;
+        }
+        
+        th.text-center {
+            text-align: center;
+        }
+        
+        td {
+            padding: 8px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #2D2D2D;
+        }
+        
+        body.dark-mode td {
+            border-bottom: 1px solid #505050;
+            color: #e0e0e0;
+        }
+        
+        td.text-center {
+            text-align: center;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        body.dark-mode tbody tr:hover {
+            background-color: #454545;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        body.dark-mode tbody tr:nth-child(even) {
+            background-color: #404040;
+        }
+        
+        .desvio-positive {
+            color: #28a745;
+            font-weight: 700;
+        }
+        
+        .desvio-negative {
+            color: #dc3545;
+            font-weight: 700;
+        }
+        
+        .desvio-neutral {
+            color: #858585;
+            font-weight: 600;
+        }
+        
+        .btn-editar {
+            background: #EB0A1E;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+        
+        .btn-editar:hover {
+            background: #C8102E;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        body.dark-mode .loading {
+            color: #a0a0a0;
+        }
+        
+        .loading i {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+        }
+        
+        body.dark-mode .modal {
+            background: rgba(0,0,0,0.8);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        body.dark-mode .modal-content {
+            background: #3a3a3a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .modal-header {
+            background: #2D2D2D;
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 3px solid #EB0A1E;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D2D2D;
+            font-weight: 600;
+        }
+        
+        body.dark-mode .form-group label {
+            color: #f0f0f0;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            background: white;
+            color: #2D2D2D;
+        }
+        
+        body.dark-mode .form-group input {
+            border: 2px solid #505050;
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+        
+        .btn-cancelar {
+            background: #58595B;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-cancelar:hover {
+            background: #2D2D2D;
+        }
+        
+        .btn-guardar {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-guardar:hover {
+            background: #C8102E;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid #EB0A1E;
+        }
+        
+        body.dark-mode .info-section {
+            background: #3a3a3a;
+        }
+        
+        .info-section h3 {
+            color: #2D2D2D;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        body.dark-mode .info-section h3 {
+            color: #f0f0f0;
+        }
+        
+        .info-section p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        body.dark-mode .info-section p {
+            color: #b0b0b0;
+        }
+        
+        .info-section h4 {
+            color: #2D2D2D;
+        }
+        
+        body.dark-mode .info-section h4 {
+            color: #f0f0f0;
+        }
+        
+        .detalles-mensuales {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mes-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        
+        body.dark-mode .mes-card {
+            background: #2d2d2d;
+            border: 1px solid #505050;
+        }
+        
+        .mes-card h4 {
+            color: #EB0A1E;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .mes-card .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .mes-card .stat-label {
+            color: #666;
+        }
+        
+        body.dark-mode .mes-card .stat-label {
+            color: #a0a0a0;
+        }
+        
+        .mes-card .stat-value {
+            color: #2D2D2D;
+            font-weight: 600;
+        }
+        
+        body.dark-mode .mes-card .stat-value {
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> Retail y Plan de Negocio</h1>
+        <a href="/bi_analysis" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+    
+    <div class="container">
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando datos...</p>
+        </div>
+        
+        <div id="contenido" style="display: none;">
+            <span class="ultima-actualizacion" id="fecha-actualizacion"></span>
+            
+            <!-- Grid 2x2 para todas las tablas -->
+            <div class="tables-grid">
+                <!-- Fila 1, Columna 1: Totales -->
+                <div class="table-section">
+                    <h2><i class="fas fa-calculator"></i> Totales Generales</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Familia</th>
+                                <th class="text-center">Ventas Reales</th>
+                                <th class="text-center">Objetivo Actual</th>
+                                <th class="text-center">Objetivo Final</th>
+                                <th class="text-center">Desvío %</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-total">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Fila 1, Columna 2: Convencional -->
+                <div class="table-section">
+                    <h2><i class="fas fa-car"></i> Ventas Convencionales (YAC)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Familia</th>
+                                <th class="text-center">Ventas Reales</th>
+                                <th class="text-center">Objetivo Actual</th>
+                                <th class="text-center">Objetivo Final</th>
+                                <th class="text-center">Desvío %</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-convencional">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Fila 2, Columna 1: Plan Ahorro -->
+                <div class="table-section">
+                    <h2><i class="fas fa-calendar-alt"></i> Plan Ahorro (TPA)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Familia</th>
+                                <th class="text-center">Ventas Reales</th>
+                                <th class="text-center">Objetivo Actual</th>
+                                <th class="text-center">Objetivo Final</th>
+                                <th class="text-center">Desvío %</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-tpa">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Fila 2, Columna 2: Especiales -->
+                <div class="table-section">
+                    <h2><i class="fas fa-star"></i> Ventas Especiales (FQ)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Familia</th>
+                                <th class="text-center">Ventas Reales</th>
+                                <th class="text-center">Objetivo Actual</th>
+                                <th class="text-center">Objetivo Final</th>
+                                <th class="text-center">Desvío %</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-especiales">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Información sobre el cálculo -->
+            <div class="info-section">
+                <h3><i class="fas fa-info-circle"></i> Metodología de Cálculo del Desvío Acumulado</h3>
+                <p>
+                    El porcentaje de desvío se calcula comparando las <strong>ventas reales</strong> contra el 
+                    <strong>objetivo acumulado esperado</strong> hasta la fecha actual, 
+                    basado en promedios históricos de patentamiento.
+                </p>
+                <p>
+                    <strong>Porcentaje acumulado a la fecha: <span id="porcentaje-info" style="color: #EB0A1E; font-size: 1.1em;"></span></strong>
+                </p>
+                <p>
+                    El cálculo considera los días transcurridos del año con precisión diaria. Cada mes tiene un porcentaje 
+                    histórico que se divide entre sus días para obtener un porcentaje diario preciso.
+                </p>
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #2D2D2D;">
+                    <i class="fas fa-calendar-alt"></i> Distribución Mensual de Patentamientos
+                </h4>
+                <div class="detalles-mensuales" id="detalles-mensuales">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para editar objetivos -->
+    <div id="modal-objetivos" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Editar Objetivos: <span id="modal-familia"></span></h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <form id="form-objetivos">
+                    <div class="form-group">
+                        <label for="obj-convencional">
+                            <i class="fas fa-car"></i> Convencional (YAC)
+                        </label>
+                        <input type="number" id="obj-convencional" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="obj-especiales">
+                            <i class="fas fa-star"></i> Ventas Especiales (FQ)
+                        </label>
+                        <input type="number" id="obj-especiales" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="obj-tpa">
+                            <i class="fas fa-calendar-alt"></i> Plan Ahorro (TPA)
+                        </label>
+                        <input type="number" id="obj-tpa" min="0" required>
+                    </div>
+                    
+                    <div class="modal-buttons">
+                        <button type="button" class="btn-cancelar" onclick="cerrarModal()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-guardar">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let datosGlobales = [];
+        let familiaEditando = null;
+        
+        // Cargar datos al iniciar y aplicar GR Mode si está activo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aplicar GR Mode si está activo
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'enabled') {
+                document.body.classList.add('dark-mode');
+            }
+            
+            cargarDatos();
+        });
+        
+        async function cargarDatos() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('contenido').style.display = 'none';
+                
+                const response = await fetch('/api/retail/sales_vs_plan?anio=2025');
+                const data = await response.json();
+                
+                if (data.success) {
+                    datosGlobales = data.datos;
+                    
+                    // Filtrar YARIS CROSS de los datos
+                    datosGlobales = datosGlobales.filter(row => row.familia !== 'YARIS CROSS');
+                    
+                    // Actualizar info (sin mostrar fecha)
+                    document.getElementById('porcentaje-info').textContent = data.porcentaje_acumulado + '%';
+                    
+                    // Renderizar detalles mensuales
+                    renderizarDetallesMensuales(data.detalles_mensuales, data.porcentaje_acumulado);
+                    
+                    // Renderizar las 4 tablas
+                    renderizarTablas(datosGlobales);
+                    
+                    const ahora = new Date().toLocaleString('es-AR');
+                    document.getElementById('fecha-actualizacion').textContent = `Última actualización: ${ahora}`;
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('contenido').style.display = 'block';
+                } else {
+                    alert('Error al cargar datos: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar datos');
+            }
+        }
+        
+        function renderizarDetallesMensuales(detalles, porcentajeAcumulado) {
+            const container = document.getElementById('detalles-mensuales');
+            container.innerHTML = '';
+            
+            let acumulado = 0;
+            detalles.forEach(mes => {
+                acumulado += mes.porcentaje;
+                
+                const card = document.createElement('div');
+                card.className = 'mes-card';
+                
+                card.innerHTML = `
+                    <h4>${mes.nombre}</h4>
+                    <div class="stat">
+                        <span class="stat-label">% Mensual:</span>
+                        <span class="stat-value">${mes.porcentaje}%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Días:</span>
+                        <span class="stat-value">${mes.dias}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">% Diario:</span>
+                        <span class="stat-value">${mes.porcentaje_diario}%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">% Acumulado:</span>
+                        <span class="stat-value">${acumulado.toFixed(2)}%</span>
+                    </div>
+                `;
+                
+                // Resaltar el mes actual
+                if (acumulado >= porcentajeAcumulado && acumulado - mes.porcentaje < porcentajeAcumulado) {
+                    card.style.borderColor = '#EB0A1E';
+                    card.style.borderWidth = '2px';
+                }
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function renderizarTablas(datos) {
+            // Ordenar por total real descendente
+            datos.sort((a, b) => b.total.real - a.total.real);
+            
+            // Renderizar cada tabla en orden: Total, Convencional, TPA, Especiales
+            renderizarTabla('total', datos);
+            renderizarTabla('convencional', datos);
+            renderizarTabla('tpa', datos);
+            renderizarTabla('especiales', datos);
+        }
+        
+        function renderizarTabla(tipo, datos) {
+            const tbody = document.getElementById(`tabla-${tipo}`);
+            tbody.innerHTML = '';
+            
+            datos.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                let tipoData;
+                switch(tipo) {
+                    case 'convencional':
+                        tipoData = row.convencional;
+                        break;
+                    case 'especiales':
+                        tipoData = row.especiales;
+                        break;
+                    case 'tpa':
+                        tipoData = row.tpa;
+                        break;
+                    case 'total':
+                        tipoData = row.total;
+                        break;
+                }
+                
+                tr.innerHTML = `
+                    <td><strong>${row.familia}</strong></td>
+                    <td class="text-center">${tipoData.real}</td>
+                    <td class="text-center">${tipoData.objetivo_acumulado}</td>
+                    <td class="text-center">${tipoData.objetivo_total}</td>
+                    <td class="text-center ${getDesvioClass(tipoData.desvio)}">
+                        ${formatDesvio(tipoData.desvio)}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-editar" onclick="editarObjetivos('${row.familia}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function getDesvioClass(desvio) {
+            if (desvio > 0) return 'desvio-positive';
+            if (desvio < 0) return 'desvio-negative';
+            return 'desvio-neutral';
+        }
+        
+        function formatDesvio(desvio) {
+            if (desvio === 0) return '0%';
+            return (desvio > 0 ? '+' : '') + desvio + '%';
+        }
+        
+        function editarObjetivos(familia) {
+            familiaEditando = familia;
+            const row = datosGlobales.find(r => r.familia === familia);
+            
+            if (row) {
+                document.getElementById('modal-familia').textContent = familia;
+                document.getElementById('obj-convencional').value = row.convencional.objetivo_total;
+                document.getElementById('obj-especiales').value = row.especiales.objetivo_total;
+                document.getElementById('obj-tpa').value = row.tpa.objetivo_total;
+                
+                document.getElementById('modal-objetivos').style.display = 'block';
+            }
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modal-objetivos').style.display = 'none';
+            familiaEditando = null;
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-objetivos');
+            if (event.target === modal) {
+                cerrarModal();
+            }
+        }
+        
+        // Guardar objetivos
+        document.getElementById('form-objetivos').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!familiaEditando) return;
+            
+            const datos = {
+                familia: familiaEditando,
+                anio: 2025,
+                convencional: parseInt(document.getElementById('obj-convencional').value),
+                especificas: parseInt(document.getElementById('obj-especiales').value),
+                tpa: parseInt(document.getElementById('obj-tpa').value)
+            };
+            
+            try {
+                const response = await fetch('/api/retail/plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    cerrarModal();
+                    cargarDatos(); // Recargar tabla
+                } else {
+                    alert('Error al guardar: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al guardar objetivos');
+            }
+        });
+    </script>
+</body>
+</html>

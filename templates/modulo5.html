@@ -1,11 +1,11 @@
 ﻿{% extends "base.html" %}
 
 {% block title %}Análisis Seguimiento - Sistema de Administración{% endblock %}
+{% block icon %}cogs{% endblock %}
+{% block page_title %}Análisis de Seguimiento{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2><i class="fas fa-chart-line"></i> Análisis Seguimiento</h2>
-    
     <div id="alert-container"></div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
@@ -121,16 +121,6 @@
                 <div id="statUbicaciones" style="color: #4a5568;"></div>
             </div>
         </div>
-    </div>
-    
-    <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-left: 4px solid #EB0A1E; border-radius: 5px;">
-        <h3 style="color: #2D2D2D; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Instrucciones de Uso</h3>
-        <ol style="color: #4a5568; line-height: 1.8;">
-            <li><strong>Cargar archivo SIAC:</strong> Es el archivo principal con 39 columnas</li>
-            <li><strong>Cargar archivo INTEGRA:</strong> Contiene las ubicaciones para vincular (columna 1: operac, columna 12: ubicacion)</li>
-            <li><strong>Procesar:</strong> El sistema ejecutará automáticamente: limpieza, asignación de ejecutivos, vinculación VLOOKUP, fechas y clasificación (A, B, C, D, E, X)</li>
-            <li><strong>Descargar:</strong> Obtendrás un archivo Excel procesado con las 39 columnas enriquecidas</li>
-        </ol>
     </div>
 </div>
 

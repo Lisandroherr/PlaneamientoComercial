@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash
 import pandas as pd
 import os
 from werkzeug.utils import secure_filename
@@ -7,15 +7,36 @@ from datetime import datetime
 from psycopg2 import IntegrityError as PgIntegrityError
 from db_config import get_db_connection as get_pg_connection, release_db_connection, init_connection_pool
 from dotenv import load_dotenv
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from auth import User, admin_required, module_permission_required, get_all_users, create_user, update_user, delete_user
+from time import time
 
 # Cargar variables de entorno
 load_dotenv()
 
+# Caché global para datos de patentamientos
+patentamientos_cache = {
+    'data': None,
+    'timestamp': 0,
+    'ttl': 1800  # 30 minutos de caché
+}
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['SECRET_KEY'] = 'tu-clave-secreta-aqui'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'clave-secreta-por-defecto-cambiar')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Deshabilitar caché
+
+# Inicializar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Debes iniciar sesión para acceder a esta página'
+login_manager.login_message_category = 'warning'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
 
 @app.after_request
 def add_header(response):
@@ -41,36 +62,213 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# ==================== RUTAS DE AUTENTICACIÓN ====================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Página de login"""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = User.get_by_username(username)
+        
+        if user and user.active and user.check_password(password):
+            login_user(user)
+            user.update_last_login()
+            flash(f'Bienvenido, {user.full_name or user.username}!', 'success')
+            
+            # Redirigir a la página solicitada o al home
+            next_page = request.args.get('next')
+            return redirect(next_page if next_page else url_for('home'))
+        else:
+            flash('Usuario o contraseña incorrectos', 'error')
+    
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Cerrar sesión"""
+    logout_user()
+    flash('Has cerrado sesión correctamente', 'info')
+    return redirect(url_for('login'))
+
+
+# ==================== PANEL DE ADMINISTRACIÓN ====================
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    """Panel de gestión de usuarios (solo admin)"""
+    return render_template('admin_users.html')
+
+
+# API para gestión de usuarios
+@app.route('/api/users', methods=['GET'])
+@login_required
+@admin_required
+def api_get_users():
+    """Obtener lista de usuarios"""
+    users = get_all_users()
+    return jsonify({'success': True, 'users': users})
+
+
+@app.route('/api/users/<int:user_id>', methods=['GET'])
+@login_required
+@admin_required
+def api_get_user(user_id):
+    """Obtener un usuario específico"""
+    user = User.get_by_id(user_id)
+    if user:
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'role': user.role,
+                'full_name': user.full_name,
+                'email': user.email,
+                'active': user.active
+            }
+        })
+    return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+
+
+@app.route('/api/users', methods=['POST'])
+@login_required
+@admin_required
+def api_create_user():
+    """Crear un nuevo usuario"""
+    data = request.json
+    result = create_user(
+        username=data.get('username'),
+        password=data.get('password'),
+        role=data.get('role', 'user'),
+        full_name=data.get('full_name'),
+        email=data.get('email'),
+        permiso_planeamiento=data.get('permiso_planeamiento', False),
+        permiso_ventas=data.get('permiso_ventas', False),
+        permiso_gestoria=data.get('permiso_gestoria', False),
+        permiso_entregas=data.get('permiso_entregas', False)
+    )
+    return jsonify(result)
+
+
+@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@login_required
+@admin_required
+def api_update_user(user_id):
+    """Actualizar un usuario"""
+    data = request.json
+    result = update_user(
+        user_id=user_id,
+        username=data.get('username'),
+        password=data.get('password') if data.get('password') else None,
+        role=data.get('role'),
+        full_name=data.get('full_name'),
+        email=data.get('email'),
+        active=data.get('active'),
+        permiso_planeamiento=data.get('permiso_planeamiento'),
+        permiso_ventas=data.get('permiso_ventas'),
+        permiso_gestoria=data.get('permiso_gestoria'),
+        permiso_entregas=data.get('permiso_entregas')
+    )
+    return jsonify(result)
+
+
+@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def api_delete_user(user_id):
+    """Eliminar un usuario"""
+    if user_id == current_user.id:
+        return jsonify({'success': False, 'error': 'No puedes eliminar tu propio usuario'}), 400
+    
+    result = delete_user(user_id)
+    return jsonify(result)
+
+
 # ==================== RUTAS PRINCIPALES ====================
 
-# Página de inicio (selector de aplicaciones)
+# Ruta raíz: redirigir a login si no está autenticado, o a home si ya lo está
 @app.route('/')
+def index():
+    """Ruta raíz - redirige según estado de autenticación"""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    return redirect(url_for('login'))
+
+# Página de inicio (selector de aplicaciones)
+@app.route('/home')
+@login_required
 def home():
     return render_template('home.html')
 
-# Página de TEST
-@app.route('/test')
-def test_simple():
-    return render_template('test_simple.html')
-
-# Aplicación PLANEAMIENTO (requiere contraseña - validación en frontend)
+# Aplicación PLANEAMIENTO (requiere permiso)
 @app.route('/planeamiento')
+@login_required
+@module_permission_required('planeamiento')
 def planeamiento():
     return render_template('planeamiento.html')
 
 # Aplicación VENTAS
 @app.route('/ventas')
+@login_required
+@module_permission_required('ventas')
 def ventas():
     return render_template('ventas.html')
 
 # Aplicación ENTREGAS
 @app.route('/entregas')
+@login_required
+@module_permission_required('entregas')
 def entregas():
     return render_template('entregas.html')
 
 @app.route('/entregas/reportes')
+@login_required
+@module_permission_required('entregas')
 def entregas_reportes():
     return render_template('entregas_reportes.html')
+
+
+# ==================== BUSINESS INTELLIGENCE ANALYSIS ====================
+
+@app.route('/bi_analysis')
+@login_required
+def bi_analysis():
+    """Página principal de Business Intelligence Analysis"""
+    return render_template('bi_analysis.html')
+
+@app.route('/bi/bases_datos')
+@login_required
+def bi_bases_datos():
+    """Módulo de carga de bases de datos"""
+    return render_template('bi_bases_datos.html')
+
+@app.route('/bi/patentamientos')
+@login_required
+def bi_patentamientos():
+    """Módulo de análisis de patentamientos"""
+    return render_template('bi_patentamientos.html')
+
+@app.route('/bi/entregas')
+@login_required
+def bi_entregas():
+    """Módulo de análisis de entregas y plan de negocio"""
+    return render_template('bi_entregas.html')
+
+@app.route('/bi/recaudacion')
+@login_required
+def bi_recaudacion():
+    """Módulo de análisis de recaudación (en construcción)"""
+    return render_template('bi_recaudacion.html')
 
 
 # ==================== FUNCIONES DE BASE DE DATOS ====================
@@ -80,23 +278,21 @@ def get_db_connection():
     return get_pg_connection()
 
 
-# Ruta principal - Home
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
 # Módulo 1: Lista de precios
 @app.route('/modulo1')
+@login_required
+@module_permission_required('planeamiento')
 def modulo1():
     return render_template('modulo1.html')
 
 # API para obtener precios
 @app.route('/api/precios', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_precios():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT modelo, precio_ars, precio_usd, cotizacion, descuento, visible, dado_baja, familia FROM precios ORDER BY familia, modelo')
+    cursor.execute('SELECT modelo, precio_ars, precio_usd, cotizacion, descuento, descuento_futuro, visible, dado_baja, familia FROM precios ORDER BY familia, modelo')
     rows = cursor.fetchall()
     conn.rollback()
     release_db_connection(conn)
@@ -111,6 +307,7 @@ def get_precios():
             'precio_usd': row['precio_usd'],
             'cotizacion': row['cotizacion'],
             'descuento': row['descuento'],
+            'descuento_futuro': row.get('descuento_futuro', 0) or 0,
             'dado_baja': row['dado_baja'],
             'familia': row['familia'] or 'OTROS'
         }
@@ -126,6 +323,8 @@ def get_precios():
 
 # API para guardar precios
 @app.route('/api/precios', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_precios():
     data = request.json
     conn = get_db_connection()
@@ -136,9 +335,9 @@ def save_precios():
         for modelo in data.get('modelos', []):
             cursor.execute('''
                 UPDATE precios 
-                SET precio_ars = %s, precio_usd = %s, cotizacion = %s, descuento = %s, dado_baja = %s, fecha_actualizacion = CURRENT_TIMESTAMP
+                SET precio_ars = %s, precio_usd = %s, cotizacion = %s, descuento = %s, descuento_futuro = %s, dado_baja = %s, fecha_actualizacion = CURRENT_TIMESTAMP
                 WHERE modelo = %s
-            ''', (modelo['precio_ars'], modelo['precio_usd'], modelo['cotizacion'], modelo['descuento'], modelo.get('dado_baja', 0), modelo['nombre']))
+            ''', (modelo['precio_ars'], modelo['precio_usd'], modelo['cotizacion'], modelo['descuento'], modelo.get('descuento_futuro', 0), modelo.get('dado_baja', 0), modelo['nombre']))
         
         # Actualizar visibilidad
         # Primero poner todos como visibles
@@ -159,6 +358,8 @@ def save_precios():
 
 # API para aplicar descuento por familia
 @app.route('/api/descuento_familia', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def aplicar_descuento_familia():
     data = request.json
     familia = data.get('familia')
@@ -188,6 +389,8 @@ def aplicar_descuento_familia():
 
 # API para obtener descuentos adicionales
 @app.route('/api/descuentos_adicionales', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_descuentos_adicionales():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -205,6 +408,8 @@ def get_descuentos_adicionales():
 
 # API para guardar descuentos adicionales
 @app.route('/api/descuentos_adicionales', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_descuentos_adicionales():
     data = request.json
     conn = get_db_connection()
@@ -230,6 +435,8 @@ def save_descuentos_adicionales():
 
 # API para obtener unidades postergadas
 @app.route('/api/unidades_postergadas', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_unidades_postergadas():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -242,6 +449,8 @@ def get_unidades_postergadas():
 
 # API para agregar unidad postergada
 @app.route('/api/unidades_postergadas', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def add_unidad_postergada():
     data = request.json
     numero_fabrica = data.get('numero_fabrica', '').strip()
@@ -268,6 +477,8 @@ def add_unidad_postergada():
 
 # API para eliminar unidad postergada
 @app.route('/api/unidades_postergadas/<numero_fabrica>', methods=['DELETE'])
+@login_required
+@module_permission_required('planeamiento')
 def delete_unidad_postergada(numero_fabrica):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -285,6 +496,8 @@ def delete_unidad_postergada(numero_fabrica):
 
 # Módulo 2: Tabla editable (a desarrollar)
 @app.route('/modulo2')
+@login_required
+@module_permission_required('planeamiento')
 def modulo2():
     return render_template('modulo2.html')
 
@@ -293,6 +506,8 @@ def modulo2():
 
 # API para obtener preventa
 @app.route('/api/preventa', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_preventa():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -322,6 +537,8 @@ def get_preventa():
 
 # API para guardar/actualizar preventa (reemplaza toda la tabla)
 @app.route('/api/preventa', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_preventa():
     data = request.json
     conn = get_db_connection()
@@ -368,6 +585,8 @@ def save_preventa():
 
 # API para convertir preventa sin vendedor a disponible
 @app.route('/api/preventa/convertir_disponible', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def convertir_preventa_disponible():
     """Convierte unidades de preventa SIN vendedor al módulo disponible"""
     conn = get_db_connection()
@@ -413,15 +632,11 @@ def convertir_preventa_disponible():
         for prev in preventas:
             modelo = prev['modelo_version']
             
-            # Calcular precio con descuento
+            # Obtener precio BASE (sin descuento)
+            # Los descuentos se aplicarán en el Módulo 4
             precio = 0
             if modelo in precios_data:
-                precio_base = precios_data[modelo]['precio_ars']
-                descuento = precios_data[modelo]['descuento']
-                if descuento > 0:
-                    precio = precio_base * (1 - descuento / 100)
-                else:
-                    precio = precio_base
+                precio = precios_data[modelo]['precio_ars']
             
             cursor.execute('''
                 INSERT INTO disponibles (
@@ -451,11 +666,15 @@ def convertir_preventa_disponible():
 
 # Módulo 3: Procesador de Excel
 @app.route('/modulo3')
+@login_required
+@module_permission_required('planeamiento')
 def modulo3():
     return render_template('modulo3.html')
 
 
 @app.route('/procesar_excel', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def procesar_excel():
     try:
         if 'file' not in request.files:
@@ -538,50 +757,134 @@ def procesar_excel():
             # Calcular Entrega Estimada sumando 1 mes
             df['Entrega Estimada'] = df['Despacho Estimado'] + pd.DateOffset(months=1)
         
-        # Mantener solo las primeras 15 columnas
-        df = df.iloc[:, :15]
-        
-        # **NUEVO: Obtener precios de la base de datos y hacer match con Modelo/Versión**
+        # **NUEVO: Obtener precios de la base de datos y hacer match con Modelo/Versión ANTES DE CORTAR**
         if 'Modelo/Versión' in df.columns and 'Precio p/ Disponible' in df.columns:
             print("🔄 Haciendo match de precios desde la base de datos...")
             
-            # Obtener todos los precios y descuentos de la base de datos
+            # Obtener todos los precios, descuentos individuales y descuentos futuros de la base de datos
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute('SELECT modelo, precio_ars, descuento FROM precios')
+            cursor.execute('SELECT modelo, precio_ars, descuento, descuento_futuro FROM precios')
             precios_data = {}
             for row in cursor.fetchall():
-                precios_data[row['modelo']] = {
-                    'precio_ars': row['precio_ars'],
-                    'descuento': row['descuento']
+                modelo = row['modelo']
+                precio_ars = row['precio_ars'] or 0
+                descuento = row['descuento'] or 0
+                descuento_futuro = row.get('descuento_futuro', 0) or 0
+                
+                precios_data[modelo] = {
+                    'precio_ars': precio_ars,
+                    'descuento': descuento,
+                    'descuento_futuro': descuento_futuro
                 }
+                
+                print(f"🔧 Cargado: {modelo[:40]:40} | Precio: ${precio_ars:,.0f} | Desc: {descuento}% | Desc.Futuro: {descuento_futuro}%")
+            
             conn.rollback()
             release_db_connection(conn)
             
             print(f"📊 Precios cargados: {len(precios_data)} modelos")
             
-            # Aplicar precios con descuento a la columna "Precio p/ Disponible"
-            def get_precio_con_descuento(modelo):
-                if pd.isna(modelo):
-                    return 0
-                modelo_str = str(modelo).strip()
-                # Buscar coincidencia exacta
-                if modelo_str in precios_data:
-                    precio = precios_data[modelo_str]['precio_ars']
-                    descuento = precios_data[modelo_str]['descuento']
-                    # Aplicar descuento si existe
-                    if descuento > 0:
-                        precio_final = precio * (1 - descuento / 100)
-                        return precio_final
-                    return precio
-                # Si no hay coincidencia, devolver 0
-                return 0
+            # Obtener fecha actual para comparar
+            from datetime import datetime
+            hoy = datetime.now()
+            hoy_ym = (hoy.year, hoy.month)
             
-            df['Precio p/ Disponible'] = df['Modelo/Versión'].apply(get_precio_con_descuento)
+            # Aplicar precio con descuento según fecha de entrega
+            def calcular_precio_con_descuento(row):
+                modelo = row['Modelo/Versión']
+                entrega_estimada = row['Entrega Estimada']
+                
+                if pd.isna(modelo):
+                    print(f"⚠️ Modelo vacío, saltando...")
+                    return pd.Series({
+                        'Precio p/ Disponible': 0,
+                        'Precio Base': 0,
+                        'Descuento Aplicado (%)': 0
+                    })
+                
+                modelo_str = str(modelo).strip()
+                
+                # Buscar coincidencia exacta
+                if modelo_str not in precios_data:
+                    print(f"⚠️ Modelo '{modelo_str}' NO encontrado en precios_data")
+                    return pd.Series({
+                        'Precio p/ Disponible': 0,
+                        'Precio Base': 0,
+                        'Descuento Aplicado (%)': 0
+                    })
+                
+                precio_base = precios_data[modelo_str]['precio_ars']
+                descuento_individual = precios_data[modelo_str]['descuento']
+                descuento_futuro = precios_data[modelo_str]['descuento_futuro']
+                
+                print(f"🔍 {modelo_str[:40]:40}")
+                print(f"   Precio Base: ${precio_base:,.0f}")
+                print(f"   Desc Individual: {descuento_individual}%")
+                print(f"   Desc Futuro: {descuento_futuro}%")
+                
+                # Determinar si es mes futuro
+                es_mes_futuro = False
+                if not pd.isna(entrega_estimada):
+                    try:
+                        if isinstance(entrega_estimada, str):
+                            fecha_entrega = pd.to_datetime(entrega_estimada)
+                        else:
+                            fecha_entrega = entrega_estimada
+                        
+                        entrega_ym = (fecha_entrega.year, fecha_entrega.month)
+                        
+                        print(f"   Fecha Entrega: {entrega_ym} vs Hoy: {hoy_ym}")
+                        
+                        # Es mes futuro si es posterior al mes actual
+                        if entrega_ym > hoy_ym:
+                            es_mes_futuro = True
+                            print(f"   ✅ ES MES FUTURO -> usando descuento_futuro")
+                        else:
+                            print(f"   ⏸️ NO es mes futuro -> usando descuento_individual")
+                    except Exception as e:
+                        print(f"   ⚠️ Error procesando fecha: {e}")
+                        pass
+                
+                # Aplicar el descuento correspondiente
+                descuento_aplicar = descuento_futuro if es_mes_futuro else descuento_individual
+                
+                # Calcular precio final
+                precio_final = precio_base * (1 - descuento_aplicar / 100)
+                
+                print(f"   💰 Descuento aplicado: {descuento_aplicar}% -> Precio Final: ${precio_final:,.0f}")
+                print("")
+                
+                return pd.Series({
+                    'Precio p/ Disponible': precio_final,
+                    'Precio Base': precio_base,
+                    'Descuento Aplicado (%)': descuento_aplicar
+                })
+            
+            # Aplicar la función y crear las tres columnas
+            resultado = df.apply(calcular_precio_con_descuento, axis=1)
+            df['Precio p/ Disponible'] = resultado['Precio p/ Disponible']
+            df['Precio Base'] = resultado['Precio Base']
+            df['Descuento Aplicado (%)'] = resultado['Descuento Aplicado (%)']
             
             # Contar cuántos precios se encontraron
             precios_encontrados = (df['Precio p/ Disponible'] > 0).sum()
-            print(f"✅ Precios aplicados: {precios_encontrados} de {len(df)} registros")
+            print(f"✅ Precios con descuento aplicados: {precios_encontrados} de {len(df)} registros")
+        
+        # Mantener solo las 15 columnas originales + 3 nuevas (18 total)
+        # Orden: 0-14 (originales) + 15,16,17 (Precio p/ Disponible, Precio Base, Descuento Aplicado)
+        columnas_a_mantener = [
+            'Nº Fábrica', 'Nº Chasis', 'Modelo/Versión', 'Color', 
+            'Fecha Finanzas', 'Despacho Estimado', 'Entrega Estimada',
+            'Fecha Recepción', 'Ubicación', 'Días Stock', 'Precio p/ Disponible',
+            'Cód. Cliente', 'Cliente', 'Vendedor', 'Operación',
+            'Precio Base', 'Descuento Aplicado (%)'
+        ]
+        # Solo mantener las columnas que existen
+        columnas_existentes = [col for col in columnas_a_mantener if col in df.columns]
+        df = df[columnas_existentes]
+        
+        print(f"📊 Columnas finales del DataFrame: {list(df.columns)}")
         
         # **Filtrar unidades postergadas ANTES de dividir por pestañas**
         if unidades_postergadas and 'Nº Fábrica' in df.columns:
@@ -653,28 +956,32 @@ def procesar_excel():
 
 # Módulos 4, 5 y 6 (placeholders)
 @app.route('/modulo4')
+@login_required
+@module_permission_required('planeamiento')
 def modulo4():
     return render_template('modulo4.html')
 
 
 @app.route('/modulo5')
+@login_required
+@module_permission_required('planeamiento')
 def modulo5():
     return render_template('modulo5.html')
 
 
 @app.route('/modulo6')
+@login_required
+@module_permission_required('planeamiento')
 def modulo6():
     return render_template('modulo6.html')
-
-@app.route('/test_zonas')
-def test_zonas():
-    return send_file('test_zona_logica.html')
 
 
 # ==================== API MÓDULO 4: DISPONIBLES ====================
 
 # API para obtener unidades disponibles
 @app.route('/api/disponibles', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_disponibles():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -693,7 +1000,8 @@ def get_disponibles():
                d.fecha_finanzas, d.despacho_estimado, d.entrega_estimada,
                d.fecha_recepcion, d.ubicacion, d.dias_stock, d.precio_disponible,
                d.cod_cliente, d.cliente, d.vendedor, d.operacion,
-               p.familia, p.descuento as descuento_individual
+               d.precio_base, d.descuento_individual as descuento_guardado, d.descuento_adicional,
+               p.familia, p.descuento as descuento_individual, p.descuento_futuro
         FROM disponibles d
         LEFT JOIN precios p ON d.modelo_version = p.modelo
         ORDER BY d.fecha_carga DESC
@@ -707,9 +1015,35 @@ def get_disponibles():
     
     disponibles = []
     for row in rows:
-        precio_base = row['precio_disponible'] or 0
-        descuento_total = 0
+        # Usar el precio_base guardado o el precio_disponible como fallback
+        precio_base_guardado = row.get('precio_base', 0) or row['precio_disponible'] or 0
+        
+        # Usar el descuento individual que ya fue guardado al procesar el Excel
+        descuento_individual_guardado = row.get('descuento_guardado', 0) or 0
+        
+        descuento_total = descuento_individual_guardado
         detalles_descuento = []
+        
+        # Determinar fecha de entrega para calcular descuentos adicionales
+        fecha_entrega_parsed = None
+        
+        if row['entrega_estimada']:
+            try:
+                fecha_str = str(row['entrega_estimada'])
+                # Intentar parsear la fecha
+                try:
+                    fecha_entrega_parsed = datetime.strptime(fecha_str, '%Y-%m-%d')
+                except:
+                    try:
+                        if 'GMT' in fecha_str:
+                            fecha_str_limpia = fecha_str.replace(' GMT', '').strip()
+                            fecha_entrega_parsed = datetime.strptime(fecha_str_limpia, '%a, %d %b %Y %H:%M:%S')
+                        else:
+                            fecha_entrega_parsed = datetime.fromisoformat(fecha_str.replace('GMT', '').strip())
+                    except:
+                        pass
+            except Exception as e:
+                pass
         
         # Descuento por Stock
         ubicacion_actual = (row['ubicacion'] or '').strip().upper()
@@ -719,55 +1053,33 @@ def get_disponibles():
         if 'STOCK' in ubicacion_actual and desc_stock > 0:
             descuento_total += desc_stock
             detalles_descuento.append(f"Stock: {desc_stock}%")
-            print(f"✅ Descuento Stock aplicado: {desc_stock}% a {row['numero_fabrica']} (Ubicación: {row['ubicacion']})")
         
         # Descuento por Color - Normalizar para comparar
         color_original = (row['color'] or '').strip()
-        # Normalizar: quitar espacios, pasar a minúsculas y reemplazar espacios por _
         color_normalizado = color_original.lower().replace(' ', '_')
         desc_color = descuentos_config.get('color', {}).get(color_normalizado, 0)
         if desc_color > 0:
             descuento_total += desc_color
             detalles_descuento.append(f"Color: {desc_color}%")
-            print(f"✅ Descuento Color aplicado: {desc_color}% a {row['numero_fabrica']} (Color: {color_original})")
         
         # Descuento por Antigüedad
-        if row['entrega_estimada']:
+        if fecha_entrega_parsed:
             try:
-                # Intentar parsear diferentes formatos de fecha
-                fecha_str = row['entrega_estimada']
-                fecha_entrega = None
+                meses_config = descuentos_config.get('antiguedad', {}).get('meses', 3)
+                desc_antiguedad = descuentos_config.get('antiguedad', {}).get('descuento', 0)
+                fecha_limite = datetime.now() - relativedelta(months=int(meses_config))
                 
-                # Intentar formato ISO (YYYY-MM-DD)
-                try:
-                    fecha_entrega = datetime.strptime(fecha_str, '%Y-%m-%d')
-                except:
-                    # Intentar formato con día de la semana (Mon, DD MMM YYYY HH:MM:SS GMT)
-                    try:
-                        # Remover GMT y parsear
-                        if 'GMT' in fecha_str:
-                            fecha_str_limpia = fecha_str.replace(' GMT', '').strip()
-                            fecha_entrega = datetime.strptime(fecha_str_limpia, '%a, %d %b %Y %H:%M:%S')
-                        else:
-                            # Intentar otros formatos comunes
-                            fecha_entrega = datetime.fromisoformat(fecha_str.replace('GMT', '').strip())
-                    except:
-                        pass
-                
-                if fecha_entrega:
-                    meses_config = descuentos_config.get('antiguedad', {}).get('meses', 3)
-                    desc_antiguedad = descuentos_config.get('antiguedad', {}).get('descuento', 0)
-                    fecha_limite = datetime.now() - relativedelta(months=int(meses_config))
-                    
-                    if fecha_entrega < fecha_limite and desc_antiguedad > 0:
-                        descuento_total += desc_antiguedad
-                        detalles_descuento.append(f"Antigüedad: {desc_antiguedad}%")
-                        print(f"✅ Descuento Antigüedad aplicado: {desc_antiguedad}% a {row['numero_fabrica']} (Entrega: {fecha_entrega.date()})")
+                if fecha_entrega_parsed < fecha_limite and desc_antiguedad > 0:
+                    descuento_total += desc_antiguedad
+                    detalles_descuento.append(f"Antigüedad: {desc_antiguedad}%")
             except Exception as e:
-                print(f"❌ Error procesando fecha para {row['numero_fabrica']}: {e}")
+                print(f"❌ Error procesando antigüedad para {row['numero_fabrica']}: {e}")
         
-        # Calcular precio final
-        precio_final = precio_base * (1 - descuento_total / 100)
+        # Calcular precio final con TODOS los descuentos
+        precio_final = precio_base_guardado * (1 - descuento_total / 100)
+        
+        # Separar descuento individual (va en su propia columna) del total de adicionales
+        descuento_adicional = descuento_total - descuento_individual_guardado
         
         disponibles.append({
             'numero_fabrica': row['numero_fabrica'],
@@ -780,11 +1092,11 @@ def get_disponibles():
             'fecha_recepcion': row['fecha_recepcion'],
             'ubicacion': row['ubicacion'],
             'dias_stock': row['dias_stock'],
-            'precio_disponible': precio_final,
-            'precio_base': precio_base,
-            'descuento_individual': row['descuento_individual'] or 0,
-            'descuento_adicional': descuento_total,
-            'detalles_descuento': ', '.join(detalles_descuento) if detalles_descuento else 'Sin descuentos adicionales',
+            'precio_disponible': round(precio_final, 2),
+            'precio_base': precio_base_guardado,
+            'descuento_individual': descuento_individual_guardado,
+            'descuento_adicional': round(descuento_adicional, 2),
+            'detalles_descuento': ', '.join(detalles_descuento) if detalles_descuento else 'Sin descuentos',
             'cod_cliente': row['cod_cliente'],
             'cliente': row['cliente'],
             'vendedor': row['vendedor'],
@@ -792,12 +1104,65 @@ def get_disponibles():
             'familia': row['familia'] or 'SIN FAMILIA'
         })
     
+    # DEBUG: Mostrar qué se está enviando al frontend
+    print(f"\n🚀 ============ ENVIANDO DATOS AL FRONTEND (MÓDULO 4) ============")
+    print(f"   Total de unidades: {len(disponibles)}")
+    if len(disponibles) > 0:
+        print(f"\n   📤 Primera unidad que se envía:")
+        print(f"      Nº Fábrica: {disponibles[0]['numero_fabrica']}")
+        print(f"      Modelo: {disponibles[0]['modelo_version']}")
+        print(f"      Precio Base: ${disponibles[0]['precio_base']}")
+        print(f"      Descuento Individual: {disponibles[0]['descuento_individual']}%")
+        print(f"      Descuento Adicional: {disponibles[0]['descuento_adicional']}%")
+        print(f"      Precio Final: ${disponibles[0]['precio_disponible']}")
+        
+        if len(disponibles) > 1:
+            print(f"\n   📤 Segunda unidad que se envía:")
+            print(f"      Nº Fábrica: {disponibles[1]['numero_fabrica']}")
+            print(f"      Modelo: {disponibles[1]['modelo_version']}")
+            print(f"      Descuento Individual: {disponibles[1]['descuento_individual']}%")
+        
+        if len(disponibles) > 2:
+            print(f"\n   📤 Tercera unidad que se envía:")
+            print(f"      Nº Fábrica: {disponibles[2]['numero_fabrica']}")
+            print(f"      Modelo: {disponibles[2]['modelo_version']}")
+            print(f"      Descuento Individual: {disponibles[2]['descuento_individual']}%")
+    print(f"   ==================================================================\n")
+    
     return jsonify(disponibles)
 
 # API para guardar/reemplazar unidades disponibles
 @app.route('/api/disponibles', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_disponibles():
     data = request.json
+    
+    print(f"\n🔍 ============ RECIBIENDO DATOS PARA GUARDAR EN DISPONIBLES ============")
+    print(f"   Total de unidades: {len(data)}")
+    if len(data) > 0:
+        print(f"\n   📦 Primera unidad recibida:")
+        print(f"      Nº Fábrica: {data[0].get('numero_fabrica')}")
+        print(f"      Modelo: {data[0].get('modelo_version')}")
+        print(f"      Precio Disponible: {data[0].get('precio_disponible')}")
+        print(f"      Precio Base: {data[0].get('precio_base')}")
+        print(f"      Descuento Aplicado: {data[0].get('descuento_aplicado')} %")
+        print(f"\n   🔑 TODAS las claves disponibles: {list(data[0].keys())}")
+        
+        # Mostrar más unidades para verificar el patrón
+        if len(data) > 1:
+            print(f"\n   📦 Segunda unidad recibida:")
+            print(f"      Nº Fábrica: {data[1].get('numero_fabrica')}")
+            print(f"      Modelo: {data[1].get('modelo_version')}")
+            print(f"      Descuento Aplicado: {data[1].get('descuento_aplicado')} %")
+        
+        if len(data) > 2:
+            print(f"\n   📦 Tercera unidad recibida:")
+            print(f"      Nº Fábrica: {data[2].get('numero_fabrica')}")
+            print(f"      Modelo: {data[2].get('modelo_version')}")
+            print(f"      Descuento Aplicado: {data[2].get('descuento_aplicado')} %")
+    print(f"   ========================================================================\n")
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -812,8 +1177,9 @@ def save_disponibles():
                     numero_fabrica, numero_chasis, modelo_version, color,
                     fecha_finanzas, despacho_estimado, entrega_estimada,
                     fecha_recepcion, ubicacion, dias_stock, precio_disponible,
-                    cod_cliente, cliente, vendedor, operacion
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    cod_cliente, cliente, vendedor, operacion,
+                    precio_base, descuento_individual, descuento_adicional
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (
                 item.get('numero_fabrica'),
                 item.get('numero_chasis'),
@@ -829,7 +1195,10 @@ def save_disponibles():
                 item.get('cod_cliente'),
                 item.get('cliente'),
                 item.get('vendedor'),
-                item.get('operacion')
+                item.get('operacion'),
+                item.get('precio_base', 0),
+                item.get('descuento_aplicado', 0),  # Este es el descuento individual que se aplicó
+                0  # descuento_adicional se calculará en Módulo 4
             ))
         
         conn.commit()
@@ -844,6 +1213,8 @@ def save_disponibles():
 
 # API para obtener unidades reservadas
 @app.route('/api/unidades_reservadas', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_unidades_reservadas():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -862,6 +1233,8 @@ def get_unidades_reservadas():
 
 # API para agregar unidad reservada
 @app.route('/api/unidades_reservadas', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def add_unidad_reservada():
     data = request.json
     numero_fabrica = data.get('numero_fabrica', '').strip()
@@ -892,6 +1265,8 @@ def add_unidad_reservada():
 
 # API para eliminar unidad reservada
 @app.route('/api/unidades_reservadas/<numero_fabrica>', methods=['DELETE'])
+@login_required
+@module_permission_required('planeamiento')
 def delete_unidad_reservada(numero_fabrica):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -910,16 +1285,17 @@ def delete_unidad_reservada(numero_fabrica):
 # ==================== API MÓDULO 6: RECAUDACIÓN ====================
 
 @app.route('/api/recaudacion', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_recaudacion():
-    """Obtener datos de recaudación separados por Stock y No Stock"""
+    """Obtener datos de recaudación desde disponibles (solo YAC - Ventas Convencionales)
+    Excluye unidades con ubicación 'Preventa'"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Obtener unidades reservadas
-    cursor.execute('SELECT numero_fabrica FROM unidades_reservadas')
-    reservadas = [row['numero_fabrica'] for row in cursor.fetchall()]
-    
-    # Obtener todas las unidades disponibles
+    # Obtener unidades disponibles que son YAC (Ventas Convencionales)
+    # Estas son las unidades que vienen del módulo 3 (Seguimiento) con cliente vacío
+    # Excluimos las que tienen ubicación "Preventa"
     cursor.execute('''
         SELECT 
             numero_fabrica,
@@ -927,19 +1303,18 @@ def get_recaudacion():
             ubicacion,
             precio_disponible
         FROM disponibles
+        WHERE numero_fabrica LIKE 'YAC%'
+        AND (ubicacion IS NULL OR UPPER(TRIM(ubicacion)) != 'PREVENTA')
     ''')
     
-    disponibles = cursor.fetchall()
+    unidades = cursor.fetchall()
     release_db_connection(conn)
     
-    # Filtrar unidades reservadas
-    disponibles_filtrados = [d for d in disponibles if d['numero_fabrica'] not in reservadas]
-    
-    # Separar por Stock y No Stock
+    # Separar por Stock y No Stock según la ubicación
     en_stock = []
     no_stock = []
     
-    for unidad in disponibles_filtrados:
+    for unidad in unidades:
         ubicacion = (unidad['ubicacion'] or '').upper().strip()
         precio = unidad['precio_disponible'] or 0
         
@@ -981,6 +1356,7 @@ def get_recaudacion():
 # ==================== API BACKUP/RESTORE ====================
 
 @app.route('/api/backup/download', methods=['GET'])
+@login_required
 def download_backup():
     """Descargar backup completo de la base de datos"""
     import io
@@ -1003,6 +1379,8 @@ def download_backup():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/backup/upload', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def upload_backup():
     """Restaurar base de datos desde backup"""
     try:
@@ -1029,6 +1407,8 @@ def upload_backup():
 # ==================== API OBSERVACIONES (MÓDULO 5) ====================
 
 @app.route('/api/observaciones/config_dias', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_config_dias():
     """Obtener configuración de días estándar y desvío por zona"""
     conn = None
@@ -1050,6 +1430,8 @@ def get_config_dias():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/observaciones/config_dias', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_config_dias():
     """Guardar configuración de días"""
     conn = None
@@ -1087,6 +1469,8 @@ def save_config_dias():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/observaciones/matriz_codigos', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_matriz_codigos():
     """Obtener matriz de códigos de observación"""
     conn = None
@@ -1108,6 +1492,8 @@ def get_matriz_codigos():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/observaciones/matriz_codigos', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def save_matriz_codigos():
     """Guardar matriz de códigos"""
     conn = None
@@ -1201,6 +1587,8 @@ def save_matriz_codigos():
         return jsonify({'success': False, 'error': error_msg}), 500
 
 @app.route('/api/observaciones/registrar_cambio', methods=['POST'])
+@login_required
+@module_permission_required('planeamiento')
 def registrar_cambio_observacion():
     """Registrar cambio de código de observación"""
     data = request.json
@@ -1259,6 +1647,8 @@ def registrar_cambio_observacion():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/observaciones/stats/<operacion>', methods=['GET'])
+@login_required
+@module_permission_required('planeamiento')
 def get_stats_operacion(operacion):
     """Obtener estadísticas de una operación"""
     conn = get_db_connection()
@@ -1295,6 +1685,1033 @@ def get_stats_operacion(operacion):
     except Exception as e:
         conn.rollback()
         release_db_connection(conn)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== API BUSINESS INTELLIGENCE ====================
+
+@app.route('/api/bi/upload_databases', methods=['POST'])
+@login_required
+def upload_bi_databases():
+    """Cargar y procesar archivos de bases de datos para BI"""
+    try:
+        files = request.files
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Solo verificar archivos de patentamientos (ignorar entregas)
+        required_files = [
+            'argentina-marca', 'argentina-modelo', 
+            'mendoza-marca', 'mendoza-modelo'
+        ]
+        
+        for file_key in required_files:
+            if file_key not in files:
+                return jsonify({'success': False, 'error': f'Falta el archivo: {file_key}'}), 400
+            # Verificar que el archivo tenga nombre válido
+            file = files[file_key]
+            if not file.filename or file.filename == '':
+                return jsonify({'success': False, 'error': f'Archivo inválido: {file_key}'}), 400
+        
+        # Procesar archivos de patentamientos
+        import pandas as pd
+        from dateutil import parser as date_parser
+        
+        # Diccionario para convertir nombres de meses en español
+        meses_es = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
+            'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
+            'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+            'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4,
+            'may': 5, 'jun': 6, 'jul': 7, 'ago': 8,
+            'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
+        }
+        
+        # Limpiar tablas anteriores
+        cursor.execute('DELETE FROM bi_patentamientos_argentina_marca')
+        cursor.execute('DELETE FROM bi_patentamientos_argentina_modelo')
+        cursor.execute('DELETE FROM bi_patentamientos_mendoza_marca')
+        cursor.execute('DELETE FROM bi_patentamientos_mendoza_modelo')
+        
+        print("🔄 Comenzando procesamiento de archivos...")
+        
+        # Procesar cada archivo
+        for file_key in ['argentina-marca', 'argentina-modelo', 'mendoza-marca', 'mendoza-modelo']:
+            file = files[file_key]
+            print(f"\n📂 Procesando archivo: {file_key} ({file.filename})")
+            
+            # Leer Excel sin forzar tipos
+            df = pd.read_excel(file, dtype=str)
+            print(f"   ✓ Archivo leído: {len(df)} filas, {len(df.columns)} columnas")
+            print(f"   Columnas detectadas: {list(df.columns)}")
+            
+            # La primera columna es el nombre (marca o modelo)
+            nombre_columna = df.columns[0]
+            fechas_columnas = df.columns[1:]
+            
+            print(f"   Columna de nombres: '{nombre_columna}'")
+            print(f"   Primeras 3 fechas: {list(fechas_columnas[:3])}")
+            
+            # Determinar tabla destino
+            if file_key == 'argentina-marca':
+                tabla = 'bi_patentamientos_argentina_marca'
+            elif file_key == 'argentina-modelo':
+                tabla = 'bi_patentamientos_argentina_modelo'
+            elif file_key == 'mendoza-marca':
+                tabla = 'bi_patentamientos_mendoza_marca'
+            else:  # mendoza-modelo
+                tabla = 'bi_patentamientos_mendoza_modelo'
+            
+            registros_insertados = 0
+            errores = 0
+            
+            # Insertar datos
+            for idx, row in df.iterrows():
+                nombre = str(row[nombre_columna]).strip()
+                
+                # Saltar filas vacías
+                if pd.isna(nombre) or nombre == '' or nombre == 'nan':
+                    continue
+                
+                # Insertar cada mes
+                for fecha_col in fechas_columnas:
+                    valor = row[fecha_col]
+                    
+                    # Convertir valor a número
+                    try:
+                        if pd.isna(valor) or valor == '' or valor == 'nan':
+                            cantidad = 0
+                        else:
+                            cantidad = int(float(str(valor).replace(',', '.')))
+                    except:
+                        cantidad = 0
+                    
+                    # Parsear fecha (puede venir como "enero-15", "01/15", o timestamp de pandas)
+                    try:
+                        fecha_str = str(fecha_col).strip().lower()
+                        
+                        # Caso 1: Formato "enero-15" o "ene-15"
+                        if '-' in fecha_str:
+                            partes = fecha_str.split('-')
+                            mes_nombre = partes[0].strip()
+                            anio = partes[1].strip()
+                            
+                            # Buscar el mes en el diccionario
+                            mes = meses_es.get(mes_nombre, None)
+                            if mes is None:
+                                print(f"   ⚠️ Mes no reconocido: '{mes_nombre}'")
+                                continue
+                            
+                            # Convertir año a 4 dígitos
+                            if len(anio) == 2:
+                                anio = '20' + anio
+                            
+                            fecha = f"{anio}-{str(mes).zfill(2)}-01"
+                        
+                        # Caso 2: Formato "01/15" o "1/15"
+                        elif '/' in fecha_str:
+                            partes = fecha_str.split('/')
+                            mes = int(partes[0])
+                            anio = partes[1].strip()
+                            
+                            if len(anio) == 2:
+                                anio = '20' + anio
+                            
+                            fecha = f"{anio}-{str(mes).zfill(2)}-01"
+                        
+                        # Caso 3: Timestamp de pandas
+                        elif isinstance(fecha_col, pd.Timestamp):
+                            fecha = fecha_col.strftime('%Y-%m-%d')
+                        
+                        # Caso 4: Intentar parsear con dateutil
+                        else:
+                            try:
+                                fecha_obj = date_parser.parse(fecha_str, dayfirst=True)
+                                fecha = fecha_obj.strftime('%Y-%m-01')
+                            except:
+                                print(f"   ⚠️ Fecha no reconocida: '{fecha_str}'")
+                                continue
+                        
+                        # Insertar en base de datos
+                        cursor.execute(f'''
+                            INSERT INTO {tabla} (nombre, fecha, cantidad)
+                            VALUES (%s, %s, %s)
+                        ''', (nombre, fecha, cantidad))
+                        
+                        registros_insertados += 1
+                        
+                    except Exception as e:
+                        errores += 1
+                        if errores < 5:  # Mostrar solo los primeros 5 errores
+                            print(f"   ⚠️ Error procesando fecha '{fecha_col}': {e}")
+            
+            print(f"   ✅ Insertados: {registros_insertados} registros | Errores: {errores}")
+        
+        conn.commit()
+        
+        # Obtener contadores de filas
+        row_counts = {}
+        cursor.execute('SELECT COUNT(*) as total FROM bi_patentamientos_argentina_marca')
+        row_counts['argentina-marca'] = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM bi_patentamientos_argentina_modelo')
+        row_counts['argentina-modelo'] = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM bi_patentamientos_mendoza_marca')
+        row_counts['mendoza-marca'] = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM bi_patentamientos_mendoza_modelo')
+        row_counts['mendoza-modelo'] = cursor.fetchone()['total']
+        
+        release_db_connection(conn)
+        
+        # INVALIDAR CACHÉ cuando se cargan nuevos datos
+        patentamientos_cache['data'] = None
+        patentamientos_cache['timestamp'] = 0
+        print("🗑️ Caché de patentamientos invalidado")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Archivos procesados correctamente',
+            'rowCounts': row_counts
+        })
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            release_db_connection(conn)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/bi/patentamientos', methods=['GET'])
+@login_required
+def get_bi_patentamientos():
+    """Obtener datos de patentamientos DIRECTAMENTE desde CSV - CON CACHÉ"""
+    try:
+        # Verificar si el caché es válido
+        current_time = time()
+        force_refresh = request.args.get('refresh', 'false').lower() == 'true'
+        
+        if (not force_refresh and 
+            patentamientos_cache['data'] is not None and 
+            (current_time - patentamientos_cache['timestamp']) < patentamientos_cache['ttl']):
+            print("✅ Sirviendo datos desde CACHÉ")
+            return jsonify({'success': True, 'data': patentamientos_cache['data'], 'from_cache': True})
+        
+        print("🔄 Cargando datos desde CSV...")
+        
+        # Leer datos desde CSV
+        result = {
+            'argentina_marca': get_patentamientos_from_csv('Mercado Argentino MARCA.csv', 'marca'),
+            'argentina_modelo': get_patentamientos_from_csv('Mercado Argentino MODELO.csv', 'modelo'),
+            'mendoza_marca': get_patentamientos_from_csv('Mercado Mendoza MARCA.csv', 'marca'),
+            'mendoza_modelo': get_patentamientos_from_csv('Mercado Mendoza MODELO.csv', 'modelo')
+        }
+        
+        # Guardar en caché
+        patentamientos_cache['data'] = result
+        patentamientos_cache['timestamp'] = current_time
+        print(f"💾 Datos guardados en caché (válido por {patentamientos_cache['ttl']}s)")
+        
+        return jsonify({'success': True, 'data': result, 'from_cache': False})
+    except FileNotFoundError as e:
+        return jsonify({'success': False, 'error': f'Archivos CSV no encontrados: {str(e)}'}), 404
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def get_patentamientos_from_csv(filename, tipo):
+    """Leer y procesar datos de patentamientos desde CSV"""
+    csv_path = os.path.join(os.path.dirname(__file__), 'Patentamientos', filename)
+    
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"Archivo no encontrado: {csv_path}")
+    
+    # Leer CSV con diferentes encodings
+    df = None
+    for encoding in ['latin-1', 'cp1252', 'iso-8859-1', 'utf-8']:
+        try:
+            df = pd.read_csv(csv_path, delimiter=';', encoding=encoding)
+            break
+        except:
+            continue
+    
+    if df is None:
+        raise Exception(f"No se pudo leer el archivo {filename}")
+    
+    # Primera columna es el nombre (marca o modelo)
+    nombres_col = df.columns[0]
+    
+    # Resto de columnas son fechas (ene-15, feb-15, etc.)
+    fecha_cols = df.columns[1:]
+    
+    # Convertir nombres de columnas de fecha a formato MM/YY
+    meses_map = {
+        'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04',
+        'may': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+        'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'
+    }
+    
+    fechas_formateadas = []
+    for col in fecha_cols:
+        col_lower = str(col).lower().strip()
+        if '-' in col_lower:
+            mes_str, anio_str = col_lower.split('-')
+            mes = meses_map.get(mes_str.strip())
+            anio = anio_str.strip()
+            if mes and len(anio) == 2:
+                fechas_formateadas.append(f"{mes}/{anio}")
+            else:
+                fechas_formateadas.append(col)
+        else:
+            fechas_formateadas.append(col)
+    
+    if tipo == 'marca':
+        return get_datos_por_marca(df, nombres_col, fecha_cols, fechas_formateadas)
+    else:
+        return get_datos_por_modelo(df, nombres_col, fecha_cols, fechas_formateadas)
+
+
+def get_datos_por_marca(df, nombres_col, fecha_cols, fechas_formateadas):
+    """Procesar datos agrupados por marca"""
+    marcas = ['TOYOTA', 'FORD', 'FIAT', 'VOLKSWAGEN', 'CHEVROLET', 'PEUGEOT']
+    result = {'labels': fechas_formateadas}
+    
+    # Inicializar series para cada marca
+    for marca in marcas:
+        result[marca.lower()] = [0] * len(fecha_cols)
+    result['otros'] = [0] * len(fecha_cols)
+    
+    # Procesar cada fila
+    for idx, row in df.iterrows():
+        nombre = str(row[nombres_col]).upper().strip()
+        
+        for i, fecha_col in enumerate(fecha_cols):
+            valor = row[fecha_col]
+            try:
+                cantidad = int(float(valor)) if pd.notna(valor) else 0
+            except:
+                cantidad = 0
+            
+            # Clasificar por marca
+            marca_encontrada = False
+            for marca in marcas:
+                if marca in nombre:
+                    result[marca.lower()][i] += cantidad
+                    marca_encontrada = True
+                    break
+            
+            if not marca_encontrada:
+                result['otros'][i] += cantidad
+    
+    return result
+
+
+def get_datos_por_modelo(df, nombres_col, fecha_cols, fechas_formateadas):
+    """Procesar datos por modelo con Top 5"""
+    # Obtener datos de la última columna para Top 5
+    ultima_col = fecha_cols[-1]
+    
+    # Crear lista de (nombre, valor_ultimo_mes) y ordenar
+    modelos_ultimo_mes = []
+    for idx, row in df.iterrows():
+        nombre = str(row[nombres_col]).strip()
+        valor = row[ultima_col]
+        try:
+            cantidad = int(float(valor)) if pd.notna(valor) else 0
+        except:
+            cantidad = 0
+        
+        if cantidad > 0:
+            modelos_ultimo_mes.append({'nombre': nombre, 'cantidad': cantidad})
+    
+    # Ordenar y obtener Top 5
+    modelos_ultimo_mes.sort(key=lambda x: x['cantidad'], reverse=True)
+    top5_ultimo_mes = modelos_ultimo_mes[:5]
+    
+    # Procesar todos los modelos con sus valores históricos
+    modelos = []
+    for idx, row in df.iterrows():
+        nombre = str(row[nombres_col]).strip()
+        valores = []
+        
+        for fecha_col in fecha_cols:
+            valor = row[fecha_col]
+            try:
+                cantidad = int(float(valor)) if pd.notna(valor) else 0
+            except:
+                cantidad = 0
+            valores.append(cantidad)
+        
+        modelos.append({
+            'nombre': nombre,
+            'valores': valores
+        })
+    
+    return {
+        'labels': fechas_formateadas,
+        'modelos': modelos,
+        'top5_ultimo_mes': top5_ultimo_mes
+    }
+
+
+def get_patentamientos_marca(cursor, tabla):
+    """Obtener datos agrupados por marca - OPTIMIZADO con una consulta"""
+    # Obtener todas las fechas distintas ordenadas
+    cursor.execute(f'SELECT DISTINCT fecha FROM {tabla} ORDER BY fecha')
+    fechas = [row['fecha'].strftime('%m/%y') for row in cursor.fetchall()]
+    
+    marcas = ['TOYOTA', 'FORD', 'FIAT', 'VOLKSWAGEN', 'CHEVROLET', 'PEUGEOT']
+    result = {'labels': fechas}
+    
+    # Inicializar diccionarios para cada marca
+    for marca in marcas:
+        result[marca.lower()] = [0] * len(fechas)
+    result['otros'] = [0] * len(fechas)
+    
+    # Obtener todos los datos en una sola consulta
+    cursor.execute(f'SELECT fecha, nombre, cantidad FROM {tabla} ORDER BY fecha')
+    
+    fecha_to_index = {fecha: idx for idx, fecha in enumerate(fechas)}
+    
+    for row in cursor.fetchall():
+        fecha_str = row['fecha'].strftime('%m/%y')
+        nombre_upper = row['nombre'].upper()
+        cantidad = row['cantidad']
+        idx = fecha_to_index.get(fecha_str)
+        
+        if idx is None:
+            continue
+        
+        # Clasificar por marca
+        marca_encontrada = False
+        for marca in marcas:
+            if marca in nombre_upper:
+                result[marca.lower()][idx] += cantidad
+                marca_encontrada = True
+                break
+        
+        if not marca_encontrada:
+            result['otros'][idx] += cantidad
+    
+    return result
+
+
+def get_patentamientos_modelo(cursor, tabla):
+    """Obtener datos por modelo - OPTIMIZADO con una sola consulta"""
+    # Obtener fechas
+    cursor.execute(f'SELECT DISTINCT fecha FROM {tabla} ORDER BY fecha')
+    fechas_rows = cursor.fetchall()
+    fechas = [row['fecha'].strftime('%m/%y') for row in fechas_rows]
+    fechas_dict = {row['fecha'].strftime('%m/%y'): row['fecha'] for row in fechas_rows}
+    
+    # Obtener la última fecha disponible
+    cursor.execute(f'SELECT MAX(fecha) as ultima_fecha FROM {tabla}')
+    ultima_fecha = cursor.fetchone()['ultima_fecha']
+    
+    # Obtener Top 5 del último mes
+    cursor.execute(f'''
+        SELECT nombre, cantidad
+        FROM {tabla}
+        WHERE fecha = %s
+        ORDER BY cantidad DESC
+        LIMIT 5
+    ''', (ultima_fecha,))
+    
+    top5_ultimo_mes = [{'nombre': row['nombre'], 'cantidad': row['cantidad']} for row in cursor.fetchall()]
+    
+    # OPTIMIZACIÓN: Obtener TODOS los datos en una sola consulta
+    cursor.execute(f'''
+        SELECT nombre, fecha, cantidad
+        FROM {tabla}
+        ORDER BY nombre, fecha
+    ''')
+    
+    # Construir estructura de datos eficientemente
+    modelos_dict = {}
+    for row in cursor.fetchall():
+        nombre = row['nombre']
+        fecha_str = row['fecha'].strftime('%m/%y')
+        cantidad = row['cantidad']
+        
+        if nombre not in modelos_dict:
+            modelos_dict[nombre] = {fecha_str: cantidad}
+        else:
+            modelos_dict[nombre][fecha_str] = cantidad
+    
+    # Convertir a formato esperado por el frontend
+    modelos = []
+    for nombre, valores_dict in modelos_dict.items():
+        valores = [valores_dict.get(fecha, 0) for fecha in fechas]
+        modelos.append({
+            'nombre': nombre,
+            'valores': valores
+        })
+    
+    return {
+        'labels': fechas,
+        'modelos': modelos,
+        'top5_ultimo_mes': top5_ultimo_mes
+    }
+
+
+@app.route('/api/bi/save_manual_data', methods=['POST'])
+@login_required
+def save_manual_data():
+    """Guardar solo MES ACTUAL - Actualización rápida"""
+    conn = None
+    try:
+        data = request.get_json()
+        data_type = data.get('dataType')
+        headers = data.get('headers')
+        rows = data.get('rows')
+        
+        if not all([data_type, headers, rows]):
+            return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+        
+        # Mapeo de tablas
+        tabla_map = {
+            'argentina-marca': 'bi_patentamientos_argentina_marca',
+            'argentina-modelo': 'bi_patentamientos_argentina_modelo',
+            'mendoza-marca': 'bi_patentamientos_mendoza_marca',
+            'mendoza-modelo': 'bi_patentamientos_mendoza_modelo'
+        }
+        
+        if data_type not in tabla_map:
+            return jsonify({'success': False, 'error': 'Tipo de datos inválido'}), 400
+        
+        tabla = tabla_map[data_type]
+        
+        # Diccionario de meses
+        meses_es = {
+            'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4,
+            'may': 5, 'jun': 6, 'jul': 7, 'ago': 8,
+            'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
+        }
+        
+        print(f"\n📝 Actualizando MES ACTUAL para {data_type}")
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # IDENTIFICAR EL ÚLTIMO MES (columna más reciente)
+        ultima_columna_idx = len(headers) - 1
+        fecha_col = str(headers[ultima_columna_idx]).strip().lower()
+        
+        print(f"   📅 Última columna detectada: {fecha_col}")
+        
+        # Parsear la fecha del último mes
+        if '-' in fecha_col:
+            partes = fecha_col.split('-')
+            mes_nombre = partes[0].strip()
+            anio = partes[1].strip()
+            
+            mes = meses_es.get(mes_nombre)
+            if not mes:
+                return jsonify({'success': False, 'error': f'Mes no reconocido: {mes_nombre}'}), 400
+            
+            if len(anio) == 2:
+                anio = '20' + anio if int(anio) <= 50 else '19' + anio
+            
+            fecha_actualizar = f"{anio}-{str(mes).zfill(2)}-01"
+        else:
+            return jsonify({'success': False, 'error': 'Formato de fecha no reconocido'}), 400
+        
+        print(f"   🎯 Actualizando datos para: {fecha_actualizar}")
+        
+        # Preparar registros SOLO del último mes
+        registros = []
+        
+        for row_data in rows:
+            nombre = str(row_data[0]).strip()
+            if not nombre or nombre.lower() in ['', 'nan', 'none']:
+                continue
+            
+            # Obtener valor del último mes
+            if ultima_columna_idx < len(row_data):
+                valor_str = row_data[ultima_columna_idx]
+                
+                try:
+                    if not valor_str or str(valor_str).lower() in ['', 'nan', 'none']:
+                        cantidad = 0
+                    else:
+                        cantidad = int(float(str(valor_str).replace(',', '').replace('.', '')))
+                except:
+                    cantidad = 0
+                
+                registros.append((nombre, fecha_actualizar, cantidad))
+        
+        # Insertar/Actualizar en batch
+        print(f"   🔄 Actualizando {len(registros)} marcas/modelos...")
+        
+        values_placeholders = ','.join(['(%s, %s, %s)'] * len(registros))
+        flat_values = [item for tupla in registros for item in tupla]
+        
+        cursor.execute(f'''
+            INSERT INTO {tabla} (nombre, fecha, cantidad)
+            VALUES {values_placeholders}
+            ON CONFLICT (nombre, fecha) 
+            DO UPDATE SET cantidad = EXCLUDED.cantidad, fecha_carga = CURRENT_TIMESTAMP
+        ''', flat_values)
+        
+        conn.commit()
+        
+        cursor.execute(f'SELECT COUNT(*) as total FROM {tabla}')
+        total = cursor.fetchone()['total']
+        
+        release_db_connection(conn)
+        
+        # INVALIDAR CACHÉ cuando se actualizan datos manualmente
+        patentamientos_cache['data'] = None
+        patentamientos_cache['timestamp'] = 0
+        print("🗑️ Caché de patentamientos invalidado")
+        
+        print(f"   ✅ Actualizado: {len(registros)} registros para {fecha_actualizar}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Mes actual actualizado: {fecha_actualizar}',
+            'recordsSaved': len(registros),
+            'totalRecords': total,
+            'updatedMonth': fecha_actualizar
+        })
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        if conn:
+            conn.rollback()
+            release_db_connection(conn)
+        
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/bi/get_saved_data/<data_type>', methods=['GET'])
+@login_required
+def get_saved_data(data_type):
+    """Obtener datos guardados de una tabla específica"""
+    try:
+        # Determinar tabla origen
+        tabla_map = {
+            'argentina-marca': 'bi_patentamientos_argentina_marca',
+            'argentina-modelo': 'bi_patentamientos_argentina_modelo',
+            'mendoza-marca': 'bi_patentamientos_mendoza_marca',
+            'mendoza-modelo': 'bi_patentamientos_mendoza_modelo'
+        }
+        
+        if data_type not in tabla_map:
+            return jsonify({'success': False, 'error': 'Tipo de datos inválido'}), 400
+        
+        tabla = tabla_map[data_type]
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar si hay datos
+        cursor.execute(f'SELECT COUNT(*) as total FROM {tabla}')
+        total = cursor.fetchone()['total']
+        
+        if total == 0:
+            release_db_connection(conn)
+            return jsonify({'success': True, 'hasData': False})
+        
+        # Obtener todas las fechas únicas ordenadas
+        cursor.execute(f'SELECT DISTINCT fecha FROM {tabla} ORDER BY fecha')
+        fechas_raw = cursor.fetchall()
+        
+        # Formatear fechas como "ene-15", "feb-15", etc.
+        meses_nombres = {
+            1: 'ene', 2: 'feb', 3: 'mar', 4: 'abr', 5: 'may', 6: 'jun',
+            7: 'jul', 8: 'ago', 9: 'sep', 10: 'oct', 11: 'nov', 12: 'dic'
+        }
+        
+        fechas = []
+        for row in fechas_raw:
+            fecha_obj = row['fecha']
+            mes_nombre = meses_nombres[fecha_obj.month]
+            anio_corto = str(fecha_obj.year)[-2:]
+            fechas.append(f"{mes_nombre}-{anio_corto}")
+        
+        # Obtener todos los nombres únicos ordenados
+        cursor.execute(f'SELECT DISTINCT nombre FROM {tabla} ORDER BY nombre')
+        nombres_raw = cursor.fetchall()
+        nombres = [row['nombre'] for row in nombres_raw]
+        
+        # Obtener TODOS los datos en una sola consulta (OPTIMIZACIÓN CRÍTICA)
+        cursor.execute(f'SELECT nombre, fecha, cantidad FROM {tabla} ORDER BY nombre, fecha')
+        todos_los_datos = cursor.fetchall()
+        
+        # Crear diccionario para acceso rápido: {(nombre, fecha): cantidad}
+        datos_dict = {}
+        for row in todos_los_datos:
+            key = (row['nombre'], row['fecha'])
+            datos_dict[key] = row['cantidad']
+        
+        # Construir matriz de datos usando el diccionario
+        rows_data = []
+        for nombre in nombres:
+            row = [nombre]
+            
+            # Para cada fecha, obtener la cantidad del diccionario
+            for fecha_obj_wrapper in fechas_raw:
+                fecha_obj = fecha_obj_wrapper['fecha']
+                cantidad = datos_dict.get((nombre, fecha_obj), 0)
+                row.append(cantidad)
+            
+            rows_data.append(row)
+        
+        # Obtener fecha de última actualización
+        cursor.execute(f'SELECT MAX(fecha_carga) as ultima_actualizacion FROM {tabla}')
+        ultima_act = cursor.fetchone()['ultima_actualizacion']
+        
+        release_db_connection(conn)
+        
+        return jsonify({
+            'success': True,
+            'hasData': True,
+            'headers': ['Marca/Modelo'] + fechas,
+            'rows': rows_data,
+            'totalRecords': total,
+            'lastUpdate': ultima_act.strftime('%Y-%m-%d %H:%M:%S') if ultima_act else None
+        })
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo datos guardados: {e}")
+        if 'conn' in locals():
+            release_db_connection(conn)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/bi/load_historical_data', methods=['POST'])
+@login_required
+def load_historical_data():
+    """Invalidar caché y forzar recarga desde CSV"""
+    patentamientos_cache['data'] = None
+    patentamientos_cache['timestamp'] = 0
+    return jsonify({'success': True, 'message': 'Caché invalidado. Los datos se recargarán en la próxima consulta.'})
+
+
+@app.route('/api/bi/load_status', methods=['GET'])
+@login_required
+def get_load_status():
+    """Verificar estado de los archivos CSV"""
+    csv_dir = os.path.join(os.path.dirname(__file__), 'Patentamientos')
+    archivos = [
+        'Mercado Argentino MARCA.csv',
+        'Mercado Argentino MODELO.csv',
+        'Mercado Mendoza MARCA.csv',
+        'Mercado Mendoza MODELO.csv'
+    ]
+    
+    status = []
+    for archivo in archivos:
+        path = os.path.join(csv_dir, archivo)
+        if os.path.exists(path):
+            stat = os.stat(path)
+            status.append({
+                'archivo': archivo,
+                'existe': True,
+                'tamano': stat.st_size,
+                'ultima_modificacion': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+            })
+        else:
+            status.append({
+                'archivo': archivo,
+                'existe': False
+            })
+    
+    return jsonify({
+        'archivos': status,
+        'cache_activo': patentamientos_cache['data'] is not None
+    })
+
+
+# ================================
+# RETAIL Y PLAN DE NEGOCIO ROUTES
+# ================================
+
+def extract_family(modelo):
+    """Extract vehicle family from model name"""
+    modelo_upper = str(modelo).upper()
+    
+    # Priority order matters (check COROLLA CROSS before COROLLA)
+    if 'COROLLA CROSS' in modelo_upper:
+        return 'COROLLA CROSS'
+    elif 'YARIS CROSS' in modelo_upper:
+        return 'YARIS CROSS'
+    elif 'COROLLA' in modelo_upper:
+        return 'COROLLA'
+    elif 'HILUX' in modelo_upper:
+        return 'HILUX'
+    elif 'SW4' in modelo_upper:
+        return 'SW4'
+    elif 'YARIS' in modelo_upper:
+        return 'YARIS'
+    elif 'RAV' in modelo_upper or 'RAV4' in modelo_upper:
+        return 'RAV 4'
+    elif 'HIACE' in modelo_upper:
+        return 'HIACE'
+    else:
+        return 'OTROS'
+
+
+@app.route('/bi/retail_plan')
+@login_required
+def retail_plan():
+    """Página del módulo Retail y Plan de Negocio"""
+    return render_template('bi_retail_plan.html')
+
+
+@app.route('/api/retail/plan', methods=['GET'])
+@login_required
+def get_retail_plan():
+    """Obtener objetivos del plan de negocio"""
+    try:
+        anio = request.args.get('anio', 2025, type=int)
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT familia, convencional_objetivo, especificas_objetivo, tpa_objetivo
+            FROM retail_plan
+            WHERE anio = %s
+            ORDER BY familia
+        """, (anio,))
+        
+        resultados = cur.fetchall()
+        plan = {}
+        for row in resultados:
+            plan[row['familia']] = {
+                'convencional': row['convencional_objetivo'],
+                'especificas': row['especificas_objetivo'],
+                'tpa': row['tpa_objetivo'],
+                'total': row['convencional_objetivo'] + row['especificas_objetivo'] + row['tpa_objetivo']
+            }
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True, 'plan': plan})
+    except Exception as e:
+        print(f"Error obteniendo plan: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/retail/plan', methods=['POST'])
+@login_required
+def update_retail_plan():
+    """Actualizar objetivos del plan de negocio"""
+    try:
+        data = request.get_json()
+        anio = data.get('anio', 2025)
+        familia = data['familia']
+        convencional = data['convencional']
+        especificas = data['especificas']
+        tpa = data['tpa']
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            INSERT INTO retail_plan 
+            (anio, familia, convencional_objetivo, especificas_objetivo, tpa_objetivo, updated_at)
+            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (anio, familia) 
+            DO UPDATE SET 
+                convencional_objetivo = EXCLUDED.convencional_objetivo,
+                especificas_objetivo = EXCLUDED.especificas_objetivo,
+                tpa_objetivo = EXCLUDED.tpa_objetivo,
+                updated_at = CURRENT_TIMESTAMP
+        """, (anio, familia, convencional, especificas, tpa))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error actualizando plan: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/retail/sales_vs_plan', methods=['GET'])
+@login_required
+def sales_vs_plan():
+    """Comparar ventas reales vs plan de negocio con desvío acumulado diario"""
+    try:
+        anio = request.args.get('anio', 2025, type=int)
+        
+        # Promedios mensuales de patentamiento histórico y días por mes
+        datos_mensuales = {
+            1: {'porcentaje': 11.54, 'dias': 31},   # Enero
+            2: {'porcentaje': 7.29, 'dias': 28},    # Febrero (ajustar para bisiestos)
+            3: {'porcentaje': 8.37, 'dias': 31},    # Marzo
+            4: {'porcentaje': 7.76, 'dias': 30},    # Abril
+            5: {'porcentaje': 8.37, 'dias': 31},    # Mayo
+            6: {'porcentaje': 9.25, 'dias': 30},    # Junio
+            7: {'porcentaje': 9.25, 'dias': 31},    # Julio
+            8: {'porcentaje': 9.43, 'dias': 31},    # Agosto
+            9: {'porcentaje': 8.65, 'dias': 30},    # Septiembre
+            10: {'porcentaje': 8.80, 'dias': 31},   # Octubre
+            11: {'porcentaje': 7.79, 'dias': 30},   # Noviembre
+            12: {'porcentaje': 3.99, 'dias': 31}    # Diciembre
+        }
+        
+        # Calcular porcentaje acumulado hasta hoy considerando días exactos
+        from datetime import datetime
+        hoy = datetime.now()
+        mes_actual = hoy.month
+        dia_actual = hoy.day
+        
+        # Acumular meses completos anteriores
+        porcentaje_esperado_acumulado = sum(datos_mensuales[m]['porcentaje'] for m in range(1, mes_actual))
+        
+        # Calcular porcentaje diario del mes actual
+        porcentaje_diario_mes_actual = datos_mensuales[mes_actual]['porcentaje'] / datos_mensuales[mes_actual]['dias']
+        
+        # Agregar los días transcurridos del mes actual
+        porcentaje_esperado_acumulado += (porcentaje_diario_mes_actual * dia_actual)
+        
+        print(f"🗓️ Fecha: {dia_actual}/{mes_actual}/{anio} | Porcentaje esperado acumulado: {porcentaje_esperado_acumulado:.2f}%")
+        
+        # Leer CSV de retail
+        csv_path = os.path.join(os.path.dirname(__file__), 'Retail y Plan de Negocio', 'Retail y Plan de Negocio.csv')
+        
+        # Try different encodings
+        df = None
+        for encoding in ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
+            try:
+                df = pd.read_csv(csv_path, sep=';', encoding=encoding)
+                break
+            except:
+                continue
+        
+        if df is None:
+            return jsonify({'success': False, 'error': 'No se pudo leer el archivo CSV'}), 500
+        
+        # Extract family and sale type
+        df['Familia'] = df['Modelo / Versión'].apply(extract_family)
+        
+        sale_type_map = {
+            'YAC': 'Convencional',
+            'TPA': 'Plan Ahorro',
+            'F02': 'Vtas Especiales'
+        }
+        df['Tipo_Venta'] = df['Orden'].str[:3].map(sale_type_map)
+        
+        # Filter by year if Fecha column exists
+        if 'Fecha' in df.columns:
+            df['Fecha'] = pd.to_datetime(df['Fecha'], format='%d/%m/%Y', errors='coerce')
+            df = df[df['Fecha'].dt.year == anio]
+        
+        # Group by family and sale type
+        ventas_reales = df.groupby(['Familia', 'Tipo_Venta']).size().unstack(fill_value=0)
+        
+        # Get plan objectives
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT familia, convencional_objetivo, especificas_objetivo, tpa_objetivo
+            FROM retail_plan
+            WHERE anio = %s
+            ORDER BY familia
+        """, (anio,))
+        
+        plan_data = {}
+        resultados_db = cur.fetchall()
+        
+        for row in resultados_db:
+            familia = row['familia']
+            plan_data[familia] = {
+                'Convencional': row['convencional_objetivo'],
+                'Vtas Especiales': row['especificas_objetivo'],
+                'Plan Ahorro': row['tpa_objetivo']
+            }
+        
+        cur.close()
+        conn.close()
+        
+        # Build comparison data with accumulated deviation logic
+        familias = list(set(list(ventas_reales.index) + list(plan_data.keys())))
+        resultados = []
+        
+        for familia in familias:
+            real_conv = ventas_reales.loc[familia, 'Convencional'] if familia in ventas_reales.index and 'Convencional' in ventas_reales.columns else 0
+            real_espec = ventas_reales.loc[familia, 'Vtas Especiales'] if familia in ventas_reales.index and 'Vtas Especiales' in ventas_reales.columns else 0
+            real_tpa = ventas_reales.loc[familia, 'Plan Ahorro'] if familia in ventas_reales.index and 'Plan Ahorro' in ventas_reales.columns else 0
+            
+            plan_conv = plan_data.get(familia, {}).get('Convencional', 0)
+            plan_espec = plan_data.get(familia, {}).get('Vtas Especiales', 0)
+            plan_tpa = plan_data.get(familia, {}).get('Plan Ahorro', 0)
+            
+            # Calcular objetivo acumulado esperado hasta ahora (enteros)
+            objetivo_acum_conv = int(plan_conv * porcentaje_esperado_acumulado / 100)
+            objetivo_acum_espec = int(plan_espec * porcentaje_esperado_acumulado / 100)
+            objetivo_acum_tpa = int(plan_tpa * porcentaje_esperado_acumulado / 100)
+            
+            # Calcular desvío: (real - objetivo_acumulado) / objetivo_acumulado * 100
+            def calcular_desvio(real, objetivo_acum):
+                if objetivo_acum == 0:
+                    return 0
+                return round(((real - objetivo_acum) / objetivo_acum * 100), 1)
+            
+            resultados.append({
+                'familia': familia,
+                'convencional': {
+                    'real': int(real_conv),
+                    'objetivo_total': plan_conv,
+                    'objetivo_acumulado': objetivo_acum_conv,
+                    'desvio': calcular_desvio(real_conv, objetivo_acum_conv)
+                },
+                'especiales': {
+                    'real': int(real_espec),
+                    'objetivo_total': plan_espec,
+                    'objetivo_acumulado': objetivo_acum_espec,
+                    'desvio': calcular_desvio(real_espec, objetivo_acum_espec)
+                },
+                'tpa': {
+                    'real': int(real_tpa),
+                    'objetivo_total': plan_tpa,
+                    'objetivo_acumulado': objetivo_acum_tpa,
+                    'desvio': calcular_desvio(real_tpa, objetivo_acum_tpa)
+                },
+                'total': {
+                    'real': int(real_conv + real_espec + real_tpa),
+                    'objetivo_total': plan_conv + plan_espec + plan_tpa,
+                    'objetivo_acumulado': objetivo_acum_conv + objetivo_acum_espec + objetivo_acum_tpa,
+                    'desvio': calcular_desvio(
+                        real_conv + real_espec + real_tpa,
+                        objetivo_acum_conv + objetivo_acum_espec + objetivo_acum_tpa
+                    )
+                }
+            })
+        
+        return jsonify({
+            'success': True, 
+            'datos': resultados,
+            'fecha_calculo': f"{dia_actual}/{mes_actual}/{anio}",
+            'porcentaje_acumulado': round(porcentaje_esperado_acumulado, 2),
+            'detalles_mensuales': [
+                {
+                    'mes': mes,
+                    'nombre': ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                              'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][mes-1],
+                    'porcentaje': datos_mensuales[mes]['porcentaje'],
+                    'dias': datos_mensuales[mes]['dias'],
+                    'porcentaje_diario': round(datos_mensuales[mes]['porcentaje'] / datos_mensuales[mes]['dias'], 3)
+                }
+                for mes in range(1, 13)
+            ]
+        })
+    
+    except Exception as e:
+        print(f"Error en sales_vs_plan: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
