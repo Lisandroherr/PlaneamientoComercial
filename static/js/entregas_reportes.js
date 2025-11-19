@@ -53,21 +53,60 @@ function setupDropZone(dropZone, fileInput, tipo) {
 
 function handleFile(file, tipo) {
     const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-    if (extension !== '.xlsx' && extension !== '.xls') {
-        showError('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)');
+    
+    console.log(`📁 Archivo recibido: ${file.name} (${file.type}), extensión: ${extension}`);
+    
+    if (extension === '.csv') {
+        // Procesar CSV
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            procesarCSV(text, tipo, file.name);
+        };
+        reader.readAsText(file, 'UTF-8');
+    } else if (extension === '.xlsx' || extension === '.xls') {
+        // Procesar Excel
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            procesarExcel(data, tipo, file.name);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        showError('Por favor, selecciona un archivo CSV o Excel válido (.csv, .xlsx, .xls)');
         return;
     }
+}
+
+function procesarCSV(text, tipo, nombreArchivo) {
+    console.log(`📊 Procesando archivo CSV: ${nombreArchivo}`);
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        procesarExcel(data, tipo, file.name);
-    };
-    reader.readAsArrayBuffer(file);
+    try {
+        // Dividir en líneas
+        const lineas = text.split('\n').filter(linea => linea.trim());
+        console.log(`Total de líneas: ${lineas.length}`);
+        
+        if (lineas.length < 2) {
+            showError('El archivo CSV está vacío o no tiene datos');
+            return;
+        }
+        
+        // Parsear CSV
+        const jsonData = lineas.map(linea => parsearLineaCSV(linea));
+        
+        console.log('Primera fila (headers):', jsonData[0]);
+        
+        // Procesar datos
+        procesarDatosGenericos(jsonData, tipo, nombreArchivo);
+        
+    } catch (error) {
+        console.error('❌ Error al procesar CSV:', error);
+        showError(`Error al procesar el archivo: ${error.message}`);
+    }
 }
 
 function procesarExcel(data, tipo, nombreArchivo) {
-    console.log(`Procesando archivo Excel: ${nombreArchivo}`);
+    console.log(`📊 Procesando archivo Excel: ${nombreArchivo}`);
     
     try {
         // Leer el archivo Excel
@@ -82,34 +121,51 @@ function procesarExcel(data, tipo, nombreArchivo) {
         
         console.log(`Total de filas: ${jsonData.length}`);
         
+        // Procesar datos
+        procesarDatosGenericos(jsonData, tipo, nombreArchivo);
+        
+    } catch (error) {
+        console.error('❌ Error al procesar Excel:', error);
+        showError(`Error al procesar el archivo: ${error.message}`);
+    }
+}
+
+function procesarDatosGenericos(jsonData, tipo, nombreArchivo) {
+    console.log(`🔍 Procesando datos genéricos para tipo: ${tipo}`);
+    
+    try {
         const datos = [];
         
-        // Determinar columnas según el tipo
-        let colRemito, colFecha, colModelo, colNroFabrica;
+        // Detectar columnas automáticamente buscando en los headers
+        const headers = jsonData[0].map(h => String(h).toLowerCase().trim());
+        console.log('📋 Headers detectados:', headers);
         
-        if (tipo === 'convencional') {
-            // Convencionales y Especiales
-            // P = columna 15 (0-indexed)
-            // Q = columna 16
-            // T = columna 19
-            // U = columna 20
-            colRemito = 15;     // P
-            colFecha = 16;      // Q
-            colModelo = 19;     // T
-            colNroFabrica = 20; // U
-        } else {
-            // Plan de Ahorro
-            // K = columna 10
-            // L = columna 11
-            // N = columna 13
-            // O = columna 14
-            colRemito = 10;     // K
-            colFecha = 11;      // L
-            colModelo = 13;     // N
-            colNroFabrica = 14; // O
+        // Buscar índices de columnas por nombre
+        let colRemito = encontrarColumna(headers, ['remito', 'nro remito', 'número remito', 'nº remito']);
+        let colFecha = encontrarColumna(headers, ['fecha', 'fecha entrega', 'fecha remito']);
+        let colModelo = encontrarColumna(headers, ['modelo', 'versión', 'modelo/versión', 'descripción']);
+        let colNroFabrica = encontrarColumna(headers, ['fábrica', 'fabrica', 'nro fábrica', 'nº fábrica', 'numero fabrica', 'chasis']);
+        
+        console.log(`🎯 Índices detectados: Remito=${colRemito}, Fecha=${colFecha}, Modelo=${colModelo}, NroFabrica=${colNroFabrica}`);
+        
+        // Si no se encontraron por nombre, usar posiciones por defecto según tipo
+        if (colRemito === -1 || colFecha === -1 || colNroFabrica === -1) {
+            console.log('⚠️ No se detectaron columnas por nombre, usando posiciones por defecto');
+            
+            if (tipo === 'convencional') {
+                colRemito = 15;     // P
+                colFecha = 16;      // Q
+                colModelo = 19;     // T
+                colNroFabrica = 20; // U
+            } else {
+                colRemito = 10;     // K
+                colFecha = 11;      // L
+                colModelo = 13;     // N
+                colNroFabrica = 14; // O
+            }
         }
         
-        console.log(`Columnas a leer: Remito=${colRemito}, Fecha=${colFecha}, Modelo=${colModelo}, NroFabrica=${colNroFabrica}`);
+        console.log(`📍 Columnas finales: Remito=${colRemito}, Fecha=${colFecha}, Modelo=${colModelo}, NroFabrica=${colNroFabrica}`);
         
         // Procesar filas (saltar la primera que suele ser encabezados)
         for (let i = 1; i < jsonData.length; i++) {
@@ -122,9 +178,9 @@ function procesarExcel(data, tipo, nombreArchivo) {
             const modelo = fila[colModelo] ? String(fila[colModelo]).trim() : '';
             const nroFabrica = fila[colNroFabrica] ? String(fila[colNroFabrica]).trim() : '';
             
-            // Debug primera fila
-            if (i === 1) {
-                console.log('Primera fila de datos:', {
+            // Debug primeras 3 filas
+            if (i <= 3) {
+                console.log(`Fila ${i}:`, {
                     nroRemito,
                     fechaStr,
                     modelo,
@@ -132,14 +188,34 @@ function procesarExcel(data, tipo, nombreArchivo) {
                 });
             }
             
-            // Validar datos mínimos
-            if (!nroRemito || !fechaStr || !nroFabrica) {
+            // Validar datos mínimos (más flexible)
+            if (!nroRemito || !fechaStr) {
+                if (i <= 5) console.log(`⏭️ Fila ${i} saltada: remito o fecha vacíos`);
                 continue;
             }
             
-            // Validar formato de remito
-            if (!nroRemito.startsWith('R-')) {
+            // Validar formato de remito (más flexible)
+            if (!nroRemito.includes('R-') && !nroRemito.startsWith('R')) {
+                if (i <= 5) console.log(`⏭️ Fila ${i} saltada: formato de remito inválido`);
                 continue;
+            }
+            
+            // Si no hay nro de fábrica, intentar buscar en otras columnas
+            if (!nroFabrica) {
+                // Buscar en columnas adyacentes
+                for (let j = colNroFabrica - 2; j <= colNroFabrica + 2; j++) {
+                    if (j >= 0 && j < fila.length) {
+                        const valor = fila[j] ? String(fila[j]).trim() : '';
+                        if (valor && (valor.startsWith('YAC') || valor.startsWith('TPA') || valor.startsWith('F0'))) {
+                            nroFabrica = valor;
+                            break;
+                        }
+                    }
+                }
+                if (!nroFabrica) {
+                    if (i <= 5) console.log(`⏭️ Fila ${i} saltada: no se encontró número de fábrica`);
+                    continue;
+                }
             }
             
             // Parsear fecha
@@ -165,10 +241,20 @@ function procesarExcel(data, tipo, nombreArchivo) {
             }
         }
         
-        console.log(`${tipo}: ${datos.length} registros procesados de ${jsonData.length - 1} filas`);
+        console.log(`✅ ${tipo}: ${datos.length} registros procesados de ${jsonData.length - 1} filas`);
         
         if (datos.length > 0) {
-            console.log('Muestra de datos procesados:', datos.slice(0, 3));
+            console.log('📊 Muestra de datos procesados:', datos.slice(0, 3));
+            console.log('📈 Tipos de venta encontrados:', {
+                Convencional: datos.filter(d => d.tipo === 'Convencional').length,
+                'Plan de Ahorro': datos.filter(d => d.tipo === 'Plan de Ahorro').length,
+                'Especial': datos.filter(d => d.tipo === 'Especial').length,
+                'Otro': datos.filter(d => d.tipo === 'Otro').length
+            });
+        } else {
+            console.warn('⚠️ No se procesaron registros válidos');
+            showError('No se encontraron registros válidos en el archivo. Verifica el formato.');
+            return;
         }
         
         if (tipo === 'convencional') {
@@ -182,9 +268,22 @@ function procesarExcel(data, tipo, nombreArchivo) {
         verificarArchivosListos();
         
     } catch (error) {
-        console.error('Error al procesar Excel:', error);
+        console.error('❌ Error al procesar:', error);
         showError(`Error al procesar el archivo: ${error.message}`);
     }
+}
+
+function encontrarColumna(headers, posiblesNombres) {
+    // Busca el índice de una columna basándose en posibles nombres
+    for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        for (const nombre of posiblesNombres) {
+            if (header.includes(nombre)) {
+                return i;
+            }
+        }
+    }
+    return -1; // No encontrado
 }
 
 function parsearLineaCSV(linea) {

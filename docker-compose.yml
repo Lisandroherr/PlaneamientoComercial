@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Aplicación Flask (conecta a base de datos externa)
+  app:
+    build: .
+    container_name: toyota_app
+    restart: always
+    ports:
+      - "5000:7860"
+    environment:
+      # Configuración de Flask
+      FLASK_APP: app.py
+      FLASK_ENV: production
+      
+      # IMPORTANTE: Configurar DATABASE_URL con tu base de datos externa (Neon, etc)
+      # Puedes usar archivo .env o configurar aquí directamente
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY:-cambiar-esta-clave-secreta-en-produccion}
+      
+      # Puerto de la aplicación
+      PORT: 7860
+    volumes:
+      - ./uploads:/app/uploads
+      - ./Patentamientos:/app/Patentamientos
+    env_file:
+      - .env
+    networks:
+      - toyota_network
+    command: >
+      sh -c "
+        echo '🔧 Verificando conexión a base de datos externa...' &&
+        python init_postgres.py &&
+        echo '📋 Inicializando tablas de observaciones...' &&
+        python init_observaciones.py &&
+        echo '🚀 Iniciando aplicación...' &&
+        python app.py
+      "
+
+networks:
+  toyota_network:
+    driver: bridge

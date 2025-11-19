@@ -122,9 +122,17 @@ def init_postgres_database():
         
         print("📦 Insertando datos iniciales...")
         
-        # Cargar modelos desde backup
-        with open('backup_precios.json', 'r', encoding='utf-8') as f:
-            backup_data = json.load(f)
+        # Cargar modelos desde backup (opcional)
+        backup_data = []
+        try:
+            with open('backup_precios.json', 'r', encoding='utf-8') as f:
+                backup_data = json.load(f)
+            print(f"✅ Cargados {len(backup_data)} modelos desde backup")
+        except FileNotFoundError:
+            print("⚠️  No se encontró backup_precios.json - La tabla precios está vacía")
+            print("   Puedes cargar los precios manualmente desde la aplicación")
+        except Exception as e:
+            print(f"⚠️  Error al cargar backup_precios.json: {e}")
         
         # Función para obtener familia
         def obtener_familia(modelo):
@@ -150,24 +158,27 @@ def init_postgres_database():
             else:
                 return 'OTROS'
         
-        # Insertar modelos con precios
-        for item in backup_data:
-            familia = obtener_familia(item['modelo'])
-            cursor.execute('''
-                INSERT INTO precios (modelo, precio_ars, precio_usd, cotizacion, descuento, visible, dado_baja, familia)
-                VALUES (%s, %s, %s, %s, %s, 1, %s, %s)
-                ON CONFLICT (modelo) DO NOTHING
-            ''', (
-                item['modelo'],
-                item['precio_ars'],
-                item['precio_usd'],
-                item['cotizacion'],
-                item['descuento'],
-                item.get('dado_baja', 0),
-                familia
-            ))
-        
-        print(f"✅ {len(backup_data)} modelos insertados")
+        # Insertar modelos con precios (solo si hay datos)
+        if backup_data:
+            for item in backup_data:
+                familia = obtener_familia(item['modelo'])
+                cursor.execute('''
+                    INSERT INTO precios (modelo, precio_ars, precio_usd, cotizacion, descuento, visible, dado_baja, familia)
+                    VALUES (%s, %s, %s, %s, %s, 1, %s, %s)
+                    ON CONFLICT (modelo) DO NOTHING
+                ''', (
+                    item['modelo'],
+                    item['precio_ars'],
+                    item['precio_usd'],
+                    item['cotizacion'],
+                    item['descuento'],
+                    item.get('dado_baja', 0),
+                    familia
+                ))
+            
+            print(f"✅ {len(backup_data)} modelos insertados")
+        else:
+            print("⏭️  Sin datos de precios para insertar")
         
         # Insertar unidades postergadas
         unidades_postergadas = [

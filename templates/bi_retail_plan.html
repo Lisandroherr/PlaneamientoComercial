@@ -707,6 +707,11 @@
             const tbody = document.getElementById(`tabla-${tipo}`);
             tbody.innerHTML = '';
             
+            // Variables para calcular totales
+            let totalReal = 0;
+            let totalObjetivoAcumulado = 0;
+            let totalObjetivoFinal = 0;
+            
             datos.forEach(row => {
                 const tr = document.createElement('tr');
                 
@@ -726,6 +731,11 @@
                         break;
                 }
                 
+                // Acumular totales
+                totalReal += tipoData.real;
+                totalObjetivoAcumulado += tipoData.objetivo_acumulado;
+                totalObjetivoFinal += tipoData.objetivo_total;
+                
                 tr.innerHTML = `
                     <td><strong>${row.familia}</strong></td>
                     <td class="text-center">${tipoData.real}</td>
@@ -743,6 +753,33 @@
                 
                 tbody.appendChild(tr);
             });
+            
+            // Agregar fila de totales
+            const trTotal = document.createElement('tr');
+            trTotal.style.background = 'linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%)';
+            trTotal.style.color = 'white';
+            trTotal.style.fontWeight = 'bold';
+            
+            // Calcular desvío total con 1 decimal
+            const desvioTotal = totalObjetivoAcumulado > 0 
+                ? (((totalReal - totalObjetivoAcumulado) / totalObjetivoAcumulado) * 100).toFixed(1)
+                : '0.0';
+            
+            // Formatear desvío con signo
+            const desvioFormateado = desvioTotal === '0.0' ? '0.0%' : (parseFloat(desvioTotal) > 0 ? '+' : '') + desvioTotal + '%';
+            
+            trTotal.innerHTML = `
+                <td style="color: white;"><strong>TOTAL</strong></td>
+                <td class="text-center" style="color: white;">${totalReal}</td>
+                <td class="text-center" style="color: white;">${totalObjetivoAcumulado}</td>
+                <td class="text-center" style="color: white;">${totalObjetivoFinal}</td>
+                <td class="text-center" style="color: white;">
+                    ${desvioFormateado}
+                </td>
+                <td class="text-center"></td>
+            `;
+            
+            tbody.appendChild(trTotal);
         }
         
         function getDesvioClass(desvio) {

@@ -181,13 +181,23 @@ function renderizarControlesFamilias() {
 
 // Aplicar descuento a toda una familia
 function aplicarDescuentoFamilia(familia) {
-    const inputId = 'desc_' + familia.replace(/ /g, '_');
+    const inputId = 'desc_' + familia.replace(/ /g, '_').replace(/\//g, '_');
     const descuento = parseFloat(document.getElementById(inputId).value) || 0;
     
     if (descuento < 0 || descuento > 100) {
         mostrarAlerta('El descuento debe estar entre 0 y 100', 'error');
         return;
     }
+    
+    // Encontrar el botón que disparó la acción
+    const btnAplicar = event.target;
+    const textoOriginal = btnAplicar.innerHTML;
+    
+    // Deshabilitar el botón y mostrar spinner
+    btnAplicar.disabled = true;
+    btnAplicar.style.opacity = '0.7';
+    btnAplicar.style.cursor = 'not-allowed';
+    btnAplicar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
     
     fetch('/api/descuento_familia', {
         method: 'POST',
@@ -197,14 +207,38 @@ function aplicarDescuentoFamilia(familia) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Mostrar checkmark temporalmente
+            btnAplicar.innerHTML = '<i class="fas fa-check-circle"></i> ¡Aplicado!';
+            btnAplicar.style.background = '#48bb78';
             mostrarAlerta(`Descuento del ${descuento}% aplicado a ${data.modelos_actualizados} modelos de ${familia}`, 'success');
-            cargarPrecios(); // Recargar para ver los cambios
+            
+            // Recargar precios
+            cargarPrecios();
+            
+            // Restaurar después de 2 segundos
+            setTimeout(() => {
+                btnAplicar.innerHTML = textoOriginal;
+                btnAplicar.disabled = false;
+                btnAplicar.style.opacity = '1';
+                btnAplicar.style.cursor = 'pointer';
+                btnAplicar.style.background = '#EB0A1E';
+            }, 2000);
         } else {
+            // Restaurar en caso de error
+            btnAplicar.innerHTML = textoOriginal;
+            btnAplicar.disabled = false;
+            btnAplicar.style.opacity = '1';
+            btnAplicar.style.cursor = 'pointer';
             mostrarAlerta('Error: ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        // Restaurar en caso de error
+        btnAplicar.innerHTML = textoOriginal;
+        btnAplicar.disabled = false;
+        btnAplicar.style.opacity = '1';
+        btnAplicar.style.cursor = 'pointer';
         mostrarAlerta('Error al aplicar descuento', 'error');
     });
 }
@@ -243,6 +277,18 @@ function cargarDescuentosAdicionales() {
 
 // Guardar descuentos adicionales
 function guardarDescuentosAdicionales() {
+    // Encontrar el botón de guardar configuración
+    const btnGuardar = document.querySelector('.btn-aplicar-adicional');
+    
+    // Guardar el texto original
+    const textoOriginal = btnGuardar.innerHTML;
+    
+    // Deshabilitar el botón y mostrar spinner
+    btnGuardar.disabled = true;
+    btnGuardar.style.opacity = '0.7';
+    btnGuardar.style.cursor = 'not-allowed';
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
     const descuentos = {
         stock: {
             descuento_stock: parseFloat(document.getElementById('descuentoStock').value) || 0
@@ -270,13 +316,35 @@ function guardarDescuentosAdicionales() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Mostrar checkmark temporalmente
+            btnGuardar.innerHTML = '<i class="fas fa-check-circle"></i> ¡Guardado!';
+            btnGuardar.style.background = '#48bb78';
             mostrarAlerta('Descuentos adicionales guardados correctamente. Se aplicarán en el Módulo 4 (Disponible)', 'success');
+            
+            // Restaurar después de 2 segundos
+            setTimeout(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+                btnGuardar.style.opacity = '1';
+                btnGuardar.style.cursor = 'pointer';
+                btnGuardar.style.background = '#e53e3e';
+            }, 2000);
         } else {
+            // Restaurar en caso de error
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+            btnGuardar.style.opacity = '1';
+            btnGuardar.style.cursor = 'pointer';
             mostrarAlerta('Error: ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        // Restaurar en caso de error
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+        btnGuardar.style.opacity = '1';
+        btnGuardar.style.cursor = 'pointer';
         mostrarAlerta('Error al guardar descuentos adicionales', 'error');
     });
 }
@@ -394,56 +462,79 @@ function crearFilaConvencional(modelo, index) {
     return tr;
 }
 
-// Crear fila de solo lectura para modelo SC
+// Crear fila EDITABLE para modelo SC (ahora igual que convencionales)
 function crearFilaSC(modelo, index) {
     const tr = document.createElement('tr');
     
-    // Buscar el modelo convencional equivalente usando el mapeo
-    const nombreConv = SC_MAPPING[modelo.nombre] || modelo.nombre.replace('SC - ', '');
-    const modeloConv = preciosData.modelos.find(m => m.nombre === nombreConv);
-    
-    // Usar los datos del modelo convencional si existe, si no usar los propios
-    const datos = modeloConv || modelo;
+    const precioArs = modelo.precio_ars || 0;
+    const precioUsd = modelo.precio_usd || 0;
+    const cotizacion = modelo.cotizacion || 1000;
+    const descuento = modelo.descuento || 0;
+    const descuentoFuturo = modelo.descuento_futuro || 0;
     const dadoBaja = modelo.dado_baja || 0;
     const familia = modelo.familia || 'OTROS';
     
-    // Clase para filas deshabilitadas (sin color de fondo, solo opacidad de texto)
+    // Clase para filas deshabilitadas
     const estiloDeshabilitado = dadoBaja === 1 ? 'opacity: 0.5;' : '';
     
     tr.innerHTML = `
-        <td style="font-weight: 600; color: #4a5568; font-size: 0.85em; ${estiloDeshabilitado}">${familia}</td>
-        <td style="${estiloDeshabilitado}"><strong>${modelo.nombre}</strong></td>
-        <td style="color: #2d3748; ${estiloDeshabilitado}">
-            $ ${formatearNumero(datos.precio_ars || 0)}
+        <td style="font-weight: 500; color: #718096; ${estiloDeshabilitado}">
+            <span style="background: #e6fffa; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; color: #234e52;">
+                ${familia}
+            </span>
         </td>
-        <td style="color: #2d3748; ${estiloDeshabilitado}">
-            US$ ${formatearNumero(datos.precio_usd || 0)}
+        <td style="font-weight: 600; ${estiloDeshabilitado}">${modelo.nombre}</td>
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${precioArs}" 
+                   onchange="actualizarPrecio(${index}, 'precio_ars', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
-        <td style="color: #2d3748; ${estiloDeshabilitado}">
-            $ ${formatearNumero(datos.cotizacion || 1000)}
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${precioUsd}" 
+                   onchange="actualizarPrecio(${index}, 'precio_usd', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
-        <td style="color: #2d3748; ${estiloDeshabilitado}">
-            ${datos.descuento || 0}%
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${cotizacion}" 
+                   onchange="actualizarPrecio(${index}, 'cotizacion', this.value)"
+                   style="width: 100%; padding: 8px; ${estiloDeshabilitado}">
         </td>
-        <td style="color: #2d3748; background: #fef5e7; ${estiloDeshabilitado}">
-            ${datos.descuento_futuro || 0}%
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${descuento}" 
+                   min="0" 
+                   max="100" 
+                   step="0.5"
+                   onchange="actualizarPrecio(${index}, 'descuento', this.value)"
+                   style="width: 100%; padding: 8px; text-align: center; ${estiloDeshabilitado}">
         </td>
-        <td style="text-align: center; ${estiloDeshabilitado}">
-            <input type="checkbox" 
-                   class="checkbox-baja"
-                   ${dadoBaja === 1 ? 'checked' : ''}
-                   data-index="${index}"
-                   style="width: 20px; height: 20px; cursor: pointer;"
-                   title="Marcar como dado de baja">
+        <td>
+            <input type="number" 
+                   class="form-input" 
+                   value="${descuentoFuturo}" 
+                   min="0" 
+                   max="100" 
+                   step="0.5"
+                   onchange="actualizarPrecio(${index}, 'descuento_futuro', this.value)"
+                   style="width: 100%; padding: 8px; text-align: center; background: #fef5e7; ${estiloDeshabilitado}"
+                   title="Descuento aplicado a unidades con entrega en meses futuros">
+        </td>
+        <td style="text-align: center;">
+            <label class="toggle-switch">
+                <input type="checkbox" 
+                       ${dadoBaja === 1 ? 'checked' : ''} 
+                       onchange="toggleDadoBaja(${index}, this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
         </td>
     `;
-    
-    // Agregar event listener al checkbox
-    const checkbox = tr.querySelector('.checkbox-baja');
-    checkbox.addEventListener('change', function() {
-        const idx = parseInt(this.dataset.index);
-        toggleDadoBaja(idx, this.checked);
-    });
     
     return tr;
 }
@@ -451,32 +542,6 @@ function crearFilaSC(modelo, index) {
 // Actualizar precio de un modelo
 function actualizarPrecio(index, campo, valor) {
     preciosData.modelos[index][campo] = parseFloat(valor) || 0;
-    sincronizarModeloSC(index);
-}
-
-// Sincronizar modelo SC con su equivalente convencional
-function sincronizarModeloSC(index) {
-    const modelo = preciosData.modelos[index];
-    
-    // Si es un modelo convencional, buscar todos los SC que dependen de él
-    if (!modelo.nombre.startsWith('SC -')) {
-        // Buscar todos los modelos SC que usan este convencional como referencia
-        for (const [modeloSC, modeloConv] of Object.entries(SC_MAPPING)) {
-            if (modeloConv === modelo.nombre) {
-                const indexSC = preciosData.modelos.findIndex(m => m.nombre === modeloSC);
-                if (indexSC !== -1) {
-                    // Sincronizar todos los campos excepto el nombre
-                    preciosData.modelos[indexSC].precio_ars = modelo.precio_ars;
-                    preciosData.modelos[indexSC].precio_usd = modelo.precio_usd;
-                    preciosData.modelos[indexSC].cotizacion = modelo.cotizacion;
-                    preciosData.modelos[indexSC].descuento = modelo.descuento;
-                }
-            }
-        }
-    }
-    
-    // Re-renderizar para actualizar la vista del SC
-    renderizarTablas();
 }
 
 // Toggle estado de dado de baja
@@ -487,6 +552,18 @@ function toggleDadoBaja(index, checked) {
 
 // Guardar precios en el servidor
 function guardarPrecios() {
+    // Encontrar el botón de guardar
+    const btnGuardar = document.querySelector('button[onclick="guardarPrecios()"]');
+    
+    // Guardar el texto original
+    const textoOriginal = btnGuardar.innerHTML;
+    
+    // Deshabilitar el botón y mostrar spinner
+    btnGuardar.disabled = true;
+    btnGuardar.style.opacity = '0.7';
+    btnGuardar.style.cursor = 'not-allowed';
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
     fetch('/api/precios', {
         method: 'POST',
         headers: {
@@ -497,11 +574,35 @@ function guardarPrecios() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Mostrar checkmark temporalmente
+            btnGuardar.innerHTML = '<i class="fas fa-check-circle"></i> ¡Guardado!';
+            btnGuardar.style.background = '#48bb78';
             mostrarAlerta('Precios guardados exitosamente', 'success');
+            
+            // Restaurar después de 2 segundos
+            setTimeout(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+                btnGuardar.style.opacity = '1';
+                btnGuardar.style.cursor = 'pointer';
+                btnGuardar.style.background = '';
+            }, 2000);
+        } else {
+            // Restaurar en caso de error
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+            btnGuardar.style.opacity = '1';
+            btnGuardar.style.cursor = 'pointer';
+            mostrarAlerta('Error: ' + (data.error || 'Error desconocido'), 'error');
         }
     })
     .catch(error => {
         console.error('Error al guardar precios:', error);
+        // Restaurar en caso de error
+        btnGuardar.innerHTML = textoOriginal;
+        btnGuardar.disabled = false;
+        btnGuardar.style.opacity = '1';
+        btnGuardar.style.cursor = 'pointer';
         mostrarAlerta('Error al guardar los precios', 'error');
     });
 }

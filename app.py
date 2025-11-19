@@ -331,7 +331,7 @@ def save_precios():
     cursor = conn.cursor()
     
     try:
-        # Actualizar precios
+        # Actualizar precios de TODOS los modelos (convencionales y SC)
         for modelo in data.get('modelos', []):
             cursor.execute('''
                 UPDATE precios 
@@ -790,10 +790,11 @@ def procesar_excel():
             hoy = datetime.now()
             hoy_ym = (hoy.year, hoy.month)
             
-            # Aplicar precio con descuento según fecha de entrega
+            # Aplicar precio con descuento según fecha de DESPACHO
             def calcular_precio_con_descuento(row):
                 modelo = row['Modelo/Versión']
-                entrega_estimada = row['Entrega Estimada']
+                despacho_estimado = row['Despacho Estimado']
+                numero_fabrica = row.get('Nº Fábrica', 'N/A')
                 
                 if pd.isna(modelo):
                     print(f"⚠️ Modelo vacío, saltando...")
@@ -818,36 +819,36 @@ def procesar_excel():
                 descuento_individual = precios_data[modelo_str]['descuento']
                 descuento_futuro = precios_data[modelo_str]['descuento_futuro']
                 
-                print(f"🔍 {modelo_str[:40]:40}")
+                print(f"🔍 {modelo_str[:40]:40} | Nº Fábrica: {numero_fabrica}")
                 print(f"   Precio Base: ${precio_base:,.0f}")
                 print(f"   Desc Individual: {descuento_individual}%")
                 print(f"   Desc Futuro: {descuento_futuro}%")
                 
-                # Determinar si es mes futuro
-                es_mes_futuro = False
-                if not pd.isna(entrega_estimada):
+                # Determinar si es mes futuro o actual BASADO EN DESPACHO ESTIMADO
+                es_mes_actual_o_futuro = False
+                if not pd.isna(despacho_estimado):
                     try:
-                        if isinstance(entrega_estimada, str):
-                            fecha_entrega = pd.to_datetime(entrega_estimada)
+                        if isinstance(despacho_estimado, str):
+                            fecha_despacho = pd.to_datetime(despacho_estimado)
                         else:
-                            fecha_entrega = entrega_estimada
+                            fecha_despacho = despacho_estimado
                         
-                        entrega_ym = (fecha_entrega.year, fecha_entrega.month)
+                        despacho_ym = (fecha_despacho.year, fecha_despacho.month)
                         
-                        print(f"   Fecha Entrega: {entrega_ym} vs Hoy: {hoy_ym}")
+                        print(f"   Fecha Despacho: {despacho_ym} vs Hoy: {hoy_ym}")
                         
-                        # Es mes futuro si es posterior al mes actual
-                        if entrega_ym > hoy_ym:
-                            es_mes_futuro = True
-                            print(f"   ✅ ES MES FUTURO -> usando descuento_futuro")
+                        # Solo meses FUTUROS usan descuento_futuro (mes actual usa descuento_individual)
+                        if despacho_ym > hoy_ym:
+                            es_mes_actual_o_futuro = True
+                            print(f"   ✅ MES FUTURO -> usando descuento_futuro")
                         else:
-                            print(f"   ⏸️ NO es mes futuro -> usando descuento_individual")
+                            print(f"   ⏸️ MES ACTUAL O ANTERIOR -> usando descuento_individual")
                     except Exception as e:
                         print(f"   ⚠️ Error procesando fecha: {e}")
                         pass
                 
                 # Aplicar el descuento correspondiente
-                descuento_aplicar = descuento_futuro if es_mes_futuro else descuento_individual
+                descuento_aplicar = descuento_futuro if es_mes_actual_o_futuro else descuento_individual
                 
                 # Calcular precio final
                 precio_final = precio_base * (1 - descuento_aplicar / 100)
@@ -981,8 +982,11 @@ def modulo6():
 # API para obtener unidades disponibles
 @app.route('/api/disponibles', methods=['GET'])
 @login_required
-@module_permission_required('planeamiento')
 def get_disponibles():
+    # Verificar que tenga permiso de planeamiento O ventas
+    if not (current_user.has_permission('planeamiento') or current_user.has_permission('ventas')):
+        return jsonify({'error': 'No tienes permisos para acceder a esta información'}), 403
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1214,8 +1218,11 @@ def save_disponibles():
 # API para obtener unidades reservadas
 @app.route('/api/unidades_reservadas', methods=['GET'])
 @login_required
-@module_permission_required('planeamiento')
 def get_unidades_reservadas():
+    # Verificar que tenga permiso de planeamiento O ventas
+    if not (current_user.has_permission('planeamiento') or current_user.has_permission('ventas')):
+        return jsonify({'error': 'No tienes permisos para acceder a esta información'}), 403
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT numero_fabrica, vendedor, fecha_agregado FROM unidades_reservadas ORDER BY fecha_agregado DESC')
@@ -1234,8 +1241,11 @@ def get_unidades_reservadas():
 # API para agregar unidad reservada
 @app.route('/api/unidades_reservadas', methods=['POST'])
 @login_required
-@module_permission_required('planeamiento')
 def add_unidad_reservada():
+    # Verificar que tenga permiso de planeamiento O ventas
+    if not (current_user.has_permission('planeamiento') or current_user.has_permission('ventas')):
+        return jsonify({'error': 'No tienes permisos para acceder a esta información'}), 403
+    
     data = request.json
     numero_fabrica = data.get('numero_fabrica', '').strip()
     vendedor = data.get('vendedor', '').strip()
@@ -1266,8 +1276,11 @@ def add_unidad_reservada():
 # API para eliminar unidad reservada
 @app.route('/api/unidades_reservadas/<numero_fabrica>', methods=['DELETE'])
 @login_required
-@module_permission_required('planeamiento')
 def delete_unidad_reservada(numero_fabrica):
+    # Verificar que tenga permiso de planeamiento O ventas
+    if not (current_user.has_permission('planeamiento') or current_user.has_permission('ventas')):
+        return jsonify({'error': 'No tienes permisos para acceder a esta información'}), 403
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     

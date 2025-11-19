@@ -1,0 +1,9 @@
+# Variables de Entorno para Render
+# Copia estas variables EXACTAMENTE en Render Dashboard → Environment Variables
+
+DATABASE_URL=postgresql://neondb_owner:npg_6xKApLX7kfzo@ep-steep-brook-a4iac5bb-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
+SECRET_KEY=c4f8a2b9e7d3f1a8c9b2d5e7f3a1b8c4d9e2f7a3b1c8d5e9f2a7b4c1d8e3f9a2
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=LShm.2701
+ADMIN_EMAIL=admin@example.com
+PORT=10000
