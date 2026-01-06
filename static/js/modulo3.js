@@ -722,7 +722,6 @@ function convertirADisponible() {
     // 4: Fecha Finanzas, 5: Despacho Estimado, 6: Entrega Estimada,
     // 7: Fecha Recepción, 8: Ubicación, 9: Días Stock, 10: Precio p/ Disponible,
     // 11: Cód. Cliente, 12: Cliente, 13: Vendedor, 14: Operación
-    // 15: Precio Base, 16: Descuento Aplicado (%)
     const disponibles = filasFiltradas.map(row => {
         return {
             numero_fabrica: row[0] || '',
@@ -739,9 +738,7 @@ function convertirADisponible() {
             cod_cliente: row[11] || '',
             cliente: row[12] || '',
             vendedor: row[13] || '',
-            operacion: row[14] || '',
-            precio_base: row[15] || 0,
-            descuento_aplicado: row[16] || 0
+            operacion: row[14] || ''
         };
     });
     

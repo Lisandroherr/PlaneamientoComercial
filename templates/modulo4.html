@@ -42,10 +42,9 @@
                         <th><i class="fas fa-hashtag"></i> Nº Fábrica</th>
                         <th><i class="fas fa-car"></i> Modelo/Versión</th>
                         <th><i class="fas fa-palette"></i> Color</th>
+                        <th><i class="fas fa-shipping-fast"></i> Fecha de Despacho</th>
                         <th><i class="fas fa-calendar-check"></i> Entrega Estimada</th>
                         <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
-                        <th><i class="fas fa-percentage"></i> Desc. Individual</th>
-                        <th><i class="fas fa-tags"></i> Desc. Adicionales</th>
                         <th><i class="fas fa-dollar-sign"></i> Precio Final</th>
                     </tr>
                 </thead>
@@ -94,31 +93,63 @@
 
 <!-- Modal de Unidades Reservadas -->
 <div id="modalReservadas" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
         <div class="modal-header">
             <h3><i class="fas fa-bookmark"></i> Gestionar Unidades Reservadas</h3>
             <button class="modal-close" onclick="closeReservadasModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <p style="color: #718096; margin-bottom: 20px;">
-                Agrega números de fábrica de unidades reservadas. Estas unidades NO aparecerán en la tabla de disponibles.
+            <p style="color: #718096; margin-bottom: 20px; font-size: 0.95em;">
+                <i class="fas fa-info-circle"></i> Agrega números de fábrica de unidades reservadas. Estas unidades NO aparecerán en la tabla de disponibles.
             </p>
             
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" 
-                       id="inputReservada" 
-                       placeholder="Nº Fábrica (Ej: YAC125090007)" 
-                       style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 5px;">
-                <input type="text" 
-                       id="inputVendedor" 
-                       placeholder="Nombre del Vendedor" 
-                       style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 5px;">
-                <button class="btn btn-primary" onclick="addReservada()">
-                    <i class="fas fa-plus"></i> Agregar
-                </button>
+            <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #e2e8f0;">
+                <div style="display: grid; grid-template-columns: 2fr 2fr auto; gap: 12px; align-items: end;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2d3748; font-size: 0.9em;">
+                            <i class="fas fa-id-card"></i> Nº de Fábrica (YAC)
+                        </label>
+                        <input type="text" 
+                               id="inputReservada" 
+                               placeholder="Ej: YAC125090007" 
+                               style="width: 100%; padding: 12px; border: 2px solid #cbd5e0; border-radius: 6px; font-weight: 500; text-transform: uppercase;"
+                               oninput="buscarModelo(this.value)">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2d3748; font-size: 0.9em;">
+                            <i class="fas fa-user"></i> Nombre del Vendedor
+                        </label>
+                        <input type="text" 
+                               id="inputVendedor" 
+                               placeholder="Nombre del vendedor" 
+                               style="width: 100%; padding: 12px; border: 2px solid #cbd5e0; border-radius: 6px; font-weight: 500;">
+                    </div>
+                    <button class="btn btn-primary" onclick="addReservada()" style="padding: 12px 24px; height: 46px;">
+                        <i class="fas fa-plus"></i> Agregar
+                    </button>
+                </div>
+                
+                <!-- Información del modelo encontrado -->
+                <div id="modeloInfo" style="margin-top: 15px; padding: 12px; background: #dbeafe; border-radius: 6px; display: none; border-left: 4px solid #2563eb;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-car" style="color: #1e40af; font-size: 1.2em;"></i>
+                        <div>
+                            <div style="font-size: 0.85em; color: #1e40af; font-weight: 600;">Modelo encontrado:</div>
+                            <div id="modeloEncontrado" style="font-weight: 700; color: #1e3a8a; font-size: 1.05em;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <div id="listaReservadas" style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 5px; padding: 10px;">
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 15px 0; color: #2d3748; font-size: 1.1em; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-list"></i> 
+                    Unidades Reservadas 
+                    <span style="background: #EB0A1E; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;" id="totalReservadas">0</span>
+                </h4>
+            </div>
+            
+            <div id="listaReservadas" style="max-height: 450px; overflow-y: auto; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
                 <!-- Lista de unidades reservadas -->
             </div>
         </div>
@@ -225,17 +256,31 @@ window.exportarAExcel = function() {
     
     // Preparar datos para Excel
     const datos = disponiblesFiltrados.map(item => {
-        // Formatear fecha a DD/MM/YYYY - NO mostrar si ubicación es "Preventa"
-        let fechaFormateada = '';
+        // Formatear fecha de despacho a DD/MM/YYYY
+        let fechaDespachoFormateada = '';
+        if (item.despacho_estimado) {
+            try {
+                const fecha = new Date(item.despacho_estimado);
+                const dia = String(fecha.getDate()).padStart(2, '0');
+                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                const anio = fecha.getFullYear();
+                fechaDespachoFormateada = `${dia}/${mes}/${anio}`;
+            } catch (e) {
+                fechaDespachoFormateada = '';
+            }
+        }
+        
+        // Formatear fecha de entrega a DD/MM/YYYY - NO mostrar si ubicación es "Preventa"
+        let fechaEntregaFormateada = '';
         if (item.ubicacion !== 'Preventa' && item.entrega_estimada) {
             try {
                 const fecha = new Date(item.entrega_estimada);
                 const dia = String(fecha.getDate()).padStart(2, '0');
                 const mes = String(fecha.getMonth() + 1).padStart(2, '0');
                 const anio = fecha.getFullYear();
-                fechaFormateada = `${dia}/${mes}/${anio}`;
+                fechaEntregaFormateada = `${dia}/${mes}/${anio}`;
             } catch (e) {
-                fechaFormateada = '';
+                fechaEntregaFormateada = '';
             }
         }
         
@@ -243,10 +288,9 @@ window.exportarAExcel = function() {
             'Nº Fábrica': item.numero_fabrica || '',
             'Modelo/Versión': item.modelo_version || '',
             'Color': item.color || '',
-            'Entrega Estimada': fechaFormateada,
+            'Fecha de Despacho': fechaDespachoFormateada,
+            'Entrega Estimada': fechaEntregaFormateada,
             'Ubicación': item.ubicacion || '',
-            'Desc. Individual': (item.descuento_individual || 0) + '%',
-            'Desc. Adicionales': (item.descuento_adicional || 0) + '%',
             'Precio Final': '$' + (item.precio_disponible || 0).toLocaleString('es-CL')
         };
     });
@@ -260,10 +304,9 @@ window.exportarAExcel = function() {
         { wch: 15 }, // Nº Fábrica
         { wch: 35 }, // Modelo/Versión
         { wch: 20 }, // Color
-        { wch: 15 }, // Entrega Estimada
+        { wch: 18 }, // Fecha de Despacho
+        { wch: 18 }, // Entrega Estimada
         { wch: 15 }, // Ubicación
-        { wch: 13 }, // Desc. Individual
-        { wch: 15 }, // Desc. Adicionales
         { wch: 15 }  // Precio Final
     ];
     ws['!cols'] = colWidths;

@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}Kinto - Reservas de Alquiler{% endblock %}
+{% block icon %}car-side{% endblock %}
+{% block page_title %}Kinto - Reservas de Lavadero para Alquiler{% endblock %}
+{% block back_url %}{{ url_for('usados') }}{% endblock %}
+{% block back_text %}Volver a Usados{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <!-- Layout: Calendario + Panel Turnos -->
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start;">
+        
+        <!-- CALENDARIO -->
+        <div class="card" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button onclick="mesAnterior()" class="btn-nav">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h3 style="margin: 0; color: #2d3748; font-size: 1.3em;" id="mesActual">Diciembre 2025</h3>
+                <button onclick="mesSiguiente()" class="btn-nav">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <div id="calendario" class="calendario-grid">
+                <!-- Generado dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- PANEL TURNOS -->
+        <div class="card" style="padding: 20px;">
+            <h3 style="margin: 0 0 20px 0; color: #2d3748; font-size: 1.2em;">
+                <i class="fas fa-clock"></i> Turnos Disponibles
+            </h3>
+            
+            <div id="listaTurnos" style="max-height: 600px; overflow-y: auto;">
+                <div style="text-align: center; padding: 80px 20px; color: #cbd5e0;">
+                    <i class="fas fa-calendar-alt" style="font-size: 5em; margin-bottom: 15px; display: block;"></i>
+                    <p style="font-size: 1.1em;">Selecciona un día en el calendario</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+</div>
+
+<!-- Modal Confirmar Reserva -->
+<div id="modalReserva" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;">
+        <h3 style="margin: 0 0 20px 0; color: #2d3748;">
+            <i class="fas fa-calendar-check"></i> Confirmar Reserva Kinto
+        </h3>
+        
+        <div style="background: #f7fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #EB0A1E;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #718096;">Fecha:</span>
+                <strong id="reservaFecha" style="color: #2d3748;"></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #718096;">Horario:</span>
+                <strong id="reservaHorario" style="color: #2d3748;"></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #718096;">Duración:</span>
+                <strong id="reservaDuracion" style="color: #2d3748;"></strong>
+            </div>
+        </div>
+        
+        <div style="background: #ebf8ff; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #4299e1;">
+            <div style="color: #2c5282; font-size: 0.9em;">
+                <i class="fas fa-hands-wash"></i> <strong>Limpieza:</strong> Standard Plus (50 minutos) - Fijo para todos los Kinto
+            </div>
+        </div>
+        
+        <form id="formReserva" style="margin-bottom: 20px;">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #2d3748;">
+                    <i class="fas fa-car"></i> Dominio del vehículo Kinto: <span style="color: #EB0A1E;">*</span>
+                </label>
+                <input type="text" id="reservaDominio" required maxlength="10" 
+                       placeholder="Ej: AA123BB"
+                       style="width: 100%; padding: 12px; border: 2px solid #cbd5e0; border-radius: 6px; text-transform: uppercase; font-size: 1.1em; font-weight: 600;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #2d3748;">
+                    <i class="fas fa-comment-alt"></i> Observaciones (opcional):
+                </label>
+                <textarea id="reservaObservaciones" rows="3" 
+                          placeholder="Ej: Cliente VIP, prioridad alta..."
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; resize: vertical;"></textarea>
+            </div>
+        </form>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="cerrarModalReserva()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button onclick="confirmarReserva()" class="btn btn-primary">
+                <i class="fas fa-check"></i> Confirmar Reserva
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+}
+
+.btn-secondary {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #3182ce;
+}
+
+.btn-nav {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #2d3748;
+    font-size: 1.2em;
+    transition: all 0.2s;
+}
+
+.btn-nav:hover {
+    background: #EB0A1E;
+    color: white;
+    border-color: #EB0A1E;
+}
+
+.calendario-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.dia-semana {
+    text-align: center;
+    font-weight: 700;
+    color: #718096;
+    font-size: 0.85em;
+    padding: 10px 0;
+}
+
+.dia-calendario {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2d3748;
+    transition: all 0.2s;
+    background: white;
+}
+
+.dia-calendario:hover {
+    border-color: #EB0A1E;
+    background: #fff5f5;
+}
+
+.dia-calendario.vacio {
+    border: none;
+    cursor: default;
+    background: transparent;
+}
+
+.dia-calendario.seleccionado {
+    background: #EB0A1E;
+    color: white;
+    border-color: #EB0A1E;
+    box-shadow: 0 4px 8px rgba(235, 10, 30, 0.3);
+}
+
+.dia-calendario.hoy {
+    border-color: #4299e1;
+    background: #ebf8ff;
+    color: #2c5282;
+}
+
+.dia-calendario.pasado {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.gap-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.gap-card:hover {
+    border-color: #48bb78;
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.15);
+}
+
+.gap-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.horario-badge {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.1em;
+    display: inline-block;
+}
+
+.duracion-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+@media (max-width: 768px) {
+    .gap-card {
+        padding: 15px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85em;
+    }
+    
+    .gap-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+let gapsDisponibles = [];
+let gapSeleccionado = null;
+let mesActual = new Date();
+let diaSeleccionado = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderizarCalendario();
+});
+
+function renderizarCalendario() {
+    const container = document.getElementById('calendario');
+    const mes = mesActual.getMonth();
+    const anio = mesActual.getFullYear();
+    
+    // Actualizar título
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    document.getElementById('mesActual').textContent = `${meses[mes]} ${anio}`;
+    
+    // Días de la semana
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    let html = diasSemana.map(d => `<div class="dia-semana">${d}</div>`).join('');
+    
+    // Primer día del mes
+    const primerDia = new Date(anio, mes, 1);
+    const ultimoDia = new Date(anio, mes + 1, 0);
+    const diasEnMes = ultimoDia.getDate();
+    const primerDiaSemana = primerDia.getDay();
+    
+    // Días vacíos al inicio
+    for (let i = 0; i < primerDiaSemana; i++) {
+        html += '<div class="dia-calendario vacio"></div>';
+    }
+    
+    // Días del mes
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+        const fecha = new Date(anio, mes, dia);
+        fecha.setHours(0, 0, 0, 0);
+        
+        const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const esHoy = fecha.getTime() === hoy.getTime();
+        const esPasado = fecha < hoy;
+        const esSeleccionado = diaSeleccionado === fechaStr;
+        
+        let clases = 'dia-calendario';
+        if (esHoy) clases += ' hoy';
+        if (esPasado) clases += ' pasado';
+        if (esSeleccionado) clases += ' seleccionado';
+        
+        html += `<div class="${clases}" onclick="seleccionarDia('${fechaStr}', ${esPasado})">${dia}</div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function mesAnterior() {
+    mesActual.setMonth(mesActual.getMonth() - 1);
+    renderizarCalendario();
+}
+
+function mesSiguiente() {
+    mesActual.setMonth(mesActual.getMonth() + 1);
+    renderizarCalendario();
+}
+
+async function seleccionarDia(fecha, esPasado) {
+    if (esPasado) {
+        mostrarAlerta('No puedes seleccionar fechas pasadas', 'error');
+        return;
+    }
+    
+    diaSeleccionado = fecha;
+    renderizarCalendario();
+    await cargarGaps(fecha);
+}
+
+async function cargarGaps(fecha) {
+    try {
+        const response = await fetch(`/api/kinto/gaps/${fecha}`);
+        if (!response.ok) throw new Error('Error al cargar gaps');
+        
+        gapsDisponibles = await response.json();
+        
+        renderizarGaps();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar turnos disponibles', 'error');
+    }
+}
+
+function renderizarGaps() {
+    const container = document.getElementById('listaTurnos');
+    
+    if (gapsDisponibles.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 60px 20px; text-align: center;">
+                <i class="fas fa-ban" style="font-size: 4em; color: #f56565; margin-bottom: 20px; display: block;"></i>
+                <h3 style="color: #2d3748; margin-bottom: 10px;">Sin turnos disponibles</h3>
+                <p style="color: #718096; font-size: 0.95em;">El Gantt está ocupado o los huecos son menores a 50 minutos (Standard Plus).</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = gapsDisponibles.map((gap, index) => {
+        const minutosDuracion = gap.duracion_minutos;
+        const horas = Math.floor(minutosDuracion / 60);
+        const minutos = minutosDuracion % 60;
+        const duracionTexto = horas > 0 
+            ? `${horas}h ${minutos}min` 
+            : `${minutos} min`;
+        
+        return `
+            <div class="gap-card">
+                <div class="gap-card-header">
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 10px;">
+                            <i class="fas fa-clock" style="color: #48bb78; margin-right: 8px;"></i>
+                            <span class="horario-badge">${gap.hora_inicio} - ${gap.hora_fin}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-hourglass-half" style="color: #EB0A1E; margin-right: 8px;"></i>
+                            <span class="duracion-badge">${duracionTexto} disponibles</span>
+                        </div>
+                    </div>
+                    <button onclick="iniciarReserva(${index})" class="btn btn-primary" style="padding: 12px 24px;">
+                        <i class="fas fa-calendar-plus"></i> Reservar
+                    </button>
+                </div>
+                
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e2e8f0;">
+                    <div style="display: flex; gap: 20px; color: #718096; font-size: 0.9em; flex-wrap: wrap;">
+                        <div>
+                            <i class="fas fa-stopwatch"></i>
+                            <span>Inicio: <strong style="color: #2d3748;">${gap.hora_inicio}</strong></span>
+                        </div>
+                        <div>
+                            <i class="fas fa-flag-checkered"></i>
+                            <span>Fin: <strong style="color: #2d3748;">${gap.hora_fin}</strong></span>
+                        </div>
+                        <div>
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Capacidad: <strong style="color: #2d3748;">${duracionTexto}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function iniciarReserva(gapIndex) {
+    gapSeleccionado = gapsDisponibles[gapIndex];
+    
+    if (!diaSeleccionado) {
+        mostrarAlerta('Error: No hay día seleccionado', 'error');
+        return;
+    }
+    
+    const fechaObj = new Date(diaSeleccionado + 'T00:00:00');
+    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    document.getElementById('reservaFecha').textContent = fechaFormateada;
+    document.getElementById('reservaHorario').textContent = 
+        `${gapSeleccionado.hora_inicio} - ${gapSeleccionado.hora_fin}`;
+    
+    const horas = Math.floor(gapSeleccionado.duracion_minutos / 60);
+    const minutos = gapSeleccionado.duracion_minutos % 60;
+    const duracionTexto = horas > 0 ? `${horas}h ${minutos}min` : `${minutos} min`;
+    document.getElementById('reservaDuracion').textContent = duracionTexto;
+    
+    // Limpiar formulario
+    document.getElementById('formReserva').reset();
+    
+    document.getElementById('modalReserva').style.display = 'flex';
+}
+
+function cerrarModalReserva() {
+    document.getElementById('modalReserva').style.display = 'none';
+    gapSeleccionado = null;
+}
+
+async function confirmarReserva() {
+    const dominio = document.getElementById('reservaDominio').value.trim();
+    const observaciones = document.getElementById('reservaObservaciones').value.trim();
+    
+    if (!dominio) {
+        mostrarAlerta('Ingresa el dominio del vehículo', 'error');
+        return;
+    }
+    
+    if (!gapSeleccionado || !diaSeleccionado) {
+        mostrarAlerta('Error: Gap o fecha no seleccionado', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/kinto/reservas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fecha: diaSeleccionado,
+                hora_inicio: gapSeleccionado.hora_inicio,
+                dominio: dominio,
+                observaciones: observaciones
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al crear reserva');
+        }
+        
+        const result = await response.json();
+        mostrarAlerta(`Reserva Kinto creada para ${dominio}`, 'success');
+        cerrarModalReserva();
+        
+        // Recargar gaps para actualizar disponibilidad
+        await cargarGaps(diaSeleccionado);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const colores = {
+        success: { bg: '#48bb78', icon: 'check-circle' },
+        error: { bg: '#f56565', icon: 'exclamation-circle' },
+        info: { bg: '#4299e1', icon: 'info-circle' }
+    };
+    
+    const color = colores[tipo] || colores.info;
+    
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${color.bg};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-weight: 600;
+        max-width: 400px;
+    `;
+    alerta.innerHTML = `<i class="fas fa-${color.icon}"></i> ${mensaje}`;
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => alerta.remove(), 5000);
+}
+</script>
+{% endblock %}

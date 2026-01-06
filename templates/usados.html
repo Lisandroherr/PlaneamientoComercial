@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planeamiento - Sistema de Administración</title>
+    <title>Usados - Gestión de Vehículos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Dark Mode Variables */
         :root {
             --bg-color: #f5f5f5;
             --text-color: #2d3748;
@@ -150,7 +149,7 @@
             }
         }
         
-        @media (max-width: 1199px) and (min-width: 769px) {
+        @media (min-width: 769px) and (max-width: 1199px) {
             .cards-container {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -159,6 +158,55 @@
         @media (max-width: 768px) {
             .cards-container {
                 grid-template-columns: 1fr;
+                padding: 0 15px;
+            }
+            
+            .content-wrapper {
+                padding: 20px 15px !important;
+            }
+            
+            .modulo-card {
+                padding: 25px 20px;
+                min-height: 140px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .modulo-card:active {
+                transform: translateY(-4px) scale(0.98);
+            }
+            
+            .modulo-card i {
+                font-size: 2.2em !important;
+            }
+            
+            .modulo-card h3 {
+                font-size: 1.15em;
+                margin-bottom: 10px;
+            }
+            
+            .modulo-card p {
+                font-size: 0.9em;
+                line-height: 1.5;
+            }
+            
+            /* Header responsive */
+            body > div:first-child {
+                padding: 12px 15px !important;
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+            }
+            
+            body > div:first-child h1 {
+                font-size: 1.1em !important;
+            }
+            
+            body > div:first-child a {
+                width: 100%;
+                justify-content: center;
+                padding: 10px 18px !important;
+                font-size: 0.9em !important;
             }
         }
     </style>
@@ -166,7 +214,7 @@
 <body>
     <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
         <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
-            <i class="fas fa-chart-line"></i> Planeamiento
+            <i class="fas fa-car"></i> Gestión de Vehículos Usados
         </h1>
         <a href="/" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
             <i class="fas fa-arrow-left"></i> Volver al Inicio
@@ -176,67 +224,73 @@
     <div class="content-wrapper">
         <div class="cards-container">
         
-        <!-- Módulo 1: Lista de Precios -->
-        <a href="{{ url_for('modulo1') }}" class="modulo-card">
-            <i class="fas fa-tags" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Lista de Precios</h3>
-            <p>Gestiona precios de vehículos en ARS y USD con cotizaciones actualizadas.</p>
+        <!-- Stock de Vehículos - Todos excepto Clase A -->
+        {% if user_role in ['usuario_plus', 'usuario_plus_plus', 'usuario_plus_plus_plus', 'clase_e', 'clase_f', 'clase_g', 'supervisor', 'admin'] %}
+        <a href="/usados/stock" class="modulo-card">
+            <i class="fas fa-warehouse" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Stock de Vehículos</h3>
+            <p>Gestión de KINTO, TEST DRIVE y vehículos USADOS. Solicitar turnos de lavado.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 2: Bitácora -->
-        <a href="{{ url_for('modulo2') }}" class="modulo-card">
-            <i class="fas fa-book" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Bitácora</h3>
-            <p>Registra operaciones con modelo, vendedor y número de operación.</p>
+        <!-- Ingresos Usados - Clase B, Clase E, Clase G, Supervisor, Admin -->
+        {% if user_role in ['usuario_plus', 'clase_e', 'clase_g', 'supervisor', 'admin'] %}
+        <a href="/usados/ingresos" class="modulo-card">
+            <i class="fas fa-exchange-alt" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Ingresos y Egresos</h3>
+            <p>Registro de vehículos usados: ingresos para limpieza y ventas del stock.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 3: Seguimiento -->
-        <a href="{{ url_for('modulo3') }}" class="modulo-card">
-            <i class="fas fa-file-excel" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Seguimiento</h3>
-            <p>Carga y limpia automáticamente tus reportes diarios de Excel.</p>
+        <!-- Planificación de Operaciones - Clase B, Supervisor y Admin -->
+        {% if user_role in ['usuario_plus', 'supervisor', 'admin'] %}
+        <a href="/usados/planificacion" class="modulo-card">
+            <i class="fas fa-calendar-alt" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Planificación de Operaciones</h3>
+            <p>Configuración y planificación del lavadero. Vista Gantt de operaciones.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 4: Disponible -->
-        <a href="{{ url_for('modulo4') }}" class="modulo-card">
-            <i class="fas fa-car" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Disponible</h3>
-            <p>Gestión de unidades disponibles y reservadas en tiempo real.</p>
+        <!-- Lavadero - Todos excepto Clase C y D -->
+        {% if user_role in ['user', 'usuario_plus', 'clase_e', 'clase_f', 'clase_g', 'supervisor', 'admin'] %}
+        <a href="/usados/lavadero" class="modulo-card">
+            <i class="fas fa-hands-wash" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Lavadero</h3>
+            <p>Panel para operarios del lavadero. Gestión de operaciones diarias.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 5: Análisis de Seguimiento -->
-        <a href="{{ url_for('modulo5') }}" class="modulo-card">
-            <i class="fas fa-cogs" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Análisis de Seguimiento</h3>
-            <p>Procesamiento avanzado de archivos SIAC e INTEGRA con VLOOKUP.</p>
+        <!-- Registro de Lavados - Solo Supervisor y Admin -->
+        {% if user_role in ['supervisor', 'admin'] %}
+        <a href="/usados/registro-lavados" class="modulo-card">
+            <i class="fas fa-history" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Registro de Lavados</h3>
+            <p>Histórico completo de todas las operaciones realizadas por vehículo.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 6: Dashboard -->
-        <a href="{{ url_for('modulo6') }}" class="modulo-card">
+        <!-- Reportes - Solo Supervisor y Admin -->
+        {% if user_role in ['supervisor', 'admin'] %}
+        <a href="/usados/reportes" class="modulo-card">
             <i class="fas fa-chart-bar" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Dashboard</h3>
-            <p>Panel de control con métricas y análisis de rendimiento.</p>
+            <h3>Reportes</h3>
+            <p>Análisis de tiempos, productividad y métricas del lavadero.</p>
         </a>
+        {% endif %}
         
-        <!-- Módulo 7: Análisis de Seguimiento 2 -->
-        <a href="{{ url_for('modulo7') }}" class="modulo-card">
-            <i class="fas fa-file-invoice" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Análisis de Seguimiento 2</h3>
-            <p>Procesamiento avanzado con hojas hoy/ayer/integra y edición en línea.</p>
+        <!-- Proveedores - Clase B, Clase G, Supervisor y Admin -->
+        {% if user_role in ['usuario_plus', 'clase_g', 'supervisor', 'admin'] %}
+        <a href="/usados/proveedores" class="modulo-card">
+            <i class="fas fa-truck" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Proveedores</h3>
+            <p>Gestión de proveedores para el departamento de usados.</p>
         </a>
-        
-        <!-- Gestión de Créditos -->
-        <a href="/planeamiento/creditos" class="modulo-card">
-            <i class="fas fa-credit-card" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Planes de Crédito</h3>
-            <p>Gestiona planes de financiación con plazos, tasas y quebrantos configurables.</p>
-        </a>
+        {% endif %}
         
         </div>
     </div>
     
     <script>
-        // Cargar preferencia de dark mode desde localStorage
         window.addEventListener('DOMContentLoaded', () => {
             const darkMode = localStorage.getItem('darkMode');
             if (darkMode === 'enabled') {

@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+
+{% block title %}Planeamiento - Créditos{% endblock %}
+{% block icon %}credit-card{% endblock %}
+{% block page_title %}Gestión de Planes de Crédito{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div>
+            <h2 style="margin: 0; color: #2d3748; font-size: 1.3em;">
+                <i class="fas fa-percentage"></i> Planes de Crédito Disponibles
+            </h2>
+            <p style="color: #718096; margin-top: 8px;">
+                Configure los planes de financiación con sus plazos, tasas y quebrantos correspondientes.
+            </p>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; gap: 8px; background: #f7fafc; padding: 5px; border-radius: 6px;">
+                <button onclick="filtrarPorTipo('todos')" id="filtroTodos" class="btn-filtro activo">
+                    <i class="fas fa-list"></i> Todos
+                </button>
+                <button onclick="filtrarPorTipo('pesos')" id="filtroPesos" class="btn-filtro">
+                    <i class="fas fa-dollar-sign"></i> Pesos
+                </button>
+                <button onclick="filtrarPorTipo('uva')" id="filtroUva" class="btn-filtro">
+                    <i class="fas fa-chart-line"></i> UVA
+                </button>
+            </div>
+            <button onclick="abrirModalNuevoPlan()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Plan
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de Planes -->
+    <div class="table-container" style="max-height: 600px; overflow: auto;">
+        <table id="tablaPlanes">
+            <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                <tr>
+                    <th style="width: 250px;">Nombre del Plan</th>
+                    <th style="width: 100px;">Tipo</th>
+                    <th>Plazos Disponibles</th>
+                    <th>Tasas (%)</th>
+                    <th>Quebrantos (%)</th>
+                    <th style="width: 100px;">Estado</th>
+                    <th style="width: 150px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPlanesBody">
+                <!-- Generado dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Nuevo/Editar Plan -->
+<div id="modalPlan" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0;" id="modalTitulo">
+            <i class="fas fa-plus-circle"></i> Nuevo Plan de Crédito
+        </h3>
+        
+        <form id="formPlan" onsubmit="guardarPlan(event)">
+            <!-- Nombre del Plan -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-tag"></i> Nombre del Plan
+                </label>
+                <input type="text" id="nombrePlan" required 
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Ej: Plan Toyota Estándar">
+            </div>
+
+            <!-- Tipo de Crédito -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-money-bill-wave"></i> Tipo de Crédito
+                </label>
+                <select id="tipoCredito" required
+                        style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                        onchange="toggleInflacionField()">
+                    <option value="pesos">Pesos (tradicional)</option>
+                    <option value="uva">UVA (ajustado por inflación)</option>
+                </select>
+                <small style="color: #718096; margin-top: 5px; display: block;">
+                    UVA: Las cuotas se ajustan según el índice CER (inflación)
+                </small>
+            </div>
+
+            <!-- Tasa de Inflación (solo para UVA) -->
+            <div id="campoInflacion" style="margin-bottom: 20px; display: none;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-chart-line"></i> Inflación Mensual Estimada (%)
+                </label>
+                <input type="number" id="tasaInflacion" min="0" max="50" step="0.1" value="4.0"
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Ej: 4.0">
+                <small style="color: #718096; margin-top: 5px; display: block;">
+                    Se usa para proyectar el valor futuro de las cuotas UVA (default: 4%)
+                </small>
+            </div>
+
+            <!-- Importe Máximo a Financiar -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-dollar-sign"></i> Importe Máximo a Financiar
+                </label>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <input type="number" id="importeMaximo" min="0" step="1000"
+                           style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                           placeholder="Ej: 10000000">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap;">
+                        <input type="checkbox" id="sinLimite" onchange="toggleImporteMaximo()">
+                        <span>Sin límite</span>
+                    </label>
+                </div>
+                <small style="color: #718096; margin-top: 5px; display: block;">
+                    Define el monto máximo que se puede financiar con este plan
+                </small>
+            </div>
+
+            <!-- Selector de Plazos -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-calendar-alt"></i> Plazos Disponibles (meses)
+                </label>
+                <p style="color: #718096; font-size: 0.9em; margin-bottom: 10px;">
+                    Selecciona uno o varios plazos disponibles para este plan:
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="12" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>12 meses</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="18" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>18 meses</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="24" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>24 meses</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="36" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>36 meses</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="48" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>48 meses</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" value="60" class="plazo-checkbox" onchange="actualizarCamposTasas()">
+                        <span>60 meses</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tasas y Quebrantos por Plazo -->
+            <div id="camposTasas" style="margin-bottom: 20px;">
+                <!-- Generado dinámicamente según plazos seleccionados -->
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
+                <button type="button" onclick="cerrarModalPlan()" class="btn" style="background: #718096; color: white;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Plan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.table-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #f7fafc;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #2d3748;
+    border-bottom: 2px solid #cbd5e0;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+tbody tr:hover {
+    background: #f7fafc;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.9em;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge-danger {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.plazo-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+label:has(input[type="checkbox"]:checked) {
+    border-color: #EB0A1E !important;
+    background: #fff5f5 !important;
+}
+
+.tasa-input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border-left: 4px solid #EB0A1E;
+}
+
+.input-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #4a5568;
+    font-size: 0.9em;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+}
+
+.btn-filtro {
+    padding: 8px 15px;
+    border: none;
+    background: white;
+    color: #4a5568;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.btn-filtro:hover {
+    background: #e2e8f0;
+}
+
+.btn-filtro.activo {
+    background: #EB0A1E;
+    color: white;
+}
+
+.badge-tipo {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-uva {
+    background: #e0f2fe;
+    color: #0c4a6e;
+    border: 1px solid #0284c7;
+}
+
+.badge-pesos {
+    background: #dcfce7;
+    color: #14532d;
+    border: 1px solid #16a34a;
+}
+</style>
+
+<script>
+let planEditando = null;
+
+// Cargar planes al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    cargarPlanes();
+});
+
+async function cargarPlanes() {
+    try {
+        const response = await fetch('/api/planes_credito');
+        if (!response.ok) throw new Error('Error al cargar planes');
+        
+        const planes = await response.json();
+        renderizarTablaPlanes(planes);
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar los planes de crédito', 'error');
+    }
+}
+
+function renderizarTablaPlanes(planes) {
+    const tbody = document.getElementById('tablaPlanesBody');
+    
+    if (planes.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-inbox" style="font-size: 3em; margin-bottom: 15px; display: block;"></i>
+                    <p style="font-size: 1.1em; margin: 0;">No hay planes de crédito configurados</p>
+                    <p style="margin-top: 5px;">Crea tu primer plan haciendo clic en "Nuevo Plan"</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = planes.map(plan => {
+        const plazos = Object.keys(plan.plazos).filter(p => plan.plazos[p]);
+        const tasasHTML = plazos.map(p => `${p}m: ${plan.tasas[p]}%`).join('<br>');
+        const quebrantosHTML = plazos.map(p => `${p}m: ${plan.quebrantos[p]}%`).join('<br>');
+        const plazosHTML = plazos.map(p => `<span class="plazo-badge">${p} meses</span>`).join('');
+        const importeMaximoHTML = plan.importe_maximo ? `$${parseFloat(plan.importe_maximo).toLocaleString('es-AR')}` : '<span style="color: #48bb78; font-weight: 600;">Sin límite</span>';
+        const tipoCredito = plan.tipo_credito || 'pesos';
+        
+        let tipoBadgeHTML = '';
+        let inflacionHTML = '';
+        if (tipoCredito === 'uva') {
+            tipoBadgeHTML = '<span class="badge-tipo badge-uva"><i class="fas fa-chart-line"></i> UVA</span>';
+            const tasaInflacion = plan.tasa_inflacion_mensual || 4.0;
+            inflacionHTML = `<div style="font-size: 0.8em; color: #718096; margin-top: 2px;">Inflación: ${tasaInflacion}% mensual</div>`;
+        } else {
+            tipoBadgeHTML = '<span class="badge-tipo badge-pesos"><i class="fas fa-dollar-sign"></i> Pesos</span>';
+        }
+        
+        return `
+            <tr data-tipo="${tipoCredito}">
+                <td>
+                    <strong>${plan.nombre_plan}</strong>
+                    <div style="font-size: 0.85em; color: #718096; margin-top: 4px;">
+                        Máx: ${importeMaximoHTML}
+                    </div>
+                </td>
+                <td>
+                    ${tipoBadgeHTML}
+                    ${inflacionHTML}
+                </td>
+                <td>${plazosHTML}</td>
+                <td style="font-size: 0.9em;">${tasasHTML}</td>
+                <td style="font-size: 0.9em;">${quebrantosHTML}</td>
+                <td>
+                    <span class="badge ${plan.activo ? 'badge-success' : 'badge-danger'}">
+                        ${plan.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                </td>
+                <td>
+                    <button onclick="editarPlan(${plan.id})" class="btn btn-sm" style="background: #4299e1; color: white; margin-right: 5px;">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="eliminarPlan(${plan.id})" class="btn btn-sm" style="background: #f56565; color: white;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleImporteMaximo() {
+    const checkbox = document.getElementById('sinLimite');
+    const input = document.getElementById('importeMaximo');
+    
+    if (checkbox.checked) {
+        input.value = '';
+        input.disabled = true;
+        input.style.background = '#f7fafc';
+    } else {
+        input.disabled = false;
+        input.style.background = 'white';
+    }
+}
+
+function toggleInflacionField() {
+    const tipoCredito = document.getElementById('tipoCredito').value;
+    const campoInflacion = document.getElementById('campoInflacion');
+    
+    if (tipoCredito === 'uva') {
+        campoInflacion.style.display = 'block';
+    } else {
+        campoInflacion.style.display = 'none';
+    }
+}
+
+function abrirModalNuevoPlan() {
+    planEditando = null;
+    document.getElementById('modalTitulo').innerHTML = '<i class="fas fa-plus-circle"></i> Nuevo Plan de Crédito';
+    document.getElementById('formPlan').reset();
+    document.getElementById('camposTasas').innerHTML = '';
+    document.getElementById('importeMaximo').disabled = false;
+    document.getElementById('importeMaximo').style.background = 'white';
+    document.getElementById('modalPlan').style.display = 'flex';
+}
+
+function cerrarModalPlan() {
+    document.getElementById('modalPlan').style.display = 'none';
+    planEditando = null;
+}
+
+function actualizarCamposTasas() {
+    const checkboxes = document.querySelectorAll('.plazo-checkbox:checked');
+    const plazosSeleccionados = Array.from(checkboxes).map(cb => cb.value);
+    const container = document.getElementById('camposTasas');
+    
+    if (plazosSeleccionados.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div style="border-top: 2px solid #e2e8f0; padding-top: 20px;">
+            <h4 style="margin-bottom: 15px; color: #2d3748;">
+                <i class="fas fa-percentage"></i> Tasas y Quebrantos por Plazo
+            </h4>
+            ${plazosSeleccionados.map(plazo => `
+                <div class="tasa-input-group">
+                    <div style="grid-column: 1 / -1; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                        ${plazo} meses
+                    </div>
+                    <div class="input-field">
+                        <label>Tasa (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" required
+                               id="tasa_${plazo}" placeholder="Ej: 15.5">
+                    </div>
+                    <div class="input-field">
+                        <label>Quebranto (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" required
+                               id="quebranto_${plazo}" placeholder="Ej: 5.0">
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+async function guardarPlan(event) {
+    event.preventDefault();
+    
+    const nombrePlan = document.getElementById('nombrePlan').value;
+    const checkboxes = document.querySelectorAll('.plazo-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        mostrarAlerta('Debes seleccionar al menos un plazo', 'error');
+        return;
+    }
+    
+    const plazos = {};
+    const tasas = {};
+    const quebrantos = {};
+    
+    checkboxes.forEach(cb => {
+        const plazo = cb.value;
+        plazos[plazo] = true;
+        tasas[plazo] = parseFloat(document.getElementById(`tasa_${plazo}`).value);
+        quebrantos[plazo] = parseFloat(document.getElementById(`quebranto_${plazo}`).value);
+    });
+    
+    const sinLimite = document.getElementById('sinLimite').checked;
+    const importeMaximo = sinLimite ? null : parseFloat(document.getElementById('importeMaximo').value);
+    
+    // Validar que si no es sin límite, debe tener un valor
+    if (!sinLimite && (!importeMaximo || importeMaximo <= 0)) {
+        mostrarAlerta('Debes ingresar un importe máximo o marcar "Sin límite"', 'error');
+        return;
+    }
+    
+    const tipoCredito = document.getElementById('tipoCredito').value;
+    const tasaInflacion = tipoCredito === 'uva' ? parseFloat(document.getElementById('tasaInflacion').value) || 4.0 : null;
+    
+    const data = {
+        nombre_plan: nombrePlan,
+        tipo_credito: tipoCredito,
+        tasa_inflacion: tasaInflacion,
+        importe_maximo: importeMaximo,
+        plazos: plazos,
+        tasas: tasas,
+        quebrantos: quebrantos
+    };
+    
+    try {
+        const url = planEditando ? `/api/planes_credito/${planEditando}` : '/api/planes_credito';
+        const method = planEditando ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar el plan');
+        }
+        
+        mostrarAlerta(planEditando ? 'Plan actualizado exitosamente' : 'Plan creado exitosamente', 'success');
+        cerrarModalPlan();
+        cargarPlanes();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+async function editarPlan(id) {
+    try {
+        const response = await fetch('/api/planes_credito');
+        if (!response.ok) throw new Error('Error al cargar plan');
+        
+        const planes = await response.json();
+        const plan = planes.find(p => p.id === id);
+        
+        if (!plan) throw new Error('Plan no encontrado');
+        
+        planEditando = id;
+        document.getElementById('modalTitulo').innerHTML = '<i class="fas fa-edit"></i> Editar Plan de Crédito';
+        document.getElementById('nombrePlan').value = plan.nombre_plan;
+        document.getElementById('tipoCredito').value = plan.tipo_credito || 'pesos';
+        
+        // Configurar tasa de inflación para UVA
+        document.getElementById('tasaInflacion').value = plan.tasa_inflacion_mensual || 4.0;
+        toggleInflacionField();
+        
+        // Configurar importe máximo
+        const sinLimite = !plan.importe_maximo || plan.importe_maximo === 0;
+        document.getElementById('sinLimite').checked = sinLimite;
+        document.getElementById('importeMaximo').value = sinLimite ? '' : plan.importe_maximo;
+        document.getElementById('importeMaximo').disabled = sinLimite;
+        document.getElementById('importeMaximo').style.background = sinLimite ? '#f7fafc' : 'white';
+        
+        // Marcar checkboxes de plazos
+        document.querySelectorAll('.plazo-checkbox').forEach(cb => {
+            cb.checked = plan.plazos[cb.value] === true;
+        });
+        
+        actualizarCamposTasas();
+        
+        // Cargar tasas y quebrantos
+        Object.keys(plan.tasas).forEach(plazo => {
+            const tasaInput = document.getElementById(`tasa_${plazo}`);
+            const quebrantoInput = document.getElementById(`quebranto_${plazo}`);
+            if (tasaInput) tasaInput.value = plan.tasas[plazo];
+            if (quebrantoInput) quebrantoInput.value = plan.quebrantos[plazo];
+        });
+        
+        document.getElementById('modalPlan').style.display = 'flex';
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar el plan', 'error');
+    }
+}
+
+async function eliminarPlan(id) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este plan de crédito?')) return;
+    
+    try {
+        const response = await fetch(`/api/planes_credito/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) throw new Error('Error al eliminar el plan');
+        
+        mostrarAlerta('Plan eliminado exitosamente', 'success');
+        cargarPlanes();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al eliminar el plan', 'error');
+    }
+}
+
+function filtrarPorTipo(tipo) {
+    // Actualizar botones
+    document.querySelectorAll('.btn-filtro').forEach(btn => btn.classList.remove('activo'));
+    document.getElementById(`filtro${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.add('activo');
+    
+    // Filtrar filas
+    const filas = document.querySelectorAll('#tablaPlanesBody tr[data-tipo]');
+    filas.forEach(fila => {
+        const tipoFila = fila.getAttribute('data-tipo');
+        if (tipo === 'todos' || tipoFila === tipo) {
+            fila.style.display = '';
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const colores = {
+        success: { bg: '#48bb78', icon: 'check-circle' },
+        error: { bg: '#f56565', icon: 'exclamation-circle' },
+        info: { bg: '#4299e1', icon: 'info-circle' }
+    };
+    
+    const color = colores[tipo] || colores.info;
+    
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${color.bg};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-weight: 600;
+        animation: slideIn 0.3s ease-out;
+    `;
+    alerta.innerHTML = `<i class="fas fa-${color.icon}"></i> ${mensaje}`;
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => {
+        alerta.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => alerta.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

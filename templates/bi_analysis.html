@@ -131,6 +131,91 @@
             background: #58595B;
             color: white;
         }
+        
+        /* ========================================
+           RESPONSIVE DESIGN - MOBILE
+           ======================================== */
+        
+        @media screen and (max-width: 768px) {
+            /* Content wrapper ajustado */
+            .content-wrapper {
+                padding: 20px 15px;
+            }
+            
+            /* Header navigation */
+            body > div:first-of-type {
+                padding: 10px 15px !important;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            body > div:first-of-type h1 {
+                font-size: 1.1em !important;
+            }
+            
+            body > div:first-of-type a {
+                font-size: 0.8em !important;
+                padding: 6px 12px !important;
+            }
+            
+            /* Cards container - una columna en móvil */
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            /* Módulo card ajustado */
+            .modulo-card {
+                padding: 20px;
+            }
+            
+            .modulo-card i {
+                font-size: 2em;
+                margin-bottom: 10px;
+            }
+            
+            .modulo-card h3 {
+                font-size: 1.1em;
+                margin-bottom: 8px;
+            }
+            
+            .modulo-card p {
+                font-size: 0.9em;
+                line-height: 1.4;
+            }
+            
+            /* Badge ajustado */
+            .badge {
+                top: 10px;
+                right: 10px;
+                padding: 4px 10px;
+                font-size: 0.7em;
+            }
+        }
+        
+        /* Tablets */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .content-wrapper {
+                padding: 30px 20px;
+            }
+            
+            .cards-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 18px;
+            }
+        }
+        
+        /* Landscape móvil */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            .cards-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            body > div:first-of-type {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>

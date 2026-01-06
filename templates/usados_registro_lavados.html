@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Lavados{% endblock %}
+{% block icon %}history{% endblock %}
+{% block page_title %}Registro de Lavados - Histórico de Operaciones{% endblock %}
+{% block back_url %}{{ url_for('usados') }}{% endblock %}
+{% block back_text %}Volver a Usados{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <!-- Filtros -->
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; font-size: 0.9em;">
+                    Desde
+                </label>
+                <input type="date" id="fechaDesde" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; font-size: 0.9em;">
+                    Hasta
+                </label>
+                <input type="date" id="fechaHasta" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; font-size: 0.9em;">
+                    Buscar Dominio
+                </label>
+                <input type="text" id="dominioFiltro" placeholder="Ej: ABC123" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="cargarRegistros()" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button onclick="exportarExcel()" class="btn btn-secondary">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <div class="card" style="padding: 20px;">
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #2d3748;">
+                <i class="fas fa-list"></i> Histórico de Operaciones
+            </h3>
+            <div id="contadorRegistros" style="background: #edf2f7; padding: 8px 15px; border-radius: 6px; font-weight: 600; color: #2d3748;">
+                0 registros
+            </div>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table id="tablaRegistros" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+                        <th style="text-align: left; padding: 12px; font-weight: 700; color: #2d3748;">Dominio</th>
+                        <th style="text-align: left; padding: 12px; font-weight: 700; color: #2d3748;">Tipo</th>
+                        <th style="text-align: left; padding: 12px; font-weight: 700; color: #2d3748;">Marca/Modelo</th>
+                        <th style="text-align: center; padding: 12px; font-weight: 700; color: #2d3748;">Alta Sistema</th>
+                        <th style="text-align: left; padding: 12px; font-weight: 700; color: #2d3748;">Operación</th>
+                        <th style="text-align: center; padding: 12px; font-weight: 700; color: #2d3748;">Programada</th>
+                        <th style="text-align: center; padding: 12px; font-weight: 700; color: #2d3748;">Horario</th>
+                        <th style="text-align: center; padding: 12px; font-weight: 700; color: #2d3748;">Ejecutada</th>
+                        <th style="text-align: center; padding: 12px; font-weight: 700; color: #2d3748;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="bodyRegistros">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 60px; color: #a0aec0;">
+                            <i class="fas fa-inbox" style="font-size: 3em; display: block; margin-bottom: 15px;"></i>
+                            Selecciona un rango de fechas para ver el historial
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(235, 10, 30, 0.3);
+}
+
+.btn-secondary {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #38a169;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(72, 187, 120, 0.3);
+}
+
+#tablaRegistros tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.2s;
+}
+
+#tablaRegistros tbody tr:hover {
+    background: #f7fafc;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-completado {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge-en-curso {
+    background: #feebc8;
+    color: #7c2d12;
+}
+
+.badge-pendiente {
+    background: #e2e8f0;
+    color: #2d3748;
+}
+
+.badge-error {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.badge-en-cola {
+    background: #e6fffa;
+    color: #234e52;
+    border: 1px solid #81e6d9;
+}
+
+.badge-usados {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.badge-kinto {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
+.badge-test-drive {
+    background: #feebc8;
+    color: #7c2d12;
+}
+</style>
+
+<script>
+let registros = [];
+
+// Inicializar fechas
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date();
+    const hace30dias = new Date();
+    hace30dias.setDate(hace30dias.getDate() - 30);
+    
+    document.getElementById('fechaDesde').value = hace30dias.toISOString().split('T')[0];
+    document.getElementById('fechaHasta').value = hoy.toISOString().split('T')[0];
+    
+    // Cargar automáticamente
+    cargarRegistros();
+});
+
+async function cargarRegistros() {
+    try {
+        const desde = document.getElementById('fechaDesde').value;
+        const hasta = document.getElementById('fechaHasta').value;
+        const dominio = document.getElementById('dominioFiltro').value;
+        
+        if (!desde || !hasta) {
+            mostrarAlerta('Selecciona un rango de fechas', 'error');
+            return;
+        }
+        
+        let url = `/api/usados/registro-lavados?desde=${desde}&hasta=${hasta}`;
+        if (dominio) {
+            url += `&dominio=${encodeURIComponent(dominio)}`;
+        }
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Error al cargar registros');
+        
+        registros = await response.json();
+        renderizarTabla();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar registros', 'error');
+    }
+}
+
+function renderizarTabla() {
+    const tbody = document.getElementById('bodyRegistros');
+    const contador = document.getElementById('contadorRegistros');
+    
+    contador.textContent = `${registros.length} registro${registros.length !== 1 ? 's' : ''}`;
+    
+    if (registros.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 60px; color: #a0aec0;">
+                    <i class="fas fa-search" style="font-size: 3em; display: block; margin-bottom: 15px;"></i>
+                    No se encontraron registros en este rango de fechas
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = registros.map(r => {
+        // Las fechas ya vienen formateadas desde el backend (YYYY-MM-DD)
+        const fechaAltaSistema = r.fecha_alta_sistema || '-';
+        
+        const fechaProgramada = r.fecha_programada || '<span style="color: #a0aec0;">Sin programar</span>';
+        
+        const horario = r.hora_inicio && r.hora_fin ? 
+            `${r.hora_inicio} - ${r.hora_fin}` : '<span style="color: #a0aec0;">-</span>';
+        
+        const fechaEjecucion = r.fecha_ejecucion || '<span style="color: #a0aec0;">Pendiente</span>';
+        
+        const estadoBadgeClass = 
+            r.estado_operacion === 'Completado' ? 'badge-completado' :
+            r.estado_operacion === 'En Curso' ? 'badge-en-curso' :
+            r.estado_operacion === 'En Cola' ? 'badge-en-cola' :
+            r.estado_operacion === 'Vencido' ? 'badge-error' : 'badge-pendiente';
+        
+        const tipoBadgeClass = 
+            r.clasificacion === 'USADOS' ? 'badge-usados' :
+            r.clasificacion === 'KINTO' ? 'badge-kinto' : 'badge-test-drive';
+        
+        return `
+            <tr>
+                <td style="padding: 12px;">
+                    <strong style="color: #2d3748; font-size: 1.05em;">${r.dominio || '-'}</strong>
+                </td>
+                <td style="padding: 12px;">
+                    <span class="badge ${tipoBadgeClass}">${r.clasificacion || '-'}</span>
+                </td>
+                <td style="padding: 12px; color: #4a5568;">
+                    ${r.marca || '-'} ${r.modelo || ''}
+                </td>
+                <td style="padding: 12px; text-align: center; color: #4a5568; font-size: 0.9em;">
+                    ${fechaAltaSistema}
+                </td>
+                <td style="padding: 12px; color: #2d3748; font-weight: 600;">
+                    ${r.operacion || '-'}
+                </td>
+                <td style="padding: 12px; text-align: center; color: #4a5568; font-size: 0.9em;">
+                    ${fechaProgramada}
+                </td>
+                <td style="padding: 12px; text-align: center; color: #4a5568; font-size: 0.9em;">
+                    ${horario}
+                </td>
+                <td style="padding: 12px; text-align: center; color: #4a5568; font-size: 0.85em;">
+                    ${fechaEjecucion}
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <span class="badge ${estadoBadgeClass}">${r.estado_operacion}</span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function exportarExcel() {
+    if (registros.length === 0) {
+        mostrarAlerta('No hay datos para exportar', 'error');
+        return;
+    }
+    
+    // Crear CSV
+    const headers = ['Dominio', 'Tipo', 'Marca', 'Modelo', 'Alta Sistema', 'Operación', 'Fecha Programada', 'Hora Inicio', 'Hora Fin', 'Fecha Ejecutada', 'Estado', 'Estado Vehiculo'];
+    const rows = registros.map(r => [
+        r.dominio || '',
+        r.clasificacion || '',
+        r.marca || '',
+        r.modelo || '',
+        r.fecha_alta_sistema || '',
+        r.operacion || '',
+        r.fecha_programada || '',
+        r.hora_inicio || '',
+        r.hora_fin || '',
+        r.fecha_ejecucion || '',
+        r.estado_operacion || '',
+        r.estado_vehiculo || ''
+    ]);
+    
+    let csv = headers.join(',') + '\n';
+    rows.forEach(row => {
+        csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+    });
+    
+    // Descargar
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `registro_lavados_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    mostrarAlerta('✅ Archivo exportado exitosamente', 'success');
+}
+
+function mostrarAlerta(mensaje, tipo = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    `;
+    
+    if (tipo === 'error') {
+        alertDiv.style.background = '#fed7d7';
+        alertDiv.style.color = '#742a2a';
+        alertDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${mensaje}`;
+    } else if (tipo === 'success') {
+        alertDiv.style.background = '#c6f6d5';
+        alertDiv.style.color = '#22543d';
+        alertDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${mensaje}`;
+    } else {
+        alertDiv.style.background = '#bee3f8';
+        alertDiv.style.color = '#2c5282';
+        alertDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${mensaje}`;
+    }
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+</style>
+{% endblock %}

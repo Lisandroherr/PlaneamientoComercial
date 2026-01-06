@@ -1,0 +1,1085 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Servicios - Post Venta{% endblock %}
+{% block icon %}gear{% endblock %}
+{% block page_title %}Gestión de Servicios - Post Venta{% endblock %}
+{% block back_url %}{{ url_for('postventa') }}{% endblock %}
+{% block back_text %}Volver a Post Venta{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="alert alert-success" id="successAlert" style="display:none">
+        <i class="fas fa-check-circle"></i>
+        <strong>¡Éxito!</strong> <span id="successMessage"></span>
+    </div>
+    <div class="alert alert-error" id="errorAlert" style="display:none">
+        <i class="fas fa-exclamation-circle"></i>
+        <strong>Error:</strong> <span id="errorMessage"></span>
+    </div>
+
+    <!-- Botones de Administración -->
+    <div style="margin: 20px 0; text-align: center; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <a href="/postventa/servicios" class="btn btn-primary" style="text-decoration: none;">
+            <i class="fas fa-tools"></i> Administrar Servicios
+        </a>
+        <a href="/postventa/asesores" class="btn btn-success" style="text-decoration: none;">
+            <i class="fas fa-user-group"></i> Administrar Asesores
+        </a>
+        <button onclick="exportarTurnosPendientes()" class="btn" style="background: #28a745; color: white;">
+            <i class="fas fa-file-excel"></i> Exportar Turnos Pendientes
+        </button>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p><strong>Arrastra tu archivo Excel aquí</strong></p>
+        <p class="hint">o haz clic para seleccionar un archivo</p>
+        <p class="hint" style="margin-top: 10px; font-size: 0.8em;">Formatos permitidos: .xlsx, .xls</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+    </div>
+
+    <div id="uploadMsg" style="margin-top:12px; text-align:center; font-weight:600"></div>
+
+    <!-- Botón Crear Turno -->
+    <div style="margin: 20px 0; text-align: center;">
+        <button onclick="abrirModalCrearTurno()" class="btn" style="background: #D00F2A; color: white; padding: 12px 24px; font-size: 1em; font-weight: 600;">
+            <i class="fas fa-plus-circle"></i> Crear Turno
+        </button>
+    </div>
+
+    <!-- Pestañas Principales -->
+    <div style="margin-top:25px; display:flex; gap:10px; border-bottom: 2px solid #e0e0e0; padding-bottom: 5px;">
+      <button class="btn btn-primary" id="tabBtnPorAsignar" style="border-radius: 8px 8px 0 0;">
+        📋 Por Asignar (<span id="countPorAsignar">0</span>)
+      </button>
+      <button class="btn" id="tabBtnAsignados" style="border-radius: 8px 8px 0 0; background: #f5f5f5; color: #333;">
+        ✅ Asignados (<span id="countAsignados">0</span>)
+      </button>
+    </div>
+
+    <!-- Sub-Pestañas Por Asignar -->
+    <div id="subTabsPorAsignar" style="margin-top:10px; display:flex; gap:8px; padding-left:15px;">
+      <button class="btn" id="subTabPorAsignarServicios" style="font-size:0.9em; padding:6px 12px; background:#007bff; color:white;">
+        🔧 Servicios (<span id="countPorAsignarServicios">0</span>)
+      </button>
+      <button class="btn" id="subTabPorAsignarChaperia" style="font-size:0.9em; padding:6px 12px; background:#e9ecef; color:#333;">
+        🎨 Chapería (<span id="countPorAsignarChaperia">0</span>)
+      </button>
+    </div>
+
+    <!-- Sub-Pestañas Asignados -->
+    <div id="subTabsAsignados" style="margin-top:10px; display:none; gap:8px; padding-left:15px;">
+      <button class="btn" id="subTabAsignadosServicios" style="font-size:0.9em; padding:6px 12px; background:#007bff; color:white;">
+        🔧 Servicios (<span id="countAsignadosServicios">0</span>)
+      </button>
+      <button class="btn" id="subTabAsignadosChaperia" style="font-size:0.9em; padding:6px 12px; background:#e9ecef; color:#333;">
+        🎨 Chapería (<span id="countAsignadosChaperia">0</span>)
+      </button>
+    </div>
+
+    <!-- Paneles Por Asignar -->
+    <div id="panelPorAsignarServicios" style="margin-top: 15px;">
+      <div style="overflow-x: auto;">
+        <table style="width:100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+              <th style="padding:12px; text-align:left; font-weight:600;">Hora</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Dominio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Cliente</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Servicio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Vehículo</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Asignación</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPorAsignarServicios">
+            <tr><td colspan="6" style="padding:30px; text-align:center; color:#888;">No hay turnos de servicios pendientes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="panelPorAsignarChaperia" style="display:none; margin-top: 15px;">
+      <div style="overflow-x: auto;">
+        <table style="width:100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+              <th style="padding:12px; text-align:left; font-weight:600;">Hora</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Dominio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Cliente</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Servicio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Vehículo</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Asignación</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPorAsignarChaperia">
+            <tr><td colspan="6" style="padding:30px; text-align:center; color:#888;">No hay turnos de chapería pendientes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Paneles Asignados -->
+    <div id="panelAsignadosServicios" style="display:none; margin-top: 15px;">
+      <div style="overflow-x: auto;">
+        <table style="width:100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+              <th style="padding:12px; text-align:left; font-weight:600;">Hora Asig.</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Dominio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Cliente</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Servicio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Vehículo</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Asesor</th>
+              <th style="padding:12px; text-align:center; font-weight:600;">⏱️ Ingreso</th>
+              <th style="padding:12px; text-align:center; font-weight:600;">⏱️ Egreso</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAsignadosServicios">
+            <tr><td colspan="9" style="padding:30px; text-align:center; color:#888;">No hay turnos de servicios asignados</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="panelAsignadosChaperia" style="display:none; margin-top: 15px;">
+      <div style="overflow-x: auto;">
+        <table style="width:100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+              <th style="padding:12px; text-align:left; font-weight:600;">Hora Asig.</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Dominio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Cliente</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Servicio</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Vehículo</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Asesor</th>
+              <th style="padding:12px; text-align:center; font-weight:600;">⏱️ Ingreso</th>
+              <th style="padding:12px; text-align:center; font-weight:600;">⏱️ Egreso</th>
+              <th style="padding:12px; text-align:left; font-weight:600;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAsignadosChaperia">
+            <tr><td colspan="9" style="padding:30px; text-align:center; color:#888;">No hay turnos de chapería asignados</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal de Asignación Manual -->
+    <div class="modal" id="modalAsignacionManual" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:white; border-radius:10px; max-width:500px; width:90%; padding:25px;">
+        <h3 style="margin:0 0 15px 0;"><i class="fas fa-user-check"></i> Asignación Manual</h3>
+        <p style="margin-bottom: 15px; color: #666;">Seleccione el asesor para este turno:</p>
+        <div id="listaAsesoresManual" style="max-height: 400px; overflow-y: auto;"></div>
+        <div style="text-align:right; margin-top:20px;">
+          <button class="btn btn-secondary" onclick="cerrarModalAsignacion()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Crear Turno -->
+    <div class="modal" id="modalCrearTurno" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:white; border-radius:10px; max-width:600px; width:90%; padding:30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0;">
+          <h3 style="margin:0; color: #000001;"><i class="fas fa-plus-circle"></i> Crear Turno Manual</h3>
+          <button onclick="cerrarModalCrearTurno()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        
+        <form id="formCrearTurno" onsubmit="guardarTurnoManual(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Fecha del Turno:</label>
+              <input type="date" id="nuevoFechaTurno" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;">
+            </div>
+            
+            <div>
+              <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Hora del Turno:</label>
+              <input type="time" id="nuevoHoraTurno" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;">
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Sector:</label>
+            <select id="nuevoSector" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;">
+              <option value="">Seleccione un sector</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Chapería y Pintura">Chapería y Pintura</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Dominio:</label>
+            <input type="text" id="nuevoDominio" required maxlength="10" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px; text-transform: uppercase;" placeholder="Ej: AB123CD">
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Nombre del Cliente:</label>
+            <input type="text" id="nuevoCliente" required maxlength="100" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;" placeholder="Ej: Juan Pérez">
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Servicio:</label>
+            <select id="nuevoServicio" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;">
+              <option value="">Sin servicio específico</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Vehículo:</label>
+            <input type="text" id="nuevoVehiculo" maxlength="100" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 5px; font-size: 14px;" placeholder="Ej: YARIS S (opcional)">
+          </div>
+          
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
+            <button type="button" onclick="cerrarModalCrearTurno()" class="btn" style="background: #cbd5e0; color: #2d3748;">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Crear Turno</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    // Estado global
+    let turnos = [];
+    let turnosAsignados = [];
+    let servicios = [];
+    let asesores = [];
+
+    // Elementos del DOM
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadMsg = document.getElementById('uploadMsg');
+
+    // Event listeners para drag and drop
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => { 
+        e.preventDefault(); 
+        dropZone.classList.add('dragover'); 
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', (e) => { 
+        e.preventDefault(); 
+        dropZone.classList.remove('dragover'); 
+        const f = e.dataTransfer.files[0]; 
+        if (f) handleFile(f); 
+    });
+    
+    fileInput.addEventListener('change', (e) => { 
+        const f = e.target.files[0]; 
+        if (f) handleFile(f); 
+    });
+
+    function showMsg(msg, type='info'){ 
+        uploadMsg.textContent = msg; 
+        uploadMsg.style.color = type==='error'? '#dc3545' : '#28a745'; 
+    }
+
+    async function exportarTurnosPendientes() {
+        try {
+            showMsg('Exportando turnos pendientes...');
+            const exportRes = await fetch('/api/postventa/exportar-turnos-no-asignados');
+            
+            if (exportRes.ok) {
+                const blob = await exportRes.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `turnos_pendientes_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showMsg('✅ Turnos exportados correctamente', 'success');
+            } else {
+                showMsg('No hay turnos pendientes para exportar', 'info');
+            }
+        } catch (e) {
+            console.error('Error al exportar:', e);
+            showMsg('Error al exportar turnos', 'error');
+        }
+    }
+
+    async function handleFile(file){
+        try{
+            showMsg('Leyendo archivo...');
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(new Uint8Array(data), {type:'array'});
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet);
+            await uploadTurnos(json);
+        } catch(err){ 
+            showMsg('Error al leer archivo: '+err.message,'error'); 
+        }
+    }
+
+    async function uploadTurnos(jsonData){
+        try{
+            showMsg('Enviando al servidor...');
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(jsonData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Turnos');
+            const buffer = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+            const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+            const fd = new FormData(); 
+            fd.append('file', blob, 'turnos.xlsx');
+            const res = await fetch('/api/postventa/upload-turnos', {method:'POST', body: fd});
+            const body = await res.json();
+            if (res.ok){ 
+                showMsg(`✅ ${body.total_insertados} turnos insertados`); 
+                await loadTurnos(); 
+            } else { 
+                showMsg('Error: '+(body.error||'Server'), 'error'); 
+            }
+        } catch(err){ 
+            showMsg('Error al subir: '+err.message,'error'); 
+        }
+    }
+    
+    async function loadAsesores(){ 
+        try{ 
+            const r = await fetch('/api/postventa/asesores');
+            if (!r.ok) {
+                console.error('Error HTTP:', r.status);
+                asesores = [];
+                return;
+            }
+            const data = await r.json();
+            asesores = Array.isArray(data) ? data : [];
+            console.log('Asesores cargados:', asesores.length);
+        }catch(e){
+            console.error('Error cargando asesores:', e);
+            asesores = [];
+        } 
+    }
+    
+    async function loadServicios(){ 
+        try{ 
+            const r = await fetch('/api/postventa/servicios');
+            if (!r.ok) {
+                console.error('Error HTTP:', r.status);
+                servicios = [];
+                return;
+            }
+            const data = await r.json();
+            servicios = Array.isArray(data) ? data.filter(s => s.activo) : [];
+            console.log('Servicios cargados:', servicios.length);
+        }catch(e){
+            console.error('Error cargando servicios:', e);
+            servicios = [];
+        } 
+    }
+    
+    async function loadTurnos(){ 
+        try{ 
+            console.log('Cargando turnos pendientes...');
+            const r = await fetch('/api/postventa/turnos'); 
+            console.log('Response status:', r.status);
+            const data = await r.json();
+            console.log('Turnos recibidos:', data);
+            // Filtrar solo los que NO están asignados (sin asesor_id)
+            turnos = Array.isArray(data) ? data.filter(t => !t.asesor_id) : [];
+            console.log('Total turnos pendientes:', turnos.length);
+            renderTurnos(); 
+        }catch(e){
+            console.error('Error cargando turnos:', e);
+            turnos = [];
+            renderTurnos();
+        } 
+    }
+
+    async function loadTurnosAsignados(){ 
+        try{ 
+            console.log('Cargando turnos asignados...');
+            const r = await fetch('/api/postventa/ordenes-trabajo'); 
+            const data = await r.json();
+            console.log('Turnos asignados recibidos:', data);
+            turnosAsignados = Array.isArray(data) ? data : [];
+            console.log('Total asignados:', turnosAsignados.length);
+            renderTurnosAsignados(); 
+        }catch(e){
+            console.error('Error cargando turnos asignados:', e);
+            turnosAsignados = [];
+            renderTurnosAsignados();
+        } 
+    }
+
+    function renderTurnos(){
+        console.log('Renderizando turnos pendientes...');
+        const serv = turnos.filter(t => t.sector === 'Servicios');
+        const chapa = turnos.filter(t => t.sector === 'Chapería y Pintura');
+        console.log('Servicios pendientes:', serv.length, 'Chapería pendiente:', chapa.length);
+        
+        const totalPendientes = turnos.length;
+        document.getElementById('countPorAsignar').textContent = totalPendientes;
+        document.getElementById('countPorAsignarServicios').textContent = serv.length;
+        document.getElementById('countPorAsignarChaperia').textContent = chapa.length;
+        
+        renderTable('tbodyPorAsignarServicios', serv);
+        renderTable('tbodyPorAsignarChaperia', chapa);
+    }
+
+    function renderTable(tbodyId, list){
+        const tbody = document.getElementById(tbodyId);
+        if(!list || list.length===0){ 
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:30px; text-align:center; color:#888;">No hay turnos pendientes</td></tr>'; 
+            return; 
+        }
+        tbody.innerHTML = list.map(t=>{
+            // Formatear hora a HH:MM
+            let horaFormateada = '-';
+            if (t.hora_inicio) {
+                const partes = t.hora_inicio.split(':');
+                horaFormateada = `${partes[0]}:${partes[1]}`;
+            }
+            const dominio = t.dominio || '';
+            const cliente = t.cliente_nombre || '';
+            const servicio = t.servicio_nombre || '';
+            const veh = t.marca_modelo || '';
+            return `<tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding:10px;">${horaFormateada}</td>
+                <td style="padding:10px;">${dominio}</td>
+                <td style="padding:10px;">${cliente}</td>
+                <td style="padding:10px;">${servicio}</td>
+                <td style="padding:10px;">${veh}</td>
+                <td style="padding:10px;">
+                    <div style="display: flex; gap: 5px;">
+                        <button class='btn btn-primary' onclick='assignTurnoAuto(${t.id})' title="Asignación automática" style="padding: 6px 12px; font-size: 0.9em;">AT</button>
+                        <button class='btn btn-success' onclick='abrirAsignacionManual(${t.id}, "${t.sector}")' title="Asignación manual" style="padding: 6px 12px; font-size: 0.9em;">MT</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderTurnosAsignados(){
+        console.log('Renderizando turnos asignados...');
+        const serv = turnosAsignados.filter(t => t.sector === 'Servicios');
+        const chapa = turnosAsignados.filter(t => t.sector === 'Chapería y Pintura');
+        console.log('Servicios asignados:', serv.length, 'Chapería asignada:', chapa.length);
+        
+        const totalAsignados = turnosAsignados.length;
+        document.getElementById('countAsignados').textContent = totalAsignados;
+        document.getElementById('countAsignadosServicios').textContent = serv.length;
+        document.getElementById('countAsignadosChaperia').textContent = chapa.length;
+        
+        renderTableAsignados('tbodyAsignadosServicios', serv);
+        renderTableAsignados('tbodyAsignadosChaperia', chapa);
+    }
+
+    function renderTableAsignados(tbodyId, list){
+        const tbody = document.getElementById(tbodyId);
+        
+        if(!list || list.length===0){ 
+            tbody.innerHTML = '<tr><td colspan="9" style="padding:30px; text-align:center; color:#888;">No hay turnos asignados</td></tr>'; 
+            return; 
+        }
+        
+        const ahora = new Date();
+        
+        tbody.innerHTML = list.map(t=>{
+            const horaAsignacion = t.fecha_registro ? formatearHora(t.fecha_registro) : '-';
+            const dominio = t.dominio || '';
+            const cliente = t.cliente_nombre || '';
+            const servicio = t.servicio_nombre || '';
+            const veh = t.marca_modelo || '';
+            const asesor = t.asesor_nombre || '-';
+            
+            // Cronómetro de Ingreso
+            const { minutos: minIngreso, segundos: segIngreso, alerta: alertaIngreso } = calcularTiempoTranscurrido(t, ahora);
+            const colorIngreso = alertaIngreso ? '#dc3545' : '#28a745';
+            
+            // Cronómetro de Egreso
+            const { minutos: minEgreso, segundos: segEgreso, alerta: alertaEgreso } = calcularTiempoEgreso(t, ahora);
+            const colorEgreso = alertaEgreso ? '#dc3545' : '#28a745';
+            
+            const estiloFila = (alertaIngreso || alertaEgreso) ? 'background-color: #fee; border-left: 4px solid #dc3545;' : '';
+            
+            return `<tr style="${estiloFila}" data-turno-id="${t.id}">
+                <td style="padding:10px;">${horaAsignacion}</td>
+                <td style="padding:10px;">${dominio}</td>
+                <td style="padding:10px;">${cliente}</td>
+                <td style="padding:10px;">${servicio}</td>
+                <td style="padding:10px;">${veh}</td>
+                <td style="padding:10px;"><strong>${asesor}</strong></td>
+                <td style="padding:10px; text-align:center;">
+                    <span class="contador-tiempo-ingreso" style="font-weight: 600; font-size: 1.1em; color: ${colorIngreso}; font-family: 'Courier New', monospace;">
+                        ${minIngreso}:${segIngreso}
+                    </span>
+                </td>
+                <td style="padding:10px; text-align:center;">
+                    <span class="contador-tiempo-egreso" style="font-weight: 600; font-size: 1.1em; color: ${colorEgreso}; font-family: 'Courier New', monospace;">
+                        ${minEgreso}:${segEgreso}
+                    </span>
+                </td>
+                <td style="padding:10px;">
+                    ${getBotonesGestion(t, asesor)}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function calcularTiempoTranscurrido(orden, ahora = new Date()) {
+        if (!orden.fecha_registro) {
+            return { minutos: '00', segundos: '00', alerta: false };
+        }
+        
+        const inicio = new Date(orden.fecha_registro);
+        let fin = ahora;
+        if (orden.hora_atender) {
+            fin = new Date(orden.hora_atender);
+        }
+        
+        const diff = Math.floor((fin - inicio) / 1000);
+        const minutos = Math.floor(diff / 60);
+        const segundos = String(diff % 60).padStart(2, '0');
+        const alerta = minutos >= 10;
+        
+        return { minutos: String(minutos).padStart(2, '0'), segundos, alerta };
+    }
+
+    function calcularTiempoEgreso(orden, ahora = new Date()) {
+        // Si no ha iniciado el retiro, retornar 00:00
+        if (!orden.hora_retiro_inicio) {
+            return { minutos: '00', segundos: '00', alerta: false };
+        }
+        
+        const inicio = new Date(orden.hora_retiro_inicio);
+        let fin = ahora;
+        
+        // Si ya fue atendido en el retiro, detener el cronómetro
+        if (orden.hora_atender_retiro) {
+            fin = new Date(orden.hora_atender_retiro);
+        }
+        
+        const diff = Math.floor((fin - inicio) / 1000);
+        const minutos = Math.floor(diff / 60);
+        const segundos = String(diff % 60).padStart(2, '0');
+        const alerta = minutos >= 10;
+        
+        return { minutos: String(minutos).padStart(2, '0'), segundos, alerta };
+    }
+
+    function getBotonesGestion(turno, asesorNombre) {
+        // Determinar si algún cronómetro está activo
+        const cronometroIngresoActivo = turno.fecha_registro && !turno.hora_atender;
+        const cronometroEgresoActivo = turno.hora_retiro_inicio && !turno.hora_atender_retiro;
+        const algunCronometroActivo = cronometroIngresoActivo || cronometroEgresoActivo;
+        
+        // Si algún cronómetro está activo → Mostrar REASIGNAR
+        if (algunCronometroActivo) {
+            let mensajeEstado = '';
+            if (cronometroIngresoActivo) {
+                mensajeEstado = 'Cronómetro ingreso activo';
+            } else if (cronometroEgresoActivo) {
+                mensajeEstado = '⏳ Esperando retorno del cliente';
+            }
+            
+            return `<div style="display: flex; gap: 5px; flex-direction: column; align-items: center;">
+                <button class='btn' onclick='reasignarTurno(${turno.id}, "${turno.sector}", "${asesorNombre}")' title="Reasignar a otro asesor" style="padding: 6px 12px; font-size: 0.85em; background: #ffc107; color: #000;">Reasignar</button>
+                <span style="font-size: 0.75em; color: #666;">${mensajeEstado}</span>
+            </div>`;
+        }
+        
+        // Cronómetros detenidos
+        // Estado: Hora Pactada (necesita botón Retiro)
+        if (turno.estado === 'Hora Pactada') {
+            return `<div style="display: flex; gap: 5px; flex-direction: column; align-items: center;">
+                <button class='btn' onclick='retirarTurno(${turno.id})' title="Registrar retiro del cliente" style="padding: 6px 12px; font-size: 0.85em; background: #6c757d; color: white;">Retiro</button>
+                <span style="font-size: 0.75em; color: #28a745;">✅ Cliente atendido</span>
+            </div>`;
+        }
+        
+        // Otros estados con cronómetros detenidos → Solo mensaje
+        return `<div style="display: flex; gap: 5px; justify-content: center;">
+            <span style="font-size: 0.85em; color: #28a745; font-weight: 600; padding: 8px;">✅ Cliente atendido</span>
+        </div>`;
+    }
+
+    function formatearHora(timestamp) {
+        if (!timestamp) return '-';
+        const date = new Date(timestamp);
+        const hora = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        return `${hora}:${min}`;
+    }
+
+    function actualizarContadores() {
+        const ahora = new Date();
+        const filas = document.querySelectorAll('#tbodyAsignadosServicios tr[data-turno-id], #tbodyAsignadosChaperia tr[data-turno-id]');
+        
+        filas.forEach(fila => {
+            const turnoId = parseInt(fila.getAttribute('data-turno-id'));
+            const orden = turnosAsignados.find(o => o.id === turnoId);
+            
+            if (orden) {
+                // Actualizar cronómetro de Ingreso
+                const { minutos: minIngreso, segundos: segIngreso, alerta: alertaIngreso } = calcularTiempoTranscurrido(orden, ahora);
+                const contadorIngreso = fila.querySelector('.contador-tiempo-ingreso');
+                
+                if (contadorIngreso) {
+                    contadorIngreso.textContent = `${minIngreso}:${segIngreso}`;
+                    contadorIngreso.style.color = alertaIngreso ? '#dc3545' : '#28a745';
+                }
+                
+                // Actualizar cronómetro de Egreso
+                const { minutos: minEgreso, segundos: segEgreso, alerta: alertaEgreso } = calcularTiempoEgreso(orden, ahora);
+                const contadorEgreso = fila.querySelector('.contador-tiempo-egreso');
+                
+                if (contadorEgreso) {
+                    contadorEgreso.textContent = `${minEgreso}:${segEgreso}`;
+                    contadorEgreso.style.color = alertaEgreso ? '#dc3545' : '#28a745';
+                }
+                
+                // Aplicar estilo de alerta si cualquiera de los cronómetros supera 10 minutos
+                if ((alertaIngreso || alertaEgreso) && !fila.style.backgroundColor) {
+                    fila.style.backgroundColor = '#fee';
+                    fila.style.borderLeft = '4px solid #dc3545';
+                }
+            }
+        });
+    }
+
+    // Variable global para almacenar el turno_id temporal
+    let turnoIdTemporal = null;
+
+    async function assignTurnoAuto(id){
+        try{
+            const r = await fetch(`/api/postventa/asignar-turno/${id}`, {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({})
+            });
+            if(r.ok){ 
+                const data = await r.json();
+                showMsg(`✅ Turno asignado automáticamente a: ${data.asesor_nombre}`, 'success'); 
+                await loadTurnos();
+                await loadTurnosAsignados();
+            } else { 
+                const b = await r.json(); 
+                showMsg('Error: '+(b.error||'server'),'error'); 
+            }
+        }catch(e){ 
+            showMsg('Error al asignar: '+e.message,'error'); 
+        }
+    }
+
+    async function abrirAsignacionManual(turnoId, sector) {
+        turnoIdTemporal = turnoId;
+        
+        // Filtrar asesores por sector + incluir "Asesor de citas" como comodín
+        const asesoresFiltrados = asesores.filter(a => a.sector === sector || a.sector === 'Asesor de citas');
+        
+        if (asesoresFiltrados.length === 0) {
+            showMsg(`No hay asesores disponibles en ${sector}`, 'error');
+            return;
+        }
+        
+        const listaDiv = document.getElementById('listaAsesoresManual');
+        listaDiv.innerHTML = asesoresFiltrados.map(asesor => `
+            <div style="padding: 12px; margin-bottom: 8px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.3s;" 
+                 onclick="assignTurnoManual(${turnoId}, ${asesor.id}, '${asesor.nombre}')"
+                 onmouseover="this.style.background='#f7fafc'; this.style.borderColor='#007bff'"
+                 onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                <div style="font-weight: 600; color: #2d3748;">${asesor.nombre}</div>
+                <div style="font-size: 0.85em; color: #718096; margin-top: 4px;">${asesor.sector}</div>
+            </div>
+        `).join('');
+        
+        document.getElementById('modalAsignacionManual').style.display = 'flex';
+    }
+
+    async function assignTurnoManual(turnoId, asesorId, asesorNombre) {
+        try{
+            const r = await fetch(`/api/postventa/asignar-turno/${turnoId}`, {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({ asesor_id: asesorId })
+            });
+            if(r.ok){ 
+                const data = await r.json();
+                showMsg(`✅ Turno asignado manualmente a: ${asesorNombre}`, 'success'); 
+                cerrarModalAsignacion();
+                await loadTurnos();
+                await loadTurnosAsignados();
+            } else { 
+                const b = await r.json(); 
+                showMsg('Error: '+(b.error||'server'),'error'); 
+            }
+        }catch(e){ 
+            showMsg('Error al asignar: '+e.message,'error'); 
+        }
+    }
+
+    function cerrarModalAsignacion() {
+        document.getElementById('modalAsignacionManual').style.display = 'none';
+        turnoIdTemporal = null;
+    }
+
+    async function reasignarTurno(turnoId, sector, asesorActual) {
+        // Reutilizar el modal de asignación manual pero con título diferente
+        turnoIdTemporal = turnoId;
+        
+        // Filtrar asesores por sector + incluir "Asesor de citas" como comodín
+        const asesoresFiltrados = asesores.filter(a => a.sector === sector || a.sector === 'Asesor de citas');
+        
+        if (asesoresFiltrados.length === 0) {
+            showMsg(`No hay asesores disponibles en ${sector}`, 'error');
+            return;
+        }
+        
+        const listaDiv = document.getElementById('listaAsesoresManual');
+        const modal = document.getElementById('modalAsignacionManual');
+        const titulo = modal.querySelector('h3');
+        
+        // Cambiar título del modal
+        titulo.innerHTML = '<i class="fas fa-exchange-alt"></i> Reasignar Turno';
+        titulo.insertAdjacentHTML('afterend', `<p style="margin: 10px 0; color: #666; font-size: 0.9em;">Asesor actual: <strong>${asesorActual}</strong></p>`);
+        
+        listaDiv.innerHTML = asesoresFiltrados.map(asesor => {
+            const esActual = asesor.nombre === asesorActual;
+            const estiloAdicional = esActual ? 'opacity: 0.5; cursor: not-allowed;' : '';
+            const badge = esActual ? '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; margin-left: 8px;">ACTUAL</span>' : '';
+            
+            return `<div style="padding: 12px; margin-bottom: 8px; border: 2px solid #e2e8f0; border-radius: 8px; ${esActual ? '' : 'cursor: pointer;'} transition: all 0.3s; ${estiloAdicional}" 
+                 ${esActual ? '' : `onclick="reasignarTurnoConfirmar(${turnoId}, ${asesor.id}, '${asesor.nombre}')" onmouseover="if(!this.style.opacity) { this.style.background='#f7fafc'; this.style.borderColor='#ffc107'; }" onmouseout="if(!this.style.opacity) { this.style.background='white'; this.style.borderColor='#e2e8f0'; }"`}>
+                <div style="font-weight: 600; color: #2d3748;">${asesor.nombre}${badge}</div>
+                <div style="font-size: 0.85em; color: #718096; margin-top: 4px;">${asesor.sector}</div>
+            </div>`;
+        }).join('');
+        
+        modal.style.display = 'flex';
+    }
+
+    async function reasignarTurnoConfirmar(turnoId, nuevoAsesorId, nuevoAsesorNombre) {
+        try{
+            const r = await fetch(`/api/postventa/reasignar-turno/${turnoId}`, {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({ asesor_id: nuevoAsesorId })
+            });
+            if(r.ok){ 
+                const data = await r.json();
+                showMsg(`✅ Turno reasignado a: ${nuevoAsesorNombre}`, 'success'); 
+                cerrarModalAsignacion();
+                // Restaurar título original
+                const modal = document.getElementById('modalAsignacionManual');
+                const titulo = modal.querySelector('h3');
+                titulo.innerHTML = '<i class="fas fa-user-check"></i> Asignación Manual';
+                const parrafo = titulo.nextElementSibling;
+                if (parrafo && parrafo.tagName === 'P' && parrafo.textContent.includes('Asesor actual')) {
+                    parrafo.remove();
+                }
+                await loadTurnosAsignados();
+            } else { 
+                const b = await r.json(); 
+                showMsg('Error: '+(b.error||'server'),'error'); 
+            }
+        }catch(e){ 
+            showMsg('Error al reasignar: '+e.message,'error'); 
+        }
+    }
+
+    async function retirarTurno(turnoId) {
+        if (!confirm('¿Confirmar que el cliente se retira del establecimiento? (Inicia cronómetro de egreso)')) return;
+        
+        try{
+            const r = await fetch('/api/postventa/retiro', {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify({ turno_id: turnoId })
+            });
+            if(r.ok){ 
+                showMsg('✅ Retiro registrado exitosamente. Cronómetro de egreso iniciado.', 'success'); 
+                await loadTurnosAsignados(); // Recargar tabla de asignados
+            } else { 
+                const b = await r.json(); 
+                showMsg('Error: '+(b.error||'server'),'error'); 
+            }
+        }catch(e){ 
+            showMsg('Error al registrar retiro: '+e.message,'error'); 
+        }
+    }
+
+    // Configurar event listeners cuando el DOM esté listo
+    function setupEventListeners() {
+        // Pestañas principales
+        const btnPorAsignar = document.getElementById('tabBtnPorAsignar');
+        const btnAsignados = document.getElementById('tabBtnAsignados');
+        
+        // Sub-pestañas Por Asignar
+        const subPorAsignarServ = document.getElementById('subTabPorAsignarServicios');
+        const subPorAsignarChap = document.getElementById('subTabPorAsignarChaperia');
+        
+        // Sub-pestañas Asignados
+        const subAsignadosServ = document.getElementById('subTabAsignadosServicios');
+        const subAsignadosChap = document.getElementById('subTabAsignadosChaperia');
+        
+        // Click en pestaña principal "Por Asignar"
+        if (btnPorAsignar) {
+            btnPorAsignar.addEventListener('click', ()=>{ 
+                // Activar pestaña principal
+                btnPorAsignar.style.background='#007bff'; 
+                btnPorAsignar.style.color='white';
+                btnAsignados.style.background='#f5f5f5'; 
+                btnAsignados.style.color='#333';
+                
+                // Mostrar sub-pestañas correspondientes
+                document.getElementById('subTabsPorAsignar').style.display='flex';
+                document.getElementById('subTabsAsignados').style.display='none';
+                
+                // Mostrar panel activo (por defecto Servicios)
+                document.getElementById('panelPorAsignarServicios').style.display='block';
+                document.getElementById('panelPorAsignarChaperia').style.display='none';
+                document.getElementById('panelAsignadosServicios').style.display='none';
+                document.getElementById('panelAsignadosChaperia').style.display='none';
+                
+                // Activar subtab de Servicios
+                subPorAsignarServ.style.background='#007bff';
+                subPorAsignarServ.style.color='white';
+                subPorAsignarChap.style.background='#e9ecef';
+                subPorAsignarChap.style.color='#333';
+            });
+        }
+        
+        // Click en pestaña principal "Asignados"
+        if (btnAsignados) {
+            btnAsignados.addEventListener('click', ()=>{ 
+                // Activar pestaña principal
+                btnAsignados.style.background='#007bff'; 
+                btnAsignados.style.color='white';
+                btnPorAsignar.style.background='#f5f5f5'; 
+                btnPorAsignar.style.color='#333';
+                
+                // Mostrar sub-pestañas correspondientes
+                document.getElementById('subTabsPorAsignar').style.display='none';
+                document.getElementById('subTabsAsignados').style.display='flex';
+                
+                // Mostrar panel activo (por defecto Servicios)
+                document.getElementById('panelPorAsignarServicios').style.display='none';
+                document.getElementById('panelPorAsignarChaperia').style.display='none';
+                document.getElementById('panelAsignadosServicios').style.display='block';
+                document.getElementById('panelAsignadosChaperia').style.display='none';
+                
+                // Activar subtab de Servicios
+                subAsignadosServ.style.background='#007bff';
+                subAsignadosServ.style.color='white';
+                subAsignadosChap.style.background='#e9ecef';
+                subAsignadosChap.style.color='#333';
+                
+                loadTurnosAsignados(); // Recargar al abrir
+            });
+        }
+        
+        // Sub-tabs Por Asignar - Servicios
+        if (subPorAsignarServ) {
+            subPorAsignarServ.addEventListener('click', ()=>{
+                subPorAsignarServ.style.background='#007bff';
+                subPorAsignarServ.style.color='white';
+                subPorAsignarChap.style.background='#e9ecef';
+                subPorAsignarChap.style.color='#333';
+                
+                document.getElementById('panelPorAsignarServicios').style.display='block';
+                document.getElementById('panelPorAsignarChaperia').style.display='none';
+            });
+        }
+        
+        // Sub-tabs Por Asignar - Chapería
+        if (subPorAsignarChap) {
+            subPorAsignarChap.addEventListener('click', ()=>{
+                subPorAsignarChap.style.background='#007bff';
+                subPorAsignarChap.style.color='white';
+                subPorAsignarServ.style.background='#e9ecef';
+                subPorAsignarServ.style.color='#333';
+                
+                document.getElementById('panelPorAsignarServicios').style.display='none';
+                document.getElementById('panelPorAsignarChaperia').style.display='block';
+            });
+        }
+        
+        // Sub-tabs Asignados - Servicios
+        if (subAsignadosServ) {
+            subAsignadosServ.addEventListener('click', ()=>{
+                subAsignadosServ.style.background='#007bff';
+                subAsignadosServ.style.color='white';
+                subAsignadosChap.style.background='#e9ecef';
+                subAsignadosChap.style.color='#333';
+                
+                document.getElementById('panelAsignadosServicios').style.display='block';
+                document.getElementById('panelAsignadosChaperia').style.display='none';
+            });
+        }
+        
+        // Sub-tabs Asignados - Chapería
+        if (subAsignadosChap) {
+            subAsignadosChap.addEventListener('click', ()=>{
+                subAsignadosChap.style.background='#007bff';
+                subAsignadosChap.style.color='white';
+                subAsignadosServ.style.background='#e9ecef';
+                subAsignadosServ.style.color='#333';
+                
+                document.getElementById('panelAsignadosServicios').style.display='none';
+                document.getElementById('panelAsignadosChaperia').style.display='block';
+            });
+        }
+        
+        // Cerrar modal de asignación manual al hacer click fuera
+        const modalAsignacion = document.getElementById('modalAsignacionManual');
+        if (modalAsignacion) {
+            modalAsignacion.addEventListener('click', (e)=> {
+                if(e.target.id === 'modalAsignacionManual'){
+                    cerrarModalAsignacion();
+                }
+            });
+        }
+    }
+
+    // Carga inicial - ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado - Iniciando carga de turnos');
+            setupEventListeners();
+            loadTurnos();
+            loadAsesores(); // Cargar asesores para asignación manual
+            loadServicios(); // Cargar servicios para modal de crear turno
+            loadTurnosAsignados(); // Cargar turnos asignados
+            setInterval(actualizarContadores, 1000); // Actualizar contadores cada segundo
+            setInterval(loadTurnosAsignados, 30000); // Recargar asignados cada 30 segundos
+        });
+    } else {
+        console.log('DOM ya listo - Iniciando carga de turnos');
+        setupEventListeners();
+        loadTurnos();
+        loadAsesores(); // Cargar asesores para asignación manual
+        loadServicios(); // Cargar servicios para modal de crear turno
+        loadTurnosAsignados(); // Cargar turnos asignados
+        setInterval(actualizarContadores, 1000); // Actualizar contadores cada segundo
+        setInterval(loadTurnosAsignados, 30000); // Recargar asignados cada 30 segundos
+    }
+
+    // Exponer funciones globales para onclick en botones
+    window.assignTurnoAuto = assignTurnoAuto;
+    window.abrirAsignacionManual = abrirAsignacionManual;
+    window.assignTurnoManual = assignTurnoManual;
+    window.cerrarModalAsignacion = cerrarModalAsignacion;
+    window.exportarTurnosPendientes = exportarTurnosPendientes;
+    window.reasignarTurno = reasignarTurno;
+    window.reasignarTurnoConfirmar = reasignarTurnoConfirmar;
+    window.retirarTurno = retirarTurno;
+    window.abrirModalCrearTurno = abrirModalCrearTurno;
+    window.cerrarModalCrearTurno = cerrarModalCrearTurno;
+    window.guardarTurnoManual = guardarTurnoManual;
+
+    // Funciones para modal de Crear Turno
+    function abrirModalCrearTurno() {
+        // Establecer fecha actual por defecto
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('nuevoFechaTurno').value = hoy;
+        
+        // Limpiar formulario
+        document.getElementById('nuevoHoraTurno').value = '';
+        document.getElementById('nuevoSector').value = '';
+        document.getElementById('nuevoDominio').value = '';
+        document.getElementById('nuevoCliente').value = '';
+        document.getElementById('nuevoVehiculo').value = '';
+        
+        // Cargar servicios en el dropdown
+        const selectServicio = document.getElementById('nuevoServicio');
+        selectServicio.innerHTML = '<option value="">Sin servicio específico</option>';
+        
+        // Agrupar servicios por sector
+        const serviciosServicios = servicios.filter(s => s.sector === 'Servicios');
+        const serviciosChaperia = servicios.filter(s => s.sector === 'Chapería y Pintura');
+        
+        if (serviciosServicios.length > 0) {
+            const optgroupServ = document.createElement('optgroup');
+            optgroupServ.label = '🔧 Servicios';
+            serviciosServicios.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.nombre;
+                option.textContent = s.nombre;
+                optgroupServ.appendChild(option);
+            });
+            selectServicio.appendChild(optgroupServ);
+        }
+        
+        if (serviciosChaperia.length > 0) {
+            const optgroupChap = document.createElement('optgroup');
+            optgroupChap.label = '🎨 Chapería y Pintura';
+            serviciosChaperia.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.nombre;
+                option.textContent = s.nombre;
+                optgroupChap.appendChild(option);
+            });
+            selectServicio.appendChild(optgroupChap);
+        }
+        
+        document.getElementById('modalCrearTurno').style.display = 'flex';
+    }
+
+    function cerrarModalCrearTurno() {
+        document.getElementById('modalCrearTurno').style.display = 'none';
+    }
+
+    async function guardarTurnoManual(event) {
+        event.preventDefault();
+        
+        const data = {
+            fecha_turno: document.getElementById('nuevoFechaTurno').value,
+            hora_inicio: document.getElementById('nuevoHoraTurno').value,
+            sector: document.getElementById('nuevoSector').value,
+            dominio: document.getElementById('nuevoDominio').value.toUpperCase(),
+            cliente_nombre: document.getElementById('nuevoCliente').value,
+            servicio_nombre: document.getElementById('nuevoServicio').value || null,
+            marca_modelo: document.getElementById('nuevoVehiculo').value || null
+        };
+        
+        try {
+            const response = await fetch('/api/postventa/crear-turno-manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                cerrarModalCrearTurno();
+                showMsg('✅ Turno creado exitosamente', 'success');
+                await loadTurnos(); // Recargar tabla de turnos pendientes
+            } else {
+                showMsg('Error: ' + (result.error || 'No se pudo crear el turno'), 'error');
+            }
+        } catch (error) {
+            showMsg('Error de conexión: ' + error.message, 'error');
+        }
+    }
+</script>
+
+<style>
+    /* Responsive tables */
+    @media (max-width: 768px) {
+        table { font-size: 0.85em; }
+        th, td { padding: 8px !important; }
+    }
+    /* Modal centering - SOLO cuando está visible */
+    .modal[style*="display: flex"], .modal[style*="display:flex"] { 
+        display: flex !important; 
+        align-items: center; 
+        justify-content: center; 
+    }
+    /* Asegurar que esté oculto por defecto */
+    .modal[style*="display: none"], .modal[style*="display:none"] {
+        display: none !important;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Cotizador de Créditos - Ventas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #EB0A1E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #C8102E;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 0;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #2d3748;
+            font-size: 0.85em;
+        }
+        .form-group input, .form-group select {
+            padding: 8px 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #EB0A1E;
+            box-shadow: 0 0 0 3px rgba(235, 10, 30, 0.1);
+        }
+        .btn-calcular {
+            background: #48bb78;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            height: 36px;
+        }
+        .btn-calcular:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .resultado-panel {
+            display: none;
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        .resultado-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #cbd5e0;
+        }
+        .resultado-item {
+            background: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-left: 4px solid #EB0A1E;
+        }
+        .resultado-item label {
+            font-size: 0.75em;
+            color: #718096;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .resultado-item .valor {
+            font-size: 1em;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .planes-disponibles {
+            margin-top: 20px;
+        }
+        .tabla-planes {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tabla-planes thead {
+            background: #f7fafc;
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
+        }
+        .tabla-planes th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .tabla-planes td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9em;
+        }
+        .tabla-planes tbody tr:hover {
+            background: #f7fafc;
+        }
+        .tabla-planes tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .btn-detalles {
+            background: #EB0A1E;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.85em;
+        }
+        .btn-detalles:hover {
+            background: #C8102E;
+            transform: translateY(-1px);
+        }
+        .btn-exportar {
+            background: #48bb78;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .btn-exportar:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+        .select2-container--default .select2-selection--single {
+            height: 36px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 32px;
+            padding-left: 10px;
+            font-size: 0.9em;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 32px;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #EB0A1E;
+        }
+        .select2-container {
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-calculator"></i> Cotizador de Créditos</h1>
+        <a href="/ventas" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="container">
+        <!-- Card Principal de Cotización -->
+        <div class="card">
+            <div class="form-grid">
+                <!-- Selector de Versión -->
+                <div class="form-group">
+                    <label>Versión del Vehículo</label>
+                    <select id="versionSelect" style="width: 100%;">
+                        <option value="">Selecciona una versión...</option>
+                    </select>
+                </div>
+
+                <!-- Descuento Máximo -->
+                <div class="form-group">
+                    <label>Descuento Máximo (%)</label>
+                    <input type="number" id="descuentoMax" min="0" max="100" step="0.1" 
+                           placeholder="Ej: 10" value="0">
+                </div>
+
+                <!-- Importe a Financiar -->
+                <div class="form-group">
+                    <label>Importe a Financiar</label>
+                    <input type="number" id="importeFinanciar" min="0" step="1000" 
+                           placeholder="Ej: 5000000">
+                </div>
+
+                <!-- Botón Calcular -->
+                <button class="btn-calcular" onclick="calcularCotizacion()">
+                    Calcular
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de Resultados -->
+        <div id="resultadoPanel" class="resultado-panel">
+            <h2 style="margin-bottom: 15px; color: #2d3748; font-size: 1.1em;">
+                Resultado de la Cotización
+            </h2>
+
+            <!-- Resumen de la Cotización -->
+            <div class="resultado-header" id="resumenCotizacion">
+                <!-- Generado dinámicamente -->
+            </div>
+
+            <!-- Planes Disponibles -->
+            <div class="planes-disponibles">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #2d3748; font-size: 1em;">
+                        Planes de Financiación Aplicables
+                    </h3>
+                    <button class="btn-exportar" onclick="exportarPlanesExcel()" id="btnExportar" style="display: none;">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+                </div>
+                <table class="tabla-planes" id="tablaPlanes">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Plan</th>
+                            <th>Período (meses)</th>
+                            <th>Tasa (%)</th>
+                            <th>Quebranto (%)</th>
+                            <th>Total Primer Período</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planesContainer">
+                        <!-- Generado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let preciosData = [];
+        let datosUltimaCotizacion = null;
+
+        // Cargar versiones al iniciar
+        $(document).ready(async function() {
+            await cargarVersiones();
+            $('#versionSelect').select2({
+                placeholder: 'Busca una versión...',
+                allowClear: true
+            });
+        });
+
+        async function cargarVersiones() {
+            try {
+                const response = await fetch('/api/precios');
+                if (!response.ok) throw new Error('Error al cargar versiones');
+                
+                const data = await response.json();
+                preciosData = data.modelos.filter(m => !data.modelos_ocultos.includes(m.nombre));
+                
+                const select = $('#versionSelect');
+                preciosData.forEach(modelo => {
+                    select.append(new Option(modelo.nombre, modelo.nombre));
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar las versiones de vehículos');
+            }
+        }
+
+        async function calcularCotizacion() {
+            const versionNombre = $('#versionSelect').val();
+            const descuentoMax = parseFloat($('#descuentoMax').val()) || 0;
+            const importeFinanciar = parseFloat($('#importeFinanciar').val()) || 0;
+
+            if (!versionNombre) {
+                alert('Por favor selecciona una versión del vehículo');
+                return;
+            }
+
+            if (importeFinanciar <= 0) {
+                alert('Por favor ingresa un importe a financiar válido');
+                return;
+            }
+
+            const modelo = preciosData.find(m => m.nombre === versionNombre);
+            if (!modelo) {
+                alert('Versión no encontrada');
+                return;
+            }
+
+            const precioUnidad = parseFloat(modelo.precio_ars);
+            const descuentoAplicado = precioUnidad * (descuentoMax / 100);
+            const precioFinal = precioUnidad - descuentoAplicado;
+
+            // Mostrar resumen
+            const resumen = document.getElementById('resumenCotizacion');
+            resumen.innerHTML = `
+                <div class="resultado-item">
+                    <label>Versión Seleccionada</label>
+                    <div class="valor">${versionNombre}</div>
+                </div>
+                <div class="resultado-item">
+                    <label>Precio Unidad</label>
+                    <div class="valor">$${precioUnidad.toLocaleString('es-AR')}</div>
+                </div>
+                <div class="resultado-item">
+                    <label>Descuento Aplicado (${descuentoMax}%)</label>
+                    <div class="valor" style="color: #48bb78;">-$${descuentoAplicado.toLocaleString('es-AR')}</div>
+                </div>
+                <div class="resultado-item">
+                    <label>Precio Final</label>
+                    <div class="valor" style="color: #EB0A1E;">$${precioFinal.toLocaleString('es-AR')}</div>
+                </div>
+                <div class="resultado-item">
+                    <label>Importe a Financiar</label>
+                    <div class="valor">$${importeFinanciar.toLocaleString('es-AR')}</div>
+                </div>
+            `;
+
+            // Cargar planes de crédito
+            await cargarPlanesCredito(precioFinal, importeFinanciar);
+
+            // Mostrar panel de resultados
+            document.getElementById('resultadoPanel').style.display = 'block';
+            document.getElementById('resultadoPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function cargarPlanesCredito(precioFinal, importeFinanciar) {
+            try {
+                const response = await fetch('/api/planes_credito');
+                if (!response.ok) throw new Error('Error al cargar planes');
+                
+                const planes = await response.json();
+                const planesActivos = planes.filter(p => p.activo);
+                
+                if (planesActivos.length === 0) {
+                    document.getElementById('planesContainer').innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #718096;">
+                            <i class="fas fa-info-circle" style="font-size: 3em; margin-bottom: 15px;"></i>
+                            <p>No hay planes de crédito disponibles en este momento.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderizarPlanes(planesActivos, precioFinal, importeFinanciar);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los planes de crédito');
+            }
+        }
+
+        function renderizarPlanes(planes, precioFinal, importeFinanciar) {
+            const container = document.getElementById('planesContainer');
+            const descuentoMax = parseFloat($('#descuentoMax').val()) || 0;
+            const descuentoAplicado = precioFinal * (descuentoMax / 100);
+            const versionNombre = $('#versionSelect').val();
+            
+            // PRIMER FILTRO: Verificar límite máximo de financiación
+            const planesFiltrados = planes.filter(plan => {
+                if (!plan.importe_maximo || plan.importe_maximo === 0) {
+                    return true;
+                }
+                return importeFinanciar <= plan.importe_maximo;
+            });
+            
+            // Recolectar todos los plazos que aplican
+            let planesQueAplican = [];
+            
+            planesFiltrados.forEach(plan => {
+                const plazos = Object.keys(plan.plazos).filter(p => plan.plazos[p]);
+                
+                plazos.forEach(plazo => {
+                    const tasa = plan.tasas[plazo];
+                    const quebranto = plan.quebrantos[plazo];
+                    const numPeriodos = parseInt(plazo);
+                    
+                    // Calcular valores para el PRIMER PERÍODO
+                    let cuotaFija, interesPrimerPeriodo, capitalPrimerPeriodo;
+                    
+                    if (tasa === 0) {
+                        // Si la tasa es 0%, el cálculo se simplifica
+                        cuotaFija = importeFinanciar / numPeriodos;
+                        capitalPrimerPeriodo = cuotaFija;
+                        interesPrimerPeriodo = 0;
+                    } else {
+                        const tasaMensual = tasa / 100 / 12;
+                        cuotaFija = importeFinanciar * (tasaMensual * Math.pow(1 + tasaMensual, numPeriodos)) / (Math.pow(1 + tasaMensual, numPeriodos) - 1);
+                        interesPrimerPeriodo = importeFinanciar * tasaMensual;
+                        capitalPrimerPeriodo = cuotaFija - interesPrimerPeriodo;
+                    }
+                    
+                    const ivaSobreInteres = interesPrimerPeriodo * 0.21;
+                    const totalPrimerPeriodo = capitalPrimerPeriodo + interesPrimerPeriodo + ivaSobreInteres;
+                    
+                    // Quebranto + IVA
+                    const quebrantoConIva = (quebranto / 100) * importeFinanciar * 1.21;
+                    
+                    // SEGUNDO FILTRO: Verificar si el descuento aplicado >= Quebranto+IVA
+                    const aplicaPlazo = descuentoAplicado >= quebrantoConIva;
+                    
+                    // Solo agregar si aplica
+                    if (aplicaPlazo) {
+                        planesQueAplican.push({
+                            planId: plan.id,
+                            nombrePlan: plan.nombre_plan,
+                            plazo: plazo,
+                            tasa: tasa,
+                            quebranto: quebranto,
+                            totalPrimerPeriodo: totalPrimerPeriodo
+                        });
+                    }
+                });
+            });
+            
+            if (planesQueAplican.length === 0) {
+                document.getElementById('tablaPlanes').style.display = 'none';
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <div style="color: #718096; background: #fff5f5; border: 2px solid #fed7d7; border-radius: 8px; padding: 30px;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 3em; margin-bottom: 15px; color: #f56565; display: block;"></i>
+                                <p style="font-size: 1.1em; font-weight: 600; color: #742a2a;">No hay planes disponibles que cumplan los criterios</p>
+                                <p style="margin-top: 10px;">Intenta aumentar el descuento o reducir el importe a financiar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Guardar datos para exportar
+            datosUltimaCotizacion = {
+                planesQueAplican: planesQueAplican,
+                importeFinanciar: importeFinanciar,
+                versionNombre: versionNombre,
+                precioFinal: precioFinal,
+                descuentoMax: descuentoMax
+            };
+            
+            document.getElementById('tablaPlanes').style.display = 'table';
+            document.getElementById('btnExportar').style.display = 'inline-block';
+            
+            let ultimoPlanNombre = '';
+            container.innerHTML = planesQueAplican.map((item, index) => {
+                // Codificar datos para URL
+                const params = new URLSearchParams({
+                    planId: item.planId,
+                    nombrePlan: item.nombrePlan,
+                    plazo: item.plazo,
+                    tasa: item.tasa,
+                    quebranto: item.quebranto,
+                    importeFinanciar: importeFinanciar,
+                    version: versionNombre,
+                    precioUnidad: precioFinal,
+                    descuento: descuentoMax
+                });
+                
+                // Detectar si cambió el nombre del plan
+                const esPrimeroDePlan = item.nombrePlan !== ultimoPlanNombre;
+                const clasesSeparacion = esPrimeroDePlan && index > 0 ? 'style="border-top: 3px solid #EB0A1E;"' : '';
+                ultimoPlanNombre = item.nombrePlan;
+                
+                return `
+                    <tr ${clasesSeparacion}>
+                        <td><strong>${item.nombrePlan}</strong></td>
+                        <td>${item.plazo}</td>
+                        <td>${item.tasa}%</td>
+                        <td>${item.quebranto}%</td>
+                        <td style="font-weight: 700; color: #EB0A1E;">$${item.totalPrimerPeriodo.toLocaleString('es-AR', {maximumFractionDigits: 0})}</td>
+                        <td>
+                            <a href="/ventas/credito_detalle?${params.toString()}" class="btn-detalles">
+                                <i class="fas fa-eye"></i> Ver Detalle
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportarPlanesExcel() {
+            if (!datosUltimaCotizacion) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            const { planesQueAplican, importeFinanciar, versionNombre, precioFinal, descuentoMax } = datosUltimaCotizacion;
+
+            // Crear libro de trabajo
+            const wb = XLSX.utils.book_new();
+
+            // HOJA 1: Resumen de Planes Aplicables
+            const resumenData = [
+                ['Planes de Financiación Aplicables'],
+                ['Versión:', versionNombre],
+                ['Precio Unidad:', precioFinal],
+                ['Descuento:', descuentoMax + '%'],
+                ['Importe a Financiar:', importeFinanciar],
+                [],
+                ['Nombre del Plan', 'Período (meses)', 'Tasa (%)', 'Quebranto (%)', 'Total Primer Período']
+            ];
+
+            planesQueAplican.forEach(plan => {
+                resumenData.push([
+                    plan.nombrePlan,
+                    plan.plazo,
+                    plan.tasa,
+                    plan.quebranto,
+                    plan.totalPrimerPeriodo
+                ]);
+            });
+
+            const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+            XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+            // HOJAS 2+: Detalle de cada plan
+            planesQueAplican.forEach((plan, index) => {
+                const tasa = plan.tasa;
+                const plazo = parseInt(plan.plazo);
+                const tasaMensual = tasa / 100 / 12;
+                
+                let cuotaFija;
+                if (tasa === 0) {
+                    cuotaFija = importeFinanciar / plazo;
+                } else {
+                    cuotaFija = importeFinanciar * (tasaMensual * Math.pow(1 + tasaMensual, plazo)) / (Math.pow(1 + tasaMensual, plazo) - 1);
+                }
+
+                let saldoRestante = importeFinanciar;
+                const detalleData = [
+                    [`Plan: ${plan.nombrePlan} - ${plazo} meses`],
+                    ['Versión:', versionNombre],
+                    ['Tasa Anual:', tasa + '%'],
+                    ['Quebranto:', plan.quebranto + '%'],
+                    ['Importe a Financiar:', importeFinanciar],
+                    [],
+                    ['Período', 'Saldo Inicial', 'Capital', 'Interés', 'IVA s/Interés', 'Total Cuota', 'Saldo Final']
+                ];
+
+                let totalCapital = 0;
+                let totalInteres = 0;
+                let totalIVA = 0;
+                let totalCuotas = 0;
+
+                for (let periodo = 1; periodo <= plazo; periodo++) {
+                    const saldoInicial = saldoRestante;
+                    const interes = tasa === 0 ? 0 : saldoRestante * tasaMensual;
+                    const capital = cuotaFija - interes;
+                    const ivaInteres = interes * 0.21;
+                    const totalCuota = capital + interes + ivaInteres;
+                    saldoRestante = saldoRestante - capital;
+
+                    totalCapital += capital;
+                    totalInteres += interes;
+                    totalIVA += ivaInteres;
+                    totalCuotas += totalCuota;
+
+                    if (periodo === plazo) {
+                        saldoRestante = 0;
+                    }
+
+                    detalleData.push([
+                        periodo,
+                        Math.round(saldoInicial),
+                        Math.round(capital),
+                        Math.round(interes),
+                        Math.round(ivaInteres),
+                        Math.round(totalCuota),
+                        Math.round(saldoRestante)
+                    ]);
+                }
+
+                // Totales
+                detalleData.push([
+                    'TOTALES',
+                    '',
+                    Math.round(totalCapital),
+                    Math.round(totalInteres),
+                    Math.round(totalIVA),
+                    Math.round(totalCuotas),
+                    ''
+                ]);
+
+                const wsDetalle = XLSX.utils.aoa_to_sheet(detalleData);
+                const nombreHoja = `${plan.nombrePlan.substring(0, 20)} ${plazo}m`;
+                XLSX.utils.book_append_sheet(wb, wsDetalle, nombreHoja);
+            });
+
+            // Descargar archivo
+            const fecha = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Planes_Credito_${versionNombre.replace(/[^a-zA-Z0-9]/g, '_')}_${fecha}.xlsx`);
+        }
+    </script>
+</body>
+</html>

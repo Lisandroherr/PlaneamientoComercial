@@ -1,0 +1,1899 @@
+{% extends "base.html" %}
+
+{% block title %}Planificación de Operaciones{% endblock %}
+{% block icon %}calendar-alt{% endblock %}
+{% block page_title %}Planificación de Operaciones - Lavadero{% endblock %}
+{% block back_url %}{{ url_for('usados') }}{% endblock %}
+{% block back_text %}Volver a Usados{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <!-- Header con controles -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="abrirModalConfigOperaciones()" class="btn btn-sm" style="background: #718096; color: white;">
+                <i class="fas fa-cog"></i> Configuración
+            </button>
+            <input type="date" id="fechaPlanificacion" onchange="cargarPlanificacion()" style="padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            <button onclick="cargarPlanificacion()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-sync"></i>
+            </button>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="abrirModalTareaCiclica()" class="btn" style="background: #8b5cf6; color: white;">
+                <i class="fas fa-sync-alt"></i> Tarea Cíclica
+            </button>
+            <button onclick="abrirModalCola()" class="btn btn-primary" style="position: relative;">
+                <i class="fas fa-list"></i> Cola
+                <span id="badgeCola" style="position: absolute; top: -8px; right: -8px; background: #f59e0b; color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75em; font-weight: 700; display: none; align-items: center; justify-content: center; border: 2px solid white;"></span>
+            </button>
+            <button onclick="abrirModalControlSalon()" class="btn" style="background: #48bb78; color: white;">
+                <i class="fas fa-couch"></i> Control Salón
+            </button>
+            <button onclick="abrirModalJornadas()" class="btn btn-secondary">
+                <i class="fas fa-calendar-alt"></i> Jornada Completa
+            </button>
+        </div>
+    </div>
+
+    <!-- Gantt Chart -->
+    <div class="card" style="padding: 20px;">
+        <div id="ganttChart" class="gantt-container" style="max-height: 600px; overflow-y: auto;">
+            <!-- Generado dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Configuración de Operaciones -->
+<div id="modalConfigOperaciones" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0;">
+            <i class="fas fa-cog"></i> Configuración de Operaciones de Lavado
+        </h3>
+
+        <!-- Tabla de Operaciones -->
+        <table style="width: 100%; margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 10px; background: #f7fafc;">Operación</th>
+                    <th style="text-align: center; padding: 10px; background: #f7fafc;">Duración (min)</th>
+                    <th style="text-align: center; padding: 10px; background: #f7fafc;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaOperaciones">
+                <!-- Generado dinámicamente -->
+            </tbody>
+        </table>
+
+        <!-- Formulario Nueva Operación -->
+        <div style="border-top: 2px solid #e2e8f0; padding-top: 20px;">
+            <h4 style="margin-bottom: 15px; color: #2d3748;">Nueva Operación Personalizada</h4>
+            <form id="formNuevaOperacion" onsubmit="guardarNuevaOperacion(event)" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; font-size: 0.9em;">
+                        Nombre
+                    </label>
+                    <input type="text" id="nombreOperacion" required
+                           style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                           placeholder="Ej: Detallado Premium">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; font-size: 0.9em;">
+                        Duración (min)
+                    </label>
+                    <input type="number" id="duracionOperacion" required min="1" max="480"
+                           style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                           placeholder="60">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </form>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button onclick="cerrarModalConfigOperaciones()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cola de Vehículos -->
+<div id="modalCola" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-car"></i> Vehículos en Cola para Programar
+        </h3>
+        
+        <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #f59e0b;">
+            <div style="color: #92400e; font-size: 0.9em;">
+                <i class="fas fa-info-circle"></i> <strong>Arrastra para cambiar el orden de prioridad</strong> - El primero se programará antes
+            </div>
+        </div>
+        
+        <div id="listaColaModal" style="margin: 20px 0;">
+            <!-- Generado dinámicamente -->
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+            <button onclick="cerrarModalCola()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button onclick="confirmarProgramarAutomatico()" class="btn btn-primary">
+                <i class="fas fa-check"></i> Programar Todos
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Horarios -->
+<div id="modalEditarHorario" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 400px; position: relative;">
+        <!-- Botón X para cerrar -->
+        <button onclick="cerrarModalEditarHorario()" style="position: absolute; top: 15px; right: 15px; width: 36px; height: 36px; border-radius: 50%; background: #e2e8f0; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: #4a5568;" onmouseover="this.style.background='#cbd5e0'" onmouseout="this.style.background='#e2e8f0'">
+            <i class="fas fa-times" style="font-size: 1.2em;"></i>
+        </button>
+        
+        <h3 style="margin-top: 0; padding-right: 40px;">
+            <i class="fas fa-clock"></i> Editar Horarios
+        </h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 5px;">Vehículo:</label>
+            <div id="editDominio" style="font-size: 1.1em; color: #2d3748; font-weight: 700; letter-spacing: 0.5px;"></div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">Fecha</label>
+                <input type="date" id="editFecha" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">Hora Inicio</label>
+                <input type="time" id="editHoraInicio" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #4a5568;">Duración:</span>
+                <strong id="editDuracion" style="color: #2d3748;"></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <span style="color: #4a5568;">Hora Fin (calculada):</span>
+                <strong id="editHoraFinCalculada" style="color: #EB0A1E;">--:--</strong>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="darDeBajaTurno()" class="btn" style="background: #dc2626; color: white;">
+                <i class="fas fa-trash-alt"></i> Dar de Baja
+            </button>
+            <button onclick="guardarHorarioEditado()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Jornadas Completas -->
+<div id="modalJornadas" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-calendar-check"></i> Configurar Jornadas Completas
+        </h3>
+        
+        <div style="background: #ebf8ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #4299e1;">
+            <div style="color: #2c5282; font-size: 0.95em;">
+                <strong>Jornada Cortada (Por defecto):</strong> 08:30-13:00 y 16:00-20:00 con descanso<br>
+                <strong>Jornada Completa:</strong> 08:30-20:00 (sin descanso - horario continuo)<br><br>
+                Marca los días que tendrán jornada completa. Los demás días tendrán jornada cortada automáticamente.
+            </div>
+        </div>
+        
+        <!-- Selector de mes -->
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                Seleccionar Mes:
+            </label>
+            <input type="month" id="mesJornadas" style="padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; width: 200px;">
+            <button onclick="cargarJornadasMes()" class="btn btn-secondary" style="margin-left: 10px;">
+                <i class="fas fa-search"></i> Ver
+            </button>
+        </div>
+        
+        <!-- Lista de días del mes -->
+        <div id="listaJornadas" style="max-height: 400px; overflow-y: auto;">
+            <!-- Generado dinámicamente -->
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+            <button onclick="cerrarModalJornadas()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Control Salón -->
+<div id="modalControlSalon" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 1000px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-couch"></i> Control de Vehículos en Salón
+        </h3>
+        
+        <div style="background: #f0fff4; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #48bb78;">
+            <div style="color: #22543d; font-size: 0.95em;">
+                <strong>Vehículos listos para entrega o repaso.</strong> Programa entregas cuando el cliente retira el vehículo, o repasos si necesita limpieza adicional.
+            </div>
+        </div>
+        
+        <!-- Tabla de vehículos -->
+        <div id="tablaSalonContainer" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f7fafc;">
+                        <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Dominio</th>
+                        <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Marca</th>
+                        <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Modelo</th>
+                        <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Último Lavado</th>
+                        <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Días en Salón</th>
+                        <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 700; color: #2d3748;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaSalon">
+                    <!-- Generado dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+            <button onclick="cerrarModalControlSalon()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tarea Cíclica -->
+<div id="modalTareaCiclica" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 600px;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-sync-alt"></i> Crear Tarea Cíclica
+        </h3>
+        
+        <div style="background: #e9d8fd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #805ad5;">
+            <div style="color: #44337a; font-size: 0.95em;">
+                <strong>Tarea Cíclica:</strong> Bloques de tiempo recurrentes (desayunos, descansos, mantenimiento) que bloquean espacios en el gantt para evitar conflictos.
+            </div>
+        </div>
+        
+        <form id="formTareaCiclica" onsubmit="guardarTareaCiclica(event)" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Tipo de Operación
+                </label>
+                <select id="tipoOperacionCiclica" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                    <option value="">Seleccionar operación...</option>
+                    <!-- Generado dinámicamente desde config_operaciones_lavado -->
+                </select>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                        Fecha Inicio
+                    </label>
+                    <input type="date" id="fechaInicioCiclica" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                        Fecha Fin
+                    </label>
+                    <input type="date" id="fechaFinCiclica" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                </div>
+            </div>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Hora de Inicio
+                </label>
+                <input type="time" id="horaInicioCiclica" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                <small style="color: #718096; font-size: 0.85em;">La hora fin se calcula automáticamente según la duración de la operación</small>
+            </div>
+            
+            <div style="border-top: 2px solid #e2e8f0; margin-top: 20px; padding-top: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #4a5568;">
+                    <i class="fas fa-repeat"></i> Frecuencia de Repetición
+                </label>
+                
+                <div style="background: #f7fafc; padding: 15px; border-radius: 6px; border-left: 3px solid #8b5cf6;">
+                    <div style="margin-bottom: 10px;">
+                        <select id="frecuenciaCiclica" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                            <option value="laborable">Laborable (lunes a viernes)</option>
+                            <option value="lun_mie_vie">Lunes, Miércoles y Viernes</option>
+                            <option value="mar_jue_sab">Martes, Jueves y Sábados</option>
+                            <option value="sabados">Solo sábados</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                <button type="button" onclick="cerrarModalTareaCiclica()" class="btn" style="background: #718096; color: white;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn" style="background: #8b5cf6; color: white;">
+                    <i class="fas fa-sync-alt"></i> Crear Tarea Cíclica
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div id="ganttTooltip" class="gantt-tooltip"></div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+}
+
+.btn-secondary {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #3182ce;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.vehiculo-cola {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: move;
+    transition: all 0.2s;
+}
+
+.vehiculo-cola:hover {
+    border-color: #EB0A1E;
+    box-shadow: 0 2px 4px rgba(235, 10, 30, 0.2);
+}
+
+.vehiculo-cola.dragging {
+    opacity: 0.5;
+}
+
+.gantt-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.gantt-row {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    height: 35px;
+    position: relative;
+}
+
+.gantt-columns-fixed {
+    display: flex;
+    flex-shrink: 0;
+    width: 300px;
+    background: #f7fafc;
+    border-right: 2px solid #2d3748;
+    position: relative;
+    z-index: 60;
+}
+
+.gantt-timeline-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.gantt-label {
+    width: 100px;
+    padding: 8px;
+    border-right: 1px solid #cbd5e0;
+    display: flex;
+    align-items: center;
+    font-size: 0.85em;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gantt-label-small {
+    width: 120px;
+    padding: 8px;
+    border-right: 1px solid #cbd5e0;
+    display: flex;
+    align-items: center;
+    font-size: 0.8em;
+    color: #4a5568;
+    flex-shrink: 0;
+}
+
+.gantt-label-duration {
+    width: 80px;
+    padding: 8px;
+    border-right: 1px solid #cbd5e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    color: #4a5568;
+    flex-shrink: 0;
+}
+
+.gantt-label-posicion {
+    width: 100px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    color: #2d3748;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.gantt-timeline {
+    position: relative;
+    min-width: 1400px;
+    height: 100%;
+    background: white;
+}
+
+.tiempo-actual {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #718096;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.gantt-tooltip {
+    position: absolute;
+    background: #1a202c;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    z-index: 200;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: none;
+}
+
+.gantt-tooltip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -6px;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #1a202c;
+}
+
+.gantt-bar {
+    position: absolute;
+    height: 24px;
+    top: 5px;
+    background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    z-index: 5;
+}
+
+.gantt-bar:active {
+    cursor: grabbing;
+}
+
+.gantt-bar:hover {
+    box-shadow: 0 4px 8px rgba(235, 10, 30, 0.3);
+    z-index: 10;
+}
+
+.gantt-bar.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+}
+
+.franja-descanso {
+    position: absolute;
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(0,0,0,0.08),
+        rgba(0,0,0,0.08) 10px,
+        rgba(0,0,0,0.15) 10px,
+        rgba(0,0,0,0.15) 20px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+.gantt-header {
+    display: flex;
+    border-bottom: 2px solid #2d3748;
+    background: #f7fafc;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.gantt-header-fixed {
+    display: flex;
+    flex-shrink: 0;
+    width: 300px;
+    border-right: 2px solid #2d3748;
+    background: #f7fafc;
+    position: relative;
+    z-index: 100;
+}
+
+.gantt-header-scroll {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.gantt-header-label {
+    width: 100px;
+    padding: 10px 8px;
+    font-weight: 700;
+    color: #2d3748;
+    border-right: 1px solid #cbd5e0;
+    font-size: 0.85em;
+    flex-shrink: 0;
+}
+
+.gantt-header-label-small {
+    width: 120px;
+    padding: 10px 8px;
+    font-weight: 700;
+    color: #2d3748;
+    border-right: 1px solid #cbd5e0;
+    font-size: 0.85em;
+    flex-shrink: 0;
+}
+
+.gantt-header-label-duration {
+    width: 80px;
+    padding: 10px 8px;
+    font-weight: 700;
+    color: #2d3748;
+    border-right: 1px solid #cbd5e0;
+    font-size: 0.85em;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.gantt-header-label-posicion {
+    width: 100px;
+    padding: 10px 8px;
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 0.85em;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.gantt-header-timeline {
+    padding: 15px 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #4a5568;
+    font-size: 0.9em;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+</style>
+
+<script>
+let operaciones = [];
+let colaVehiculos = [];
+let planificacionActual = [];
+
+// Cargar datos al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    // Establecer fecha de hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaPlanificacion').value = hoy;
+    
+    cargarOperaciones();
+    cargarCola();
+    cargarPlanificacion();
+});
+
+async function cargarOperaciones() {
+    try {
+        const response = await fetch('/api/usados/operaciones');
+        if (!response.ok) throw new Error('Error al cargar operaciones');
+        
+        operaciones = await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function cargarCola() {
+    try {
+        const response = await fetch('/api/usados/cola');
+        if (!response.ok) throw new Error('Error al cargar cola');
+        
+        colaVehiculos = await response.json();
+        renderizarCola();
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderizarCola() {
+    // La cola se renderiza dentro del Gantt
+    renderizarGantt();
+}
+
+async function cargarPlanificacion() {
+    try {
+        const fecha = document.getElementById('fechaPlanificacion').value;
+        const response = await fetch(`/api/usados/planificacion/${fecha}`);
+        if (!response.ok) throw new Error('Error al cargar planificación');
+        
+        planificacionActual = await response.json();
+        await renderizarGantt();
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function renderizarGantt() {
+    const container = document.getElementById('ganttChart');
+    
+    // Actualizar badge de cola en el botón
+    const badgeCola = document.getElementById('badgeCola');
+    if (badgeCola) {
+        if (colaVehiculos.length > 0) {
+            badgeCola.textContent = colaVehiculos.length;
+            badgeCola.style.display = 'flex';
+        } else {
+            badgeCola.style.display = 'none';
+        }
+    }
+    
+    // Obtener fecha y determinar horarios según día de la semana
+    const fecha = document.getElementById('fechaPlanificacion').value;
+    const fechaObj = new Date(fecha + 'T00:00:00'); // Asegurar que se interprete como fecha local
+    const diaSemana = fechaObj.getDay(); // 0=Domingo, 6=Sábado
+    
+    // Determinar horarios según día
+    let horaInicio, minutoInicio, horaFin, totalMinutos, marcasTiempo;
+    
+    if (diaSemana === 6) {
+        // SÁBADO: 9:00-13:00
+        horaInicio = 9;
+        minutoInicio = 0;
+        horaFin = 13;
+        totalMinutos = (horaFin * 60) - (horaInicio * 60 + minutoInicio); // 9:00 a 13:00 = 240 min
+        
+        // Generar marcas cada 30 minutos: 9:00, 9:30, 10:00, 10:30, 11:00, 11:30, 12:00, 12:30, 13:00
+        marcasTiempo = [];
+        for (let h = horaInicio; h <= horaFin; h++) {
+            marcasTiempo.push(`${h.toString().padStart(2, '0')}:00`);
+            if (h < horaFin) {
+                marcasTiempo.push(`${h.toString().padStart(2, '0')}:30`);
+            }
+        }
+    } else {
+        // LUNES A VIERNES: 8:30-20:00
+        horaInicio = 8;
+        minutoInicio = 30;
+        horaFin = 20;
+        totalMinutos = (horaFin * 60) - (horaInicio * 60 + minutoInicio); // 8:30 a 20:00
+        
+        // Generar marcas cada 30 minutos empezando desde 8:30
+        marcasTiempo = [];
+        for (let h = horaInicio; h <= horaFin; h++) {
+            if (h === horaInicio) {
+                marcasTiempo.push('08:30');
+            } else {
+                marcasTiempo.push(`${h.toString().padStart(2, '0')}:00`);
+                if (h < horaFin) {
+                    marcasTiempo.push(`${h.toString().padStart(2, '0')}:30`);
+                }
+            }
+        }
+    }
+    
+    // Mostrar cola primero
+    let html = '';
+    
+    if (planificacionActual.length === 0) {
+        html += `
+            <div style="text-align: center; padding: 60px; color: #718096;">
+                <i class="fas fa-calendar" style="font-size: 3em; margin-bottom: 15px; display: block;"></i>
+                <p style="font-size: 1.1em;">No hay operaciones planificadas para esta fecha</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">Usa el botón "Programar Automático" para generar la planificación</p>
+            </div>
+        `;
+        container.innerHTML = html;
+        return;
+    }
+    
+    // Verificar tipo de jornada para franjas grises
+    let tieneJornadaCompleta = false;
+    try {
+        const respJornada = await fetch(`/api/usados/jornada/${fecha}`);
+        const jornada = await respJornada.json();
+        tieneJornadaCompleta = jornada.tipo_jornada === 'completa';
+    } catch (e) {
+        // Por defecto: jornada cortada (con franjas grises)
+        tieneJornadaCompleta = false;
+    }
+
+    html += `
+        <div class="gantt-header">
+            <div class="gantt-header-fixed">
+                <div class="gantt-header-label">Dominio</div>
+                <div class="gantt-header-label-small">Limpieza</div>
+                <div class="gantt-header-label-duration">Duración</div>
+            </div>
+            <div class="gantt-header-scroll">
+                <div class="gantt-header-timeline" style="min-width: 1400px; padding: 10px 0;">
+                    ${marcasTiempo.map(marca => `<span style="margin-right: 15px;">${marca}</span>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    planificacionActual.forEach(op => {
+        const [horaIni, minIni] = op.hora_inicio.split(':').map(Number);
+        const [horaFinOp, minFin] = op.hora_fin.split(':').map(Number);
+        
+        // Calcular minutos desde 8:30
+        const minutosDesdeInicio = (horaIni * 60 + minIni) - (horaInicio * 60 + minutoInicio);
+        const duracionMinutos = (horaFinOp - horaIni) * 60 + (minFin - minIni);
+        
+        const left = (minutosDesdeInicio / totalMinutos) * 100;
+        const width = (duracionMinutos / totalMinutos) * 100;
+        
+        // Determinar color según clasificación, tipo de operación y estado
+        const isTareaCiclica = op.es_tarea_ciclica === true || op.clasificacion === 'TAREA_CICLICA' || op.tipo === 'ciclica';
+        const isTareaManual = op.tipo === 'manual' || op.clasificacion === 'TAREA_MANUAL';
+        // Verificar si está completada: tiempo_fin_real presente O estado = Salón
+        const isCompleted = (op.tiempo_fin_real !== null && op.tiempo_fin_real !== undefined) || op.estado === 'Salón';
+        const isKinto = op.clasificacion === 'KINTO' || op.tipo === 'kinto';
+        const isTestDrive = op.clasificacion === 'TEST DRIVE';
+        const isEntrega = op.operacion_nombre === 'Entrega'; // Usar operacion_nombre en lugar de limpieza_requerida
+        const isRepaso = op.operacion_nombre === 'Repaso';
+        
+        let barColor;
+        let label = '';
+        
+        if (isCompleted) {
+            // PRIMERO verificar si está completada - barra NEGRA con checkmark
+            barColor = 'background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);';
+            label = ' ✓';
+        } else if (isTareaCiclica) {
+            barColor = 'background: repeating-linear-gradient(45deg, #718096, #718096 10px, #4a5568 10px, #4a5568 20px);'; // Gris rayado para tareas cíclicas
+            label = ' ⟳';
+        } else if (isTareaManual) {
+            barColor = 'background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);'; // Morado para tareas manuales
+            label = ' [MANUAL]';
+        } else if (isKinto) {
+            barColor = 'background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);'; // Azul
+        } else if (isTestDrive) {
+            barColor = 'background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);'; // Naranja
+        } else if (isEntrega) {
+            barColor = 'background: linear-gradient(135deg, #38b2ac 0%, #319795 100%);'; // Turquesa
+        } else if (isRepaso) {
+            barColor = 'background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);'; // Morado
+        } else {
+            barColor = 'background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);'; // Rojo (USADOS normales)
+        }
+        
+        // Debug temporal - DESPUÉS de definir barColor
+        if (op.dominio === 'AAA111') {
+            console.log('Operación AAA111:', {
+                operacion: op.operacion_nombre,
+                tiempo_fin_real: op.tiempo_fin_real,
+                estado: op.estado,
+                isCompleted: isCompleted,
+                barColor: barColor
+            });
+        }
+        // No agregamos labels redundantes, la columna 'Limpieza' ya muestra el tipo
+        
+        // Calcular franjas grises si NO hay jornada completa Y NO es sábado
+        let franjasGrises = '';
+        if (!tieneJornadaCompleta && diaSemana !== 6) {
+            // Franja 13:00-16:00 (descanso) - SOLO LUNES A VIERNES
+            const minutosDescansoInicio = (13 * 60) - (horaInicio * 60 + minutoInicio);
+            const duracionDescanso = 3 * 60; // 3 horas
+            const leftDescanso = (minutosDescansoInicio / totalMinutos) * 100;
+            const widthDescanso = (duracionDescanso / totalMinutos) * 100;
+            
+            franjasGrises = `
+                <div class="franja-descanso" style="
+                    position: absolute;
+                    left: ${leftDescanso}%;
+                    width: ${widthDescanso}%;
+                    height: 100%;
+                    background: repeating-linear-gradient(
+                        45deg,
+                        rgba(0,0,0,0.08),
+                        rgba(0,0,0,0.08) 10px,
+                        rgba(0,0,0,0.15) 10px,
+                        rgba(0,0,0,0.15) 20px
+                    );
+                    pointer-events: none;
+                    z-index: 1;
+                    border-left: 2px solid rgba(0,0,0,0.3);
+                    border-right: 2px solid rgba(0,0,0,0.3);
+                "></div>
+            `;
+        }
+
+        html += `
+            <div class="gantt-row">
+                <div class="gantt-columns-fixed">
+                    <div class="gantt-label">
+                        <strong>${op.dominio}${label}</strong>
+                    </div>
+                    <div class="gantt-label-small">${op.operacion_nombre || op.limpieza_requerida}</div>
+                    <div class="gantt-label-duration">${op.duracion_minutos}min</div>
+                </div>
+                <div class="gantt-timeline-container">
+                    <div class="gantt-timeline" data-timeline="true">
+                        ${franjasGrises}
+                        <div class="gantt-bar" 
+                             draggable="${!isTareaManual}"
+                             data-operacion-id="${op.id}"
+                             data-dominio="${op.dominio}"
+                             data-limpieza="${op.operacion_nombre || op.limpieza_requerida}"
+                             data-duracion="${op.duracion_minutos}"
+                             data-inicio-minutos="${minutosDesdeInicio}"
+                             data-hora-inicio="${op.hora_inicio.substring(0, 5)}"
+                             data-hora-fin="${op.hora_fin.substring(0, 5)}"
+                             data-estado="${op.estado}"
+                             data-tipo="${op.tipo || 'usados'}"
+                             data-es-manual="${isTareaManual}"
+                             data-completado="${isCompleted}"
+                             style="left: ${left}%; width: ${width}%; ${barColor} ${isTareaManual ? 'cursor: not-allowed; opacity: 0.9;' : ''}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Añadir línea de tiempo actual a cada timeline
+    const timelines = container.querySelectorAll('[data-timeline="true"]');
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+    const minutoActual = ahora.getMinutes();
+    const minutosActualesTotales = horaActual * 60 + minutoActual;
+    const minutosInicioTotales = horaInicio * 60 + minutoInicio;
+    
+    if (minutosActualesTotales >= minutosInicioTotales && horaActual < horaFin) {
+        const minutosActuales = minutosActualesTotales - minutosInicioTotales;
+        const leftActual = (minutosActuales / totalMinutos) * 100;
+        
+        const timelines = container.querySelectorAll('[data-timeline="true"]');
+        timelines.forEach(timeline => {
+            const lineaTiempo = document.createElement('div');
+            lineaTiempo.className = 'tiempo-actual';
+            lineaTiempo.style.left = leftActual + '%';
+            timeline.appendChild(lineaTiempo);
+        });
+    }
+    
+    // Sincronizar scroll horizontal de todas las filas
+    const headerScroll = container.querySelector('.gantt-header-scroll');
+    const timelineContainers = container.querySelectorAll('.gantt-timeline-container');
+    
+    const syncScroll = (source) => {
+        const scrollLeft = source.scrollLeft;
+        if (headerScroll !== source) headerScroll.scrollLeft = scrollLeft;
+        timelineContainers.forEach(tc => {
+            if (tc !== source) tc.scrollLeft = scrollLeft;
+        });
+    };
+    
+    if (headerScroll) {
+        headerScroll.addEventListener('scroll', () => syncScroll(headerScroll));
+    }
+    
+    timelineContainers.forEach(tc => {
+        tc.addEventListener('scroll', () => syncScroll(tc));
+    });
+    
+    // Auto-scroll para centrar línea de tiempo actual
+    if (horaActual >= horaInicio && horaActual < horaFin) {
+        const lineaActual = container.querySelector('.tiempo-actual');
+        if (lineaActual && headerScroll) {
+            const offsetLeft = lineaActual.offsetLeft;
+            const scrollPos = offsetLeft - (headerScroll.clientWidth / 2);
+            headerScroll.scrollLeft = scrollPos;
+        }
+    }
+}
+
+let ordenColaActual = [];
+
+function abrirModalCola() {
+    if (colaVehiculos.length === 0) {
+        mostrarAlerta('No hay vehículos en cola para programar', 'error');
+        return;
+    }
+    
+    // Inicializar orden actual con los IDs de la cola
+    ordenColaActual = colaVehiculos.map(v => v.id);
+    
+    renderizarListaCola();
+    document.getElementById('modalCola').style.display = 'flex';
+}
+
+function renderizarListaCola() {
+    const listaContainer = document.getElementById('listaColaModal');
+    
+    // Obtener vehículos en el orden actual
+    const vehiculosOrdenados = ordenColaActual
+        .map(id => colaVehiculos.find(v => v.id === id))
+        .filter(v => v !== undefined);
+    
+    listaContainer.innerHTML = `
+        <div style="background: #f7fafc; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+            <div style="color: #4a5568; font-size: 0.9em; margin-bottom: 5px;">
+                Se programarán <strong style="color: #EB0A1E;">${vehiculosOrdenados.length}</strong> vehículo${vehiculosOrdenados.length > 1 ? 's' : ''} en este orden:
+            </div>
+        </div>
+        <div id="listaColaOrdenable" style="display: flex; flex-direction: column; gap: 10px;">
+            ${vehiculosOrdenados.map((v, index) => `
+                <div class="item-cola-ordenable" 
+                     data-vehiculo-id="${v.id}"
+                     draggable="true"
+                     style="display: flex; align-items: center; gap: 15px; padding: 12px; background: white; border: 2px solid #e2e8f0; border-radius: 6px; cursor: move; transition: all 0.2s;">
+                    <div style="color: #718096; font-size: 1.2em; flex-shrink: 0;">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div style="background: #EB0A1E; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 1.1em;">
+                        ${index + 1}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #2d3748; font-size: 1.05em;">${v.dominio}</div>
+                        <div style="color: #718096; font-size: 0.9em;">${v.limpieza_requerida}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Agregar event listeners para drag and drop
+    const items = listaContainer.querySelectorAll('.item-cola-ordenable');
+    items.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+        item.addEventListener('dragenter', handleDragEnter);
+        item.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.style.borderColor = '#EB0A1E';
+        this.style.background = '#fef2f2';
+    }
+}
+
+function handleDragLeave(e) {
+    this.style.borderColor = '#e2e8f0';
+    this.style.background = 'white';
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        // Obtener IDs
+        const draggedId = parseInt(draggedElement.getAttribute('data-vehiculo-id'));
+        const targetId = parseInt(this.getAttribute('data-vehiculo-id'));
+        
+        // Actualizar orden
+        const draggedIndex = ordenColaActual.indexOf(draggedId);
+        const targetIndex = ordenColaActual.indexOf(targetId);
+        
+        ordenColaActual.splice(draggedIndex, 1);
+        ordenColaActual.splice(targetIndex, 0, draggedId);
+        
+        // Re-renderizar
+        renderizarListaCola();
+    }
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    
+    // Limpiar estilos de todos los items
+    const items = document.querySelectorAll('.item-cola-ordenable');
+    items.forEach(item => {
+        item.style.borderColor = '#e2e8f0';
+        item.style.background = 'white';
+    });
+}
+
+function cerrarModalCola() {
+    document.getElementById('modalCola').style.display = 'none';
+}
+
+async function confirmarProgramarAutomatico() {
+    try {
+        const fecha = document.getElementById('fechaPlanificacion').value;
+        
+        if (!fecha) {
+            mostrarAlerta('Selecciona una fecha primero', 'error');
+            return;
+        }
+        
+        // Enviar orden manual al backend
+        const response = await fetch('/api/usados/programar-automatico', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                fecha,
+                orden_vehiculos: ordenColaActual
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al programar');
+        }
+        
+        const result = await response.json();
+        mostrarAlerta(`${result.programados} operaciones programadas exitosamente`, 'success');
+        
+        cerrarModalCola();
+        await cargarCola();
+        await cargarPlanificacion();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+// Función optimizarGantt eliminada - ya no se usa
+
+function abrirModalConfigOperaciones() {
+    cargarTablaOperaciones();
+    document.getElementById('modalConfigOperaciones').style.display = 'flex';
+}
+
+function cerrarModalConfigOperaciones() {
+    document.getElementById('modalConfigOperaciones').style.display = 'none';
+}
+
+async function cargarTablaOperaciones() {
+    await cargarOperaciones();
+    
+    const tbody = document.getElementById('tablaOperaciones');
+    tbody.innerHTML = operaciones.map(op => `
+        <tr>
+            <td>
+                <strong>${op.nombre}</strong>
+                ${op.es_sistema ? '<span style="color: #718096; font-size: 0.8em; margin-left: 8px;">(Sistema)</span>' : ''}
+            </td>
+            <td style="text-align: center;">
+                <input type="number" value="${op.duracion_minutos}" min="1" max="480"
+                       onchange="actualizarDuracion(${op.id}, this.value)"
+                       style="width: 80px; padding: 5px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: center;">
+            </td>
+            <td style="text-align: center;">
+                ${!op.es_sistema ? `
+                    <button onclick="eliminarOperacion(${op.id})" class="btn btn-sm" style="background: #f56565; color: white;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : '-'}
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function actualizarDuracion(id, duracion) {
+    try {
+        const response = await fetch(`/api/usados/operaciones/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duracion_minutos: parseInt(duracion) })
+        });
+        
+        if (!response.ok) throw new Error('Error al actualizar');
+        
+        mostrarAlerta('Duración actualizada', 'success');
+        cargarOperaciones();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+async function eliminarOperacion(id) {
+    if (!confirm('¿Eliminar esta operación personalizada?')) return;
+    
+    try {
+        const response = await fetch(`/api/usados/operaciones/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) throw new Error('Error al eliminar');
+        
+        mostrarAlerta('Operación eliminada', 'success');
+        cargarTablaOperaciones();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+async function guardarNuevaOperacion(event) {
+    event.preventDefault();
+    
+    const data = {
+        nombre: document.getElementById('nombreOperacion').value,
+        duracion_minutos: parseInt(document.getElementById('duracionOperacion').value)
+    };
+    
+    try {
+        const response = await fetch('/api/usados/operaciones', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar');
+        }
+        
+        mostrarAlerta('Operación creada exitosamente', 'success');
+        document.getElementById('formNuevaOperacion').reset();
+        cargarTablaOperaciones();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+// Tooltip hover
+const tooltip = document.getElementById('ganttTooltip');
+let currentOperacionId = null;
+
+document.addEventListener('mouseover', (e) => {
+    if (e.target.classList.contains('gantt-bar')) {
+        const dominio = e.target.dataset.dominio;
+        const limpieza = e.target.dataset.limpieza;
+        const horaInicio = e.target.dataset.horaInicio;
+        const horaFin = e.target.dataset.horaFin;
+        const duracion = e.target.dataset.duracion;
+        const estado = e.target.dataset.estado;
+        const tipo = e.target.dataset.tipo;
+        const completado = e.target.dataset.completado === 'true';
+        
+        const completadoTag = completado ? '<br><strong style="color: #48bb78;">✓ COMPLETADO</strong>' : '';
+        
+        let tag = '';
+        if (tipo === 'kinto') {
+            tag = '<br><span style="background: #4299e1; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">KINTO</span>';
+        } else if (limpieza === 'Entrega') {
+            tag = '<br><span style="background: #38b2ac; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">ENTREGA</span>';
+        } else if (limpieza === 'Repaso') {
+            tag = '<br><span style="background: #ed8936; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">REPASO</span>';
+        }
+        
+        tooltip.innerHTML = `
+            <strong>${dominio}</strong>${tag}<br>
+            ${limpieza}<br>
+            ${horaInicio} - ${horaFin} (${duracion}min)${completadoTag}
+        `;
+        tooltip.style.display = 'block';
+        
+        // Calcular posición después de que el tooltip tenga contenido
+        setTimeout(() => {
+            const rect = e.target.getBoundingClientRect();
+            const tooltipHeight = tooltip.offsetHeight;
+            
+            // Posicionar a la derecha de la barra, centrado verticalmente
+            tooltip.style.left = rect.right + 10 + 'px';
+            tooltip.style.top = rect.top + (rect.height / 2) - (tooltipHeight / 2) + window.scrollY + 'px';
+        }, 0);
+    }
+});
+
+document.addEventListener('mouseout', (e) => {
+    if (e.target.classList.contains('gantt-bar')) {
+        tooltip.style.display = 'none';
+    }
+});
+
+// Click en barra para editar
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('gantt-bar')) {
+        const operacionId = e.target.dataset.operacionId;
+        const dominio = e.target.dataset.dominio;
+        const limpieza = e.target.dataset.limpieza;
+        const horaInicio = e.target.dataset.horaInicio;
+        const horaFin = e.target.dataset.horaFin;
+        const duracion = e.target.dataset.duracion;
+        const tipo = e.target.dataset.tipo || 'usados';
+        const fecha = document.getElementById('fechaPlanificacion').value;
+        
+        abrirModalEditarHorario(operacionId, dominio, limpieza, horaInicio, horaFin, duracion, fecha, tipo);
+    }
+});
+
+let duracionActual = 0;
+let tipoOperacionActual = 'usados';
+
+function abrirModalEditarHorario(operacionId, dominio, limpieza, horaInicio, horaFin, duracion, fecha, tipo) {
+    currentOperacionId = operacionId;
+    duracionActual = parseInt(duracion);
+    tipoOperacionActual = tipo || 'usados';
+    
+    document.getElementById('editDominio').textContent = `${dominio} - ${limpieza}`;
+    document.getElementById('editDuracion').textContent = `${duracion} minutos`;
+    document.getElementById('editFecha').value = fecha || document.getElementById('fechaPlanificacion').value;
+    document.getElementById('editHoraInicio').value = horaInicio;
+    
+    calcularHoraFin();
+    
+    document.getElementById('modalEditarHorario').style.display = 'flex';
+    
+    // Listener para recalcular al cambiar hora inicio
+    document.getElementById('editHoraInicio').onchange = calcularHoraFin;
+}
+
+function calcularHoraFin() {
+    const horaInicio = document.getElementById('editHoraInicio').value;
+    if (!horaInicio) {
+        document.getElementById('editHoraFinCalculada').textContent = '--:--';
+        return;
+    }
+    
+    const [h, m] = horaInicio.split(':').map(Number);
+    const minutosInicio = h * 60 + m;
+    const minutosFin = minutosInicio + duracionActual;
+    
+    const horaFin = Math.floor(minutosFin / 60);
+    const minutoFin = minutosFin % 60;
+    
+    const horaFinStr = `${horaFin.toString().padStart(2, '0')}:${minutoFin.toString().padStart(2, '0')}`;
+    document.getElementById('editHoraFinCalculada').textContent = horaFinStr;
+}
+
+function cerrarModalEditarHorario() {
+    document.getElementById('modalEditarHorario').style.display = 'none';
+    currentOperacionId = null;
+}
+
+async function guardarHorarioEditado() {
+    const fecha = document.getElementById('editFecha').value;
+    const horaInicio = document.getElementById('editHoraInicio').value;
+    
+    if (!fecha || !horaInicio) {
+        mostrarAlerta('Completa fecha y hora de inicio', 'error');
+        return;
+    }
+    
+    // VALIDACIÓN: Si es HOY, no permitir horarios en el pasado
+    const hoy = new Date();
+    const fechaSeleccionada = new Date(fecha + 'T00:00:00');
+    const esHoy = fechaSeleccionada.toDateString() === hoy.toDateString();
+    
+    if (esHoy) {
+        const [h, m] = horaInicio.split(':').map(Number);
+        const minutosSeleccionados = h * 60 + m;
+        const minutosActuales = hoy.getHours() * 60 + hoy.getMinutes();
+        
+        if (minutosSeleccionados <= minutosActuales) {
+            mostrarAlerta('❌ No se puede programar en un horario que ya pasó. Hora actual: ' + 
+                         hoy.getHours().toString().padStart(2, '0') + ':' + 
+                         hoy.getMinutes().toString().padStart(2, '0'), 'error');
+            return;
+        }
+    }
+    
+    // Calcular hora fin
+    const [h, m] = horaInicio.split(':').map(Number);
+    const minutosInicio = h * 60 + m;
+    const minutosFin = minutosInicio + duracionActual;
+    
+    const horaFin = Math.floor(minutosFin / 60);
+    const minutoFin = minutosFin % 60;
+    const horaFinStr = `${horaFin.toString().padStart(2, '0')}:${minutoFin.toString().padStart(2, '0')}:00`;
+    
+    // Validar horario según día de la semana
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const diaSemana = fechaObj.getDay(); // 0=Domingo, 6=Sábado
+    
+    if (diaSemana === 6) {
+        // SÁBADO: solo 9:00-13:00
+        const sabadoMin = 9 * 60; // 9:00
+        const sabadoMax = 13 * 60; // 13:00
+        
+        if (minutosInicio < sabadoMin || minutosFin > sabadoMax) {
+            mostrarAlerta('❌ Los sábados solo se permiten turnos entre 9:00 y 13:00', 'error');
+            return;
+        }
+    } else {
+        // LUNES A VIERNES: 8:30 a 20:00
+        const horaInicioMin = 8 * 60 + 30; // 8:30 = 510 min
+        const horaFinMax = 20 * 60; // 20:00 = 1200 min
+        
+        if (minutosInicio < horaInicioMin || minutosFin > horaFinMax) {
+            mostrarAlerta('❌ Horario permitido: 8:30 a 20:00', 'error');
+            return;
+        }
+    }
+    
+    // Validar que no haya más de 2 operaciones simultáneas (solo si es la misma fecha)
+    const fechaActual = document.getElementById('fechaPlanificacion').value;
+    if (fecha === fechaActual) {
+        const conflictos = planificacionActual.filter(op => {
+            if (op.id === currentOperacionId) return false;
+            
+            const [opH1, opM1] = op.hora_inicio.split(':').map(Number);
+            const [opH2, opM2] = op.hora_fin.split(':').map(Number);
+            const opInicio = opH1 * 60 + opM1;
+            const opFin = opH2 * 60 + opM2;
+            
+            return (minutosInicio < opFin && minutosFin > opInicio);
+        });
+        
+        if (conflictos.length >= 2) {
+            mostrarAlerta('❌ No hay espacio disponible. Máximo 2 operaciones simultáneas.', 'error');
+            return;
+        }
+    }
+    
+    try {
+        const response = await fetch(`/api/usados/planificacion/${currentOperacionId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fecha: fecha,
+                hora_inicio: horaInicio + ':00',
+                hora_fin: horaFinStr,
+                tipo: tipoOperacionActual
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al actualizar');
+        
+        mostrarAlerta('Operación reprogramada correctamente', 'success');
+        cerrarModalEditarHorario();
+        
+        // Si cambió la fecha, actualizar el selector
+        if (fecha !== fechaActual) {
+            document.getElementById('fechaPlanificacion').value = fecha;
+        }
+        
+        // Recargar y reordenar
+        await cargarPlanificacion();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al actualizar horario', 'error');
+    }
+}
+
+async function darDeBajaTurno() {
+    if (!currentOperacionId) {
+        mostrarAlerta('Error: No hay operación seleccionada', 'error');
+        return;
+    }
+    
+    const dominio = document.getElementById('editDominio').textContent;
+    
+    if (!confirm(`¿Está seguro que desea dar de baja el turno del vehículo ${dominio}?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usados/planificacion/${currentOperacionId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo: tipoOperacionActual })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al dar de baja');
+        }
+        
+        mostrarAlerta('✅ Turno dado de baja exitosamente', 'success');
+        cerrarModalEditarHorario();
+        await cargarPlanificacion();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const colores = {
+        success: { bg: '#48bb78', icon: 'check-circle' },
+        error: { bg: '#f56565', icon: 'exclamation-circle' },
+        info: { bg: '#4299e1', icon: 'info-circle' }
+    };
+    
+    const color = colores[tipo] || colores.info;
+    
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${color.bg};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-weight: 600;
+    `;
+    alerta.innerHTML = `<i class="fas fa-${color.icon}"></i> ${mensaje}`;
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => alerta.remove(), 3000);
+}
+
+// ==== CONTROL DE JORNADAS COMPLETAS ====
+
+function abrirModalJornadas() {
+    // Establecer mes actual
+    const hoy = new Date();
+    const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('mesJornadas').value = mesActual;
+    
+    document.getElementById('modalJornadas').style.display = 'flex';
+    cargarJornadasMes();
+}
+
+function cerrarModalJornadas() {
+    document.getElementById('modalJornadas').style.display = 'none';
+}
+
+async function cargarJornadasMes() {
+    const mes = document.getElementById('mesJornadas').value;
+    if (!mes) {
+        mostrarAlerta('Selecciona un mes', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usados/jornadas?mes=${mes}`);
+        if (!response.ok) throw new Error('Error al cargar jornadas');
+        
+        const jornadas = await response.json();
+        
+        // Crear mapa de jornadas configuradas
+        const jornadasMap = {};
+        jornadas.forEach(j => {
+            jornadasMap[j.fecha] = j.tipo_jornada;
+        });
+        
+        // Generar lista de días del mes
+        const [anio, mesNum] = mes.split('-').map(Number);
+        const primerDia = new Date(anio, mesNum - 1, 1);
+        const ultimoDia = new Date(anio, mesNum, 0);
+        const diasEnMes = ultimoDia.getDate();
+        
+        const container = document.getElementById('listaJornadas');
+        let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+        
+        for (let dia = 1; dia <= diasEnMes; dia++) {
+            const fecha = new Date(anio, mesNum - 1, dia);
+            const fechaStr = `${anio}-${String(mesNum).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            const diaNombre = fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            
+            const tipoJornada = jornadasMap[fechaStr] || 'cortada';
+            const esCompleta = tipoJornada === 'completa';
+            
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${esCompleta ? '#ebf8ff' : '#f7fafc'}; border: 2px solid ${esCompleta ? '#4299e1' : '#e2e8f0'}; border-radius: 6px;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #2d3748; text-transform: capitalize;">${diaNombre}</div>
+                        <div style="font-size: 0.85em; color: #718096; margin-top: 3px;">
+                            ${esCompleta ? '<strong style="color: #4299e1;">Jornada Completa</strong> (08:30-20:00 continuo)' : '<span style="color: #718096;">Jornada Cortada</span> (08:30-13:00 y 16:00-20:00)'}
+                        </div>
+                    </div>
+                    <button onclick="toggleJornada('${fechaStr}', '${tipoJornada}')" 
+                            class="btn btn-sm" 
+                            style="background: ${esCompleta ? '#f56565' : '#4299e1'}; color: white;">
+                        ${esCompleta ? '<i class="fas fa-times"></i> Desactivar' : '<i class="fas fa-check"></i> Activar Completa'}
+                    </button>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar jornadas', 'error');
+    }
+}
+
+async function toggleJornada(fecha, tipoActual) {
+    try {
+        if (tipoActual === 'completa') {
+            // Eliminar configuración (vuelve a cortada por defecto)
+            const getResponse = await fetch(`/api/usados/jornadas?mes=${fecha.substring(0, 7)}`);
+            const jornadas = await getResponse.json();
+            const jornada = jornadas.find(j => j.fecha === fecha);
+            
+            if (jornada) {
+                await fetch(`/api/usados/jornadas/${jornada.id}`, { method: 'DELETE' });
+                mostrarAlerta('Jornada cambiada a cortada (con descanso)', 'success');
+            }
+        } else {
+            // Crear jornada completa
+            const response = await fetch('/api/usados/jornadas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fecha: fecha,
+                    tipo_jornada: 'completa',
+                    observaciones: ''
+                })
+            });
+            
+            if (!response.ok) throw new Error('Error al guardar');
+            
+            mostrarAlerta('Jornada completa configurada (sin descanso)', 'success');
+        }
+        
+        // Recargar lista
+        await cargarJornadasMes();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cambiar jornada', 'error');
+    }
+}
+
+// ==== CONTROL SALÓN ====
+
+let vehiculosSalon = [];
+
+async function abrirModalControlSalon() {
+    try {
+        const response = await fetch('/api/usados/control-salon');
+        if (!response.ok) throw new Error('Error al cargar vehículos en salón');
+        
+        vehiculosSalon = await response.json();
+        renderizarTablaSalon();
+        
+        document.getElementById('modalControlSalon').style.display = 'flex';
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar control de salón', 'error');
+    }
+}
+
+function cerrarModalControlSalon() {
+    document.getElementById('modalControlSalon').style.display = 'none';
+}
+
+function renderizarTablaSalon() {
+    const tbody = document.getElementById('tablaSalon');
+    
+    if (vehiculosSalon.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-inbox" style="font-size: 2em; display: block; margin-bottom: 10px;"></i>
+                    No hay vehículos en Salón
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = vehiculosSalon.map(v => {
+        const ultimoLavado = v.ultimo_lavado 
+            ? new Date(v.ultimo_lavado).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '<span style="color: #718096;">Sin registro</span>';
+        
+        const diasEnSalon = Math.floor(v.dias_en_salon || 0);
+        const colorDias = diasEnSalon > 7 ? '#f56565' : diasEnSalon > 3 ? '#f59e0b' : '#48bb78';
+        
+        return `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px;">
+                    <strong style="color: #2d3748; font-size: 1.05em;">${v.dominio}</strong>
+                </td>
+                <td style="padding: 12px; color: #4a5568;">
+                    ${v.marca || '<span style="color: #cbd5e0;">-</span>'}
+                </td>
+                <td style="padding: 12px; color: #4a5568;">
+                    ${v.modelo || '<span style="color: #cbd5e0;">-</span>'}
+                </td>
+                <td style="padding: 12px; text-align: center; color: #4a5568; font-size: 0.9em;">
+                    ${ultimoLavado}
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <span style="background: ${colorDias}; color: white; padding: 6px 12px; border-radius: 12px; font-weight: 600; font-size: 0.9em;">
+                        ${diasEnSalon} día${diasEnSalon !== 1 ? 's' : ''}
+                    </span>
+                </td>
+                <td style="padding: 12px; text-align: center;">
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button onclick="programarDesdeControl(${v.id}, 'entrega')" 
+                                class="btn btn-sm" 
+                                style="background: #4299e1; color: white;"
+                                title="Programar entrega del vehículo">
+                            <i class="fas fa-handshake"></i> Entrega
+                        </button>
+                        <button onclick="programarDesdeControl(${v.id}, 'repaso')" 
+                                class="btn btn-sm" 
+                                style="background: #ed8936; color: white;"
+                                title="Programar repaso de limpieza">
+                            <i class="fas fa-redo"></i> Repaso
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function programarDesdeControl(ingresoId, tipoOperacion) {
+    try {
+        // Capitalizar: 'entrega' -> 'Entrega', 'repaso' -> 'Repaso'
+        const tipoOperacionCapitalizado = tipoOperacion.charAt(0).toUpperCase() + tipoOperacion.slice(1);
+        const tipoTexto = tipoOperacionCapitalizado;
+        
+        const mensaje = `¿Enviar a cola para ${tipoTexto.toLowerCase()}?`;
+        
+        if (!confirm(mensaje)) return;
+        
+        // Cambiar el estado del vehículo para que tenga la operación correspondiente
+        // y enviarlo a "Playa Lavadero" (cola)
+        const response = await fetch(`/api/usados/enviar-a-cola-desde-salon`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ingreso_id: ingresoId,
+                tipo_operacion: tipoOperacionCapitalizado
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al enviar a cola');
+        }
+        
+        mostrarAlerta(`✅ Vehículo enviado a cola para ${tipoTexto}`, 'success');
+        
+        // Cerrar modal de control salón
+        cerrarModalControlSalon();
+        
+        // Recargar cola
+        await cargarCola();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message || `Error al enviar ${tipoOperacion} a cola`, 'error');
+    }
+}
+
+// ============================================
+// MODAL TAREA MANUAL
+// ============================================
+
+async function abrirModalTareaCiclica() {
+    document.getElementById('modalTareaCiclica').style.display = 'flex';
+    
+    // Setear fecha actual como inicio
+    const fechaActual = document.getElementById('fechaPlanificacion').value || new Date().toISOString().split('T')[0];
+    document.getElementById('fechaInicioCiclica').value = fechaActual;
+    
+    // Setear fecha fin 30 días después
+    const fechaFin = new Date(fechaActual);
+    fechaFin.setDate(fechaFin.getDate() + 30);
+    document.getElementById('fechaFinCiclica').value = fechaFin.toISOString().split('T')[0];
+    
+    // Cargar operaciones disponibles
+    await cargarOperacionesEnSelect();
+}
+
+function cerrarModalTareaCiclica() {
+    document.getElementById('modalTareaCiclica').style.display = 'none';
+    document.getElementById('formTareaCiclica').reset();
+}
+
+async function cargarOperacionesEnSelect() {
+    try {
+        const response = await fetch('/api/usados/operaciones');
+        if (!response.ok) throw new Error('Error al cargar operaciones');
+        
+        const operaciones = await response.json();
+        const select = document.getElementById('tipoOperacionCiclica');
+        
+        select.innerHTML = '<option value="">Seleccionar operación...</option>';
+        operaciones.forEach(op => {
+            const option = document.createElement('option');
+            option.value = op.id;
+            option.textContent = `${op.nombre} (${op.duracion_minutos} min)`;
+            option.dataset.duracion = op.duracion_minutos;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar operaciones', 'error');
+    }
+}
+
+async function guardarTareaCiclica(event) {
+    event.preventDefault();
+    
+    const operacionSelect = document.getElementById('tipoOperacionCiclica');
+    const operacionId = operacionSelect.value;
+    const fechaInicio = document.getElementById('fechaInicioCiclica').value;
+    const fechaFin = document.getElementById('fechaFinCiclica').value;
+    const horaInicio = document.getElementById('horaInicioCiclica').value;
+    const frecuencia = document.getElementById('frecuenciaCiclica').value;
+    
+    if (!operacionId || !fechaInicio || !fechaFin || !horaInicio) {
+        mostrarAlerta('Completa todos los campos requeridos', 'error');
+        return;
+    }
+    
+    // Validar que fecha fin sea posterior a fecha inicio
+    if (fechaFin < fechaInicio) {
+        mostrarAlerta('La fecha de fin debe ser posterior a la fecha de inicio', 'error');
+        return;
+    }
+    
+    // Obtener duración de la operación
+    const duracionMinutos = parseInt(operacionSelect.selectedOptions[0].dataset.duracion);
+    
+    // Calcular hora fin
+    const [h, m] = horaInicio.split(':').map(Number);
+    const minutosInicio = h * 60 + m;
+    const minutosFin = minutosInicio + duracionMinutos;
+    const horaFinH = Math.floor(minutosFin / 60);
+    const horaFinM = minutosFin % 60;
+    const horaFin = `${horaFinH.toString().padStart(2, '0')}:${horaFinM.toString().padStart(2, '0')}:00`;
+    const horaInicioFormatted = horaInicio + ':00';
+    
+    // Construir configuración de frecuencia
+    let config_frecuencia = { tipo: frecuencia };
+    
+    // No hay más días personalizados, las opciones son fijas
+    
+    try {
+        const response = await fetch('/api/usados/tarea-ciclica', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                operacion_id: parseInt(operacionId),
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin,
+                hora_inicio: horaInicioFormatted,
+                hora_fin: horaFin,
+                frecuencia: config_frecuencia
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al crear tarea cíclica');
+        }
+        
+        const resultado = await response.json();
+        const mensaje = `✅ ${resultado.tareas_creadas} tarea(s) cíclica(s) creada(s) exitosamente`;
+        mostrarAlerta(mensaje, 'success');
+        
+        cerrarModalTareaCiclica();
+        
+        // Recargar planificación
+        await cargarPlanificacion();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message || 'Error al crear tarea cíclica', 'error');
+    }
+}
+</script>
+{% endblock %}

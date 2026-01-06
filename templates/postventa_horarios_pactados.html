@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retiros Programados - Post Venta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #404041;
+        }
+        .container {
+            background: white;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #58595B;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .horario-destacado {
+            color: #2D2D2D;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        .toolbar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #2D2D2D;
+        }
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 0.95em;
+            min-width: 180px;
+        }
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        .btn-limpiar {
+            background: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .btn-limpiar:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-clock"></i> Retiros Programados</h1>
+        <a href="/postventa" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Post Venta
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <div class="filter-group">
+                <label><i class="fas fa-info-circle"></i> Estado</label>
+                <select id="filtroEstado" onchange="aplicarFiltros()">
+                    <option value="">Todos los estados</option>
+                    <option value="Hora Pactada">Pendiente de Retiro</option>
+                    <option value="Esperando Retiro">Esperando Retiro</option>
+                    <option value="Listo para Entrega">Listo para Entrega</option>
+                    <option value="Entregado">Entregado</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label><i class="fas fa-user-tie"></i> Asesor</label>
+                <select id="filtroAsesor" onchange="aplicarFiltros()">
+                    <option value="">Todos los asesores</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label><i class="fas fa-calendar-alt"></i> Fecha</label>
+                <input type="date" id="filtroFecha" onchange="aplicarFiltros()">
+            </div>
+            
+            <button class="btn-limpiar" onclick="limpiarFiltros()">
+                <i class="fas fa-eraser"></i> Limpiar filtros
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-calendar-check"></i> Horario Pactado</th>
+                        <th><i class="fas fa-user"></i> Cliente</th>
+                        <th><i class="fas fa-id-card"></i> Dominio</th>
+                        <th><i class="fas fa-car"></i> Vehículo</th>
+                        <th><i class="fas fa-user-tie"></i> Asesor</th>
+                        <th><i class="fas fa-info-circle"></i> Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaHorarios">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando retiros programados...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+let horariosData = [];
+let horariosFiltrados = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarHorarios();
+    // Actualizar cada 30 segundos
+    setInterval(cargarHorarios, 30000);
+});
+
+function cargarHorarios() {
+    fetch('/api/postventa/horarios-pactados')
+        .then(response => response.json())
+        .then(data => {
+            horariosData = data;
+            poblarFiltroAsesores();
+            aplicarFiltros();
+        })
+        .catch(error => {
+            console.error('Error al cargar horarios:', error);
+            document.getElementById('tablaHorarios').innerHTML = 
+                '<tr><td colspan="6" class="empty-state"><i class="fas fa-exclamation-triangle"></i>Error al cargar los datos</td></tr>';
+        });
+}
+
+function poblarFiltroAsesores() {
+    const asesoresUnicos = [...new Set(horariosData.map(t => t.asesor_nombre).filter(a => a))];
+    const select = document.getElementById('filtroAsesor');
+    
+    // Mantener la opción "Todos"
+    select.innerHTML = '<option value="">Todos los asesores</option>';
+    
+    asesoresUnicos.sort().forEach(asesor => {
+        const option = document.createElement('option');
+        option.value = asesor;
+        option.textContent = asesor;
+        select.appendChild(option);
+    });
+}
+
+function aplicarFiltros() {
+    const filtroEstado = document.getElementById('filtroEstado').value;
+    const filtroAsesor = document.getElementById('filtroAsesor').value;
+    const filtroFecha = document.getElementById('filtroFecha').value;
+    
+    horariosFiltrados = horariosData.filter(turno => {
+        // Filtro por estado
+        if (filtroEstado && turno.estado !== filtroEstado) {
+            return false;
+        }
+        
+        // Filtro por asesor
+        if (filtroAsesor && turno.asesor_nombre !== filtroAsesor) {
+            return false;
+        }
+        
+        // Filtro por fecha
+        if (filtroFecha) {
+            const fechaTurno = new Date(turno.fecha_hora_pactada);
+            const fechaFiltro = new Date(filtroFecha);
+            
+            // Comparar solo fecha (sin hora)
+            const fechaTurnoStr = fechaTurno.toISOString().split('T')[0];
+            const fechaFiltroStr = fechaFiltro.toISOString().split('T')[0];
+            
+            if (fechaTurnoStr !== fechaFiltroStr) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    renderizarTabla();
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtroEstado').value = '';
+    document.getElementById('filtroAsesor').value = '';
+    document.getElementById('filtroFecha').value = '';
+    aplicarFiltros();
+}
+
+function renderizarTabla() {
+    const tbody = document.getElementById('tablaHorarios');
+    
+    if (horariosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i>No hay retiros programados con los filtros seleccionados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    horariosFiltrados.forEach(turno => {
+        const horarioPactado = formatearHorario(turno.fecha_hora_pactada);
+        const estadoBadge = getEstadoBadge(turno.estado);
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="horario-destacado">${horarioPactado}</td>
+            <td>${turno.cliente_nombre}</td>
+            <td><strong>${turno.dominio}</strong></td>
+            <td>${turno.marca_modelo || '-'}</td>
+            <td>${turno.asesor_nombre || 'Sin asignar'}</td>
+            <td>${estadoBadge}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function formatearHorario(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp);
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const hora = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const diaSemana = dias[date.getDay()];
+    
+    return `${diaSemana} ${dia}/${mes} ${hora}:${min}`;
+}
+
+function getEstadoBadge(estado) {
+    switch(estado) {
+        case 'Entregado':
+            return '<span class="badge badge-success">✓ Entregado</span>';
+        case 'Listo para Entrega':
+            return '<span class="badge badge-info">Listo para Entrega</span>';
+        case 'Esperando Retiro':
+            return '<span class="badge badge-warning">Esperando Retiro</span>';
+        case 'Hora Pactada':
+            return '<span class="badge badge-warning">Pendiente de Retiro</span>';
+        default:
+            return `<span class="badge badge-warning">${estado}</span>`;
+    }
+}
+</script>
+</body>
+</html>

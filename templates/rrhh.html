@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planeamiento - Sistema de Administración</title>
+    <title>Recursos Humanos - Sistema de Administración</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -160,13 +160,17 @@
             .cards-container {
                 grid-template-columns: 1fr;
             }
+            
+            .content-wrapper {
+                padding: 20px 15px;
+            }
         }
     </style>
 </head>
 <body>
     <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
         <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
-            <i class="fas fa-chart-line"></i> Planeamiento
+            <i class="fas fa-users"></i> Recursos Humanos
         </h1>
         <a href="/" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
             <i class="fas fa-arrow-left"></i> Volver al Inicio
@@ -176,60 +180,32 @@
     <div class="content-wrapper">
         <div class="cards-container">
         
-        <!-- Módulo 1: Lista de Precios -->
-        <a href="{{ url_for('modulo1') }}" class="modulo-card">
-            <i class="fas fa-tags" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Lista de Precios</h3>
-            <p>Gestiona precios de vehículos en ARS y USD con cotizaciones actualizadas.</p>
+        <!-- Módulo: Posiciones -->
+        <a href="{{ url_for('rrhh_posiciones') }}" class="modulo-card">
+            <i class="fas fa-briefcase" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Posiciones de Trabajo</h3>
+            <p>Gestiona las posiciones disponibles en la empresa y los montos del Premio Toyota asociados.</p>
         </a>
         
-        <!-- Módulo 2: Bitácora -->
-        <a href="{{ url_for('modulo2') }}" class="modulo-card">
-            <i class="fas fa-book" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Bitácora</h3>
-            <p>Registra operaciones con modelo, vendedor y número de operación.</p>
+        <!-- Módulo: Empleados -->
+        <a href="{{ url_for('rrhh_empleados') }}" class="modulo-card">
+            <i class="fas fa-id-badge" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Empleados</h3>
+            <p>Administra la información de los empleados: legajo, posición, fechas de alta/baja y estado.</p>
         </a>
         
-        <!-- Módulo 3: Seguimiento -->
-        <a href="{{ url_for('modulo3') }}" class="modulo-card">
-            <i class="fas fa-file-excel" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Seguimiento</h3>
-            <p>Carga y limpia automáticamente tus reportes diarios de Excel.</p>
+        <!-- Módulo: Supervisores -->
+        <a href="{{ url_for('rrhh_supervisores') }}" class="modulo-card">
+            <i class="fas fa-user-tie" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Supervisores</h3>
+            <p>Gestiona la información de los supervisores: contacto, área y estado.</p>
         </a>
         
-        <!-- Módulo 4: Disponible -->
-        <a href="{{ url_for('modulo4') }}" class="modulo-card">
-            <i class="fas fa-car" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Disponible</h3>
-            <p>Gestión de unidades disponibles y reservadas en tiempo real.</p>
-        </a>
-        
-        <!-- Módulo 5: Análisis de Seguimiento -->
-        <a href="{{ url_for('modulo5') }}" class="modulo-card">
-            <i class="fas fa-cogs" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Análisis de Seguimiento</h3>
-            <p>Procesamiento avanzado de archivos SIAC e INTEGRA con VLOOKUP.</p>
-        </a>
-        
-        <!-- Módulo 6: Dashboard -->
-        <a href="{{ url_for('modulo6') }}" class="modulo-card">
-            <i class="fas fa-chart-bar" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Dashboard</h3>
-            <p>Panel de control con métricas y análisis de rendimiento.</p>
-        </a>
-        
-        <!-- Módulo 7: Análisis de Seguimiento 2 -->
-        <a href="{{ url_for('modulo7') }}" class="modulo-card">
-            <i class="fas fa-file-invoice" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Análisis de Seguimiento 2</h3>
-            <p>Procesamiento avanzado con hojas hoy/ayer/integra y edición en línea.</p>
-        </a>
-        
-        <!-- Gestión de Créditos -->
-        <a href="/planeamiento/creditos" class="modulo-card">
-            <i class="fas fa-credit-card" style="font-size: 2.5em; margin-bottom: 15px;"></i>
-            <h3>Planes de Crédito</h3>
-            <p>Gestiona planes de financiación con plazos, tasas y quebrantos configurables.</p>
+        <!-- Módulo: Liquidaciones -->
+        <a href="{{ url_for('rrhh_liquidaciones') }}" class="modulo-card">
+            <i class="fas fa-file-invoice-dollar" style="font-size: 2.5em; margin-bottom: 15px;"></i>
+            <h3>Liquidaciones</h3>
+            <p>Consolidado de empleados con sus evaluaciones mensuales: performance, comisiones y horas extras.</p>
         </a>
         
         </div>

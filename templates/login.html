@@ -14,7 +14,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #b4afaf 0%, #58595B 100%);
+            background: #1a1a1a;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,27 +36,16 @@
             padding: 40px 35px;
             text-align: center;
             border-bottom: 5px solid #EB0A1E;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .login-header .logo-icon {
-            font-size: 55px;
-            margin-bottom: 18px;
-            color: #EB0A1E;
+        .login-header .logo-img {
+            max-width: 280px;
+            width: 100%;
+            height: auto;
             display: block;
-        }
-        
-        .login-header h1 {
-            font-size: 1.75em;
-            margin-bottom: 8px;
-            font-weight: 600;
-            letter-spacing: -0.5px;
-        }
-        
-        .login-header p {
-            font-size: 1em;
-            opacity: 0.8;
-            margin: 0;
-            font-weight: 400;
         }
         
         .login-body {
@@ -167,15 +156,11 @@
         
         @media (max-width: 480px) {
             .login-header {
-                padding: 35px 25px;
+                padding: 30px 20px;
             }
             
-            .login-header .logo-icon {
-                font-size: 48px;
-            }
-            
-            .login-header h1 {
-                font-size: 1.5em;
+            .login-header .logo-img {
+                max-width: 220px;
             }
             
             .login-body {
@@ -187,9 +172,7 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <i class="fas fa-lock logo-icon"></i>
-            <h1>Plan Comercial</h1>
-            <p>Sistema de Gestión Toyota</p>
+            <img src="{{ url_for('static', filename='loginimage.png') }}" alt="Logo Plan Comercial" class="logo-img">
         </div>
         
         <div class="login-body">

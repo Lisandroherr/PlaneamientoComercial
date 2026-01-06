@@ -431,6 +431,21 @@
         body.dark-mode .mes-card .stat-value {
             color: #e0e0e0;
         }
+        
+        /* Estilos para selector de año en dark mode */
+        body.dark-mode #selector-anio {
+            background: #2d2d2d;
+            color: #e0e0e0;
+            border-color: #505050;
+        }
+        
+        body.dark-mode #btn-cargar-anio:hover {
+            background: #C8102E;
+        }
+        
+        body.dark-mode label {
+            color: #f0f0f0 !important;
+        }
     </style>
 </head>
 <body>
@@ -448,6 +463,21 @@
         </div>
         
         <div id="contenido" style="display: none;">
+            <!-- Selector de Año -->
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #EB0A1E;">
+                <label style="font-weight: 600; color: #2D2D2D; font-size: 1em;">
+                    <i class="fas fa-calendar-alt"></i> Año a consultar:
+                </label>
+                <select id="selector-anio" style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; font-weight: 600; cursor: pointer; background: white; color: #2D2D2D;">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+                </select>
+                <button id="btn-cargar-anio" style="background: #EB0A1E; color: white; padding: 8px 20px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    <i class="fas fa-sync-alt"></i> Cargar
+                </button>
+            </div>
+            
             <span class="ultima-actualizacion" id="fecha-actualizacion"></span>
             
             <!-- Grid 2x2 para todas las tablas -->
@@ -602,6 +632,7 @@
     <script>
         let datosGlobales = [];
         let familiaEditando = null;
+        let anioActual = 2025; // Año por defecto
         
         // Cargar datos al iniciar y aplicar GR Mode si está activo
         document.addEventListener('DOMContentLoaded', function() {
@@ -611,6 +642,21 @@
                 document.body.classList.add('dark-mode');
             }
             
+            // Cargar año guardado o usar 2025 por defecto
+            const anioGuardado = localStorage.getItem('retailPlanAnio');
+            if (anioGuardado) {
+                anioActual = parseInt(anioGuardado);
+                document.getElementById('selector-anio').value = anioActual;
+            }
+            
+            // Event listener para el botón de cargar
+            document.getElementById('btn-cargar-anio').addEventListener('click', function() {
+                const anioSeleccionado = parseInt(document.getElementById('selector-anio').value);
+                anioActual = anioSeleccionado;
+                localStorage.setItem('retailPlanAnio', anioActual);
+                cargarDatos();
+            });
+            
             cargarDatos();
         });
         
@@ -619,7 +665,7 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('contenido').style.display = 'none';
                 
-                const response = await fetch('/api/retail/sales_vs_plan?anio=2025');
+                const response = await fetch(`/api/retail/sales_vs_plan?anio=${anioActual}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -828,7 +874,7 @@
             
             const datos = {
                 familia: familiaEditando,
-                anio: 2025,
+                anio: anioActual,
                 convencional: parseInt(document.getElementById('obj-convencional').value),
                 especificas: parseInt(document.getElementById('obj-especiales').value),
                 tpa: parseInt(document.getElementById('obj-tpa').value)

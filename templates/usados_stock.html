@@ -1,0 +1,1227 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Vehículos{% endblock %}
+{% block icon %}warehouse{% endblock %}
+{% block page_title %}Gestión de Stock{% endblock %}
+{% block back_url %}{{ url_for('usados') }}{% endblock %}
+{% block back_text %}Volver a Usados{% endblock %}
+
+{% block content %}
+<div style="max-width: 1600px; margin: 0 auto; padding: 20px;">
+    <!-- Header con botones -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px;">
+            {% if current_user.role not in ['usuario_plus_plus', 'usuario_plus_plus_plus'] %}
+            <button onclick="filtrarClasificacion('todos')" id="btnTodos" class="btn-filtro active">
+                <i class="fas fa-th"></i> Todos
+            </button>
+            {% endif %}
+            {% if current_user.role != 'usuario_plus_plus_plus' %}
+            <button onclick="filtrarClasificacion('KINTO')" id="btnKinto" class="btn-filtro {% if current_user.role == 'usuario_plus_plus' %}active{% endif %}">
+                <i class="fas fa-car"></i> KINTO
+            </button>
+            {% endif %}
+            {% if current_user.role != 'usuario_plus_plus' %}
+            <button onclick="filtrarClasificacion('TEST DRIVE')" id="btnTestDrive" class="btn-filtro {% if current_user.role == 'usuario_plus_plus_plus' %}active{% endif %}">
+                <i class="fas fa-car-side"></i> TEST DRIVE
+            </button>
+            {% endif %}
+            {% if current_user.role not in ['usuario_plus_plus', 'usuario_plus_plus_plus'] %}
+            <button onclick="filtrarClasificacion('USADOS')" id="btnUsados" class="btn-filtro">
+                <i class="fas fa-boxes"></i> USADOS
+            </button>
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 10px;">
+            {% if current_user.role in ['usuario_plus', 'usuario_plus_plus', 'supervisor', 'admin'] %}
+            <button onclick="abrirModalNuevo('KINTO')" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo KINTO
+            </button>
+            {% endif %}
+            {% if current_user.role in ['usuario_plus', 'usuario_plus_plus_plus', 'supervisor', 'admin'] %}
+            <button onclick="abrirModalNuevo('TEST DRIVE')" class="btn" style="background: #4299e1; color: white;">
+                <i class="fas fa-plus"></i> Nuevo TEST DRIVE
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabla de stock -->
+    <div class="card" style="padding: 20px;">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f7fafc; border-bottom: 2px solid #cbd5e0;">
+                        <th style="padding: 12px; text-align: left;">Dominio</th>
+                        <th style="padding: 12px; text-align: left;">Marca</th>
+                        <th style="padding: 12px; text-align: left;">Modelo</th>
+                        <th style="padding: 12px; text-align: center;">Clasificación</th>
+                        <th style="padding: 12px; text-align: center;">Ubicación</th>
+                        <th style="padding: 12px; text-align: center;">Historial de Lavados</th>
+                        <th style="padding: 12px; text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaStockBody">
+                    <!-- Generado dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Vehículo -->
+<div id="modalNuevo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 600px;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-plus-circle"></i> Nuevo <span id="tituloClasificacion"></span>
+        </h3>
+        
+        <form id="formNuevo" onsubmit="guardarNuevo(event)">
+            <input type="hidden" id="clasificacionNuevo">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Dominio <span style="color: #f56565;">*</span>
+                </label>
+                <input type="text" id="dominioNuevo" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="AB123CD">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Marca
+                </label>
+                <input type="text" id="marcaNuevo" value="TOYOTA" readonly
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; background: #f7fafc;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Modelo <span style="color: #f56565;">*</span>
+                </label>
+                <input type="text" id="modeloNuevo" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Corolla, Hilux, Etios, etc.">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button type="button" onclick="cerrarModalNuevo()" class="btn" style="background: #718096; color: white;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Editar Vehículo -->
+<div id="modalEditar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 600px;">
+        <h3 style="margin-top: 0; color: #2d3748;">
+            <i class="fas fa-edit"></i> Editar <span id="tituloClasificacionEditar"></span>
+        </h3>
+        
+        <form id="formEditar" onsubmit="guardarEdicion(event)">
+            <input type="hidden" id="idEditar">
+            <input type="hidden" id="clasificacionEditar">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Dominio <span style="color: #f56565;">*</span>
+                </label>
+                <input type="text" id="dominioEditar" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="AB123CD">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Marca
+                </label>
+                <input type="text" id="marcaEditar" value="TOYOTA" readonly
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; background: #f7fafc;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568;">
+                    Modelo <span style="color: #f56565;">*</span>
+                </label>
+                <input type="text" id="modeloEditar" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Corolla, Hilux, Etios, etc.">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button type="button" onclick="cerrarModalEditar()" class="btn" style="background: #718096; color: white;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn" style="background: #ed8936; color: white;">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Solicitar Turno con Calendario -->
+<div id="modalSolicitarTurno" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; overflow-y: auto;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 95%; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #2d3748;">
+                <i class="fas fa-calendar-plus"></i> Solicitar Turno de Lavado
+            </h3>
+            <button onclick="cerrarModalSolicitarTurno()" style="background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div style="background: #ebf8ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #4299e1;">
+            <div style="color: #2c5282;">
+                <strong>Vehículo:</strong> <span id="turnoVehiculo"></span><br>
+                <strong>Clasificación:</strong> <span id="turnoClasificacion"></span>
+            </div>
+        </div>
+        
+        <!-- Layout: Calendario + Panel Turnos -->
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start;">
+            
+            <!-- CALENDARIO -->
+            <div class="card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <button onclick="mesAnteriorStock()" class="btn-nav">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h3 style="margin: 0; color: #2d3748; font-size: 1.3em;" id="mesActualStock">Diciembre 2025</h3>
+                    <button onclick="mesSiguienteStock()" class="btn-nav">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <div id="calendarioStock" class="calendario-grid">
+                    <!-- Generado dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- PANEL TURNOS -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="margin: 0 0 20px 0; color: #2d3748; font-size: 1.2em;">
+                    <i class="fas fa-clock"></i> Turnos Disponibles
+                </h3>
+                
+                <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #fbbf24;">
+                    <div style="color: #92400e; font-size: 0.9em;">
+                        <i class="fas fa-hands-wash"></i> <strong>Limpieza:</strong> Standard Plus (50 minutos) - Fijo para KINTO/TEST DRIVE
+                    </div>
+                </div>
+                
+                <div id="listaTurnosStock" style="max-height: 450px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 80px 20px; color: #cbd5e0;">
+                        <i class="fas fa-calendar-alt" style="font-size: 5em; margin-bottom: 15px; display: block;"></i>
+                        <p style="font-size: 1.1em;">Selecciona un día en el calendario</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <input type="hidden" id="turnoIngresoId">
+    </div>
+</div>
+
+<!-- Modal Historial de Lavados -->
+<div id="modalHistorialLavados" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; overflow-y: auto;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+            <h3 style="margin: 0; color: #2d3748;">
+                <i class="fas fa-history" style="color: #4299e1; margin-right: 10px;"></i>
+                Historial de Lavados - <span id="historialDominio" style="color: #EB0A1E;"></span>
+            </h3>
+            <button onclick="cerrarModalHistorial()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #a0aec0; padding: 0; width: 30px; height: 30px;">×</button>
+        </div>
+        
+        <div id="contenidoHistorial" style="min-height: 200px;">
+            <!-- Generado dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+}
+
+.btn-filtro {
+    padding: 8px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    color: #4a5568;
+    transition: all 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-filtro:hover {
+    border-color: #EB0A1E;
+    color: #EB0A1E;
+}
+
+.btn-filtro.active {
+    background: #EB0A1E;
+    color: white;
+    border-color: #EB0A1E;
+}
+
+.badge-clasificacion {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-kinto {
+    background: #4299e1;
+    color: white;
+}
+
+.badge-testdrive {
+    background: #ed8936;
+    color: white;
+}
+
+.badge-usados {
+    background: #48bb78;
+    color: white;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+tbody tr:hover {
+    background: #f7fafc;
+}
+
+/* Estilos del Calendario */
+.btn-nav {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #2d3748;
+    font-size: 1.2em;
+    transition: all 0.2s;
+}
+
+.btn-nav:hover {
+    background: #EB0A1E;
+    color: white;
+    border-color: #EB0A1E;
+}
+
+.calendario-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.dia-semana {
+    text-align: center;
+    font-weight: 700;
+    color: #718096;
+    font-size: 0.85em;
+    padding: 10px 0;
+}
+
+.dia-calendario {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2d3748;
+    transition: all 0.2s;
+    background: white;
+}
+
+.dia-calendario:hover {
+    border-color: #EB0A1E;
+    background: #fff5f5;
+}
+
+.dia-calendario.vacio {
+    border: none;
+    cursor: default;
+    background: transparent;
+}
+
+.dia-calendario.seleccionado {
+    background: #EB0A1E;
+    color: white;
+    border-color: #EB0A1E;
+    box-shadow: 0 4px 8px rgba(235, 10, 30, 0.3);
+}
+
+.dia-calendario.hoy {
+    border-color: #4299e1;
+    background: #ebf8ff;
+    color: #2c5282;
+}
+
+.dia-calendario.pasado {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-historial {
+    background: linear-gradient(135deg, #ff1145 0%, #ff0000 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85em;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-historial:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.historial-item {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.historial-item:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.historial-item.completado {
+    border-left: 4px solid #48bb78;
+    background: #f0fff4;
+}
+
+.historial-item.programado {
+    border-left: 4px solid #4299e1;
+    background: #ebf8ff;
+}
+
+.historial-item.en-curso {
+    border-left: 4px solid #ed8936;
+    background: #fffaf0;
+}
+
+.historial-item.vencido {
+    border-left: 4px solid #f56565;
+    background: #fff5f5;
+}
+
+.gap-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.gap-card:hover {
+    border-color: #48bb78;
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.15);
+}
+
+.gap-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.horario-badge {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.1em;
+    display: inline-block;
+}
+
+.duracion-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+@media (max-width: 768px) {
+    .gap-card {
+        padding: 15px;
+    }
+    
+    .gap-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+let stock = [];
+let operaciones = [];
+let filtroActual = 'todos';
+let gapsDisponibles = [];
+let mesActualStock = new Date();
+let diaSeleccionadoStock = null;
+let vehiculoSeleccionadoStock = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarStock();
+    cargarOperaciones();
+    
+    // Aplicar filtro automático según rol
+    const userRole = '{{ current_user.role }}';
+    if (userRole === 'usuario_plus_plus') {
+        // Usuario ++ solo ve KINTO
+        filtroActual = 'KINTO';
+        filtrarClasificacion('KINTO');
+    } else if (userRole === 'usuario_plus_plus_plus') {
+        // Usuario +++ solo ve TEST DRIVE
+        filtroActual = 'TEST DRIVE';
+        filtrarClasificacion('TEST DRIVE');
+    }
+});
+
+async function cargarStock() {
+    try {
+        const response = await fetch('/api/usados/stock');
+        if (!response.ok) throw new Error('Error al cargar stock');
+        
+        stock = await response.json();
+        console.log('Stock cargado:', stock); // DEBUG
+        console.log('Ejemplo proximo_turno:', stock[0]?.proximo_turno); // DEBUG DETALLADO
+        renderizarStock();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar stock', 'error');
+    }
+}
+
+async function cargarOperaciones() {
+    try {
+        const response = await fetch('/api/usados/operaciones');
+        if (!response.ok) throw new Error('Error al cargar operaciones');
+        
+        operaciones = await response.json();
+        
+        // No necesitamos poblar select en esta página (solo se usa en planificación)
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function filtrarClasificacion(tipo) {
+    filtroActual = tipo;
+    
+    // Actualizar botones
+    document.querySelectorAll('.btn-filtro').forEach(btn => btn.classList.remove('active'));
+    
+    // Manejar el ID del botón según el tipo
+    let btnId;
+    if (tipo === 'todos') {
+        btnId = 'btnTodos';
+    } else if (tipo === 'KINTO') {
+        btnId = 'btnKinto';
+    } else if (tipo === 'TEST DRIVE') {
+        btnId = 'btnTestDrive';
+    } else if (tipo === 'USADOS') {
+        btnId = 'btnUsados';
+    }
+    
+    if (btnId) {
+        document.getElementById(btnId).classList.add('active');
+    }
+    
+    renderizarStock();
+}
+
+function renderizarStock() {
+    const tbody = document.getElementById('tablaStockBody');
+    
+    // Filtrar según selección
+    let stockFiltrado = stock;
+    if (filtroActual !== 'todos') {
+        stockFiltrado = stock.filter(v => v.clasificacion === filtroActual);
+    }
+    
+    if (stockFiltrado.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-inbox" style="font-size: 2em; display: block; margin-bottom: 10px;"></i>
+                    No hay vehículos en esta categoría
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = stockFiltrado.map(v => {
+        const badgeClass = v.clasificacion === 'KINTO' ? 'badge-kinto' : 
+                          v.clasificacion === 'TEST DRIVE' ? 'badge-testdrive' : 
+                          'badge-usados';
+        
+        const ubicacion = v.estado || '<span style="color: #cbd5e0;">-</span>';
+        
+        // Control de acceso según rol
+        const userRole = '{{ current_user.role }}';
+        
+        // Mostrar botón de solicitar turno para KINTO y TEST DRIVE
+        // Clase C y Clase D PUEDEN solicitar turnos (es su única acción permitida)
+        let botonTurno;
+        if (v.clasificacion === 'KINTO' || v.clasificacion === 'TEST DRIVE') {
+            botonTurno = `<button onclick="abrirModalSolicitarTurno(${v.id}, '${v.dominio}', '${v.clasificacion}')" class="btn" style="background: #4299e1; color: white; padding: 6px 12px; font-size: 0.85em;">
+                <i class="fas fa-calendar-plus"></i> Solicitar Turno
+               </button>`;
+        } else if (v.clasificacion === 'USADOS' && userRole === 'supervisor') {
+            // Botón para cambiar ubicación (solo supervisores)
+            const esReparacion = v.estado === 'Reparación';
+            const iconoUbicacion = esReparacion ? 'fa-warehouse' : 'fa-wrench';
+            const textoUbicacion = esReparacion ? 'Mover a Salón' : 'Enviar a Reparación';
+            const colorBoton = esReparacion ? '#48bb78' : '#ed8936';
+            botonTurno = `<button onclick="cambiarUbicacion(${v.id}, '${v.estado || 'Salón'}')" style="background: ${colorBoton}; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                <i class="fas ${iconoUbicacion}"></i> ${textoUbicacion}
+            </button>`;
+        } else {
+            botonTurno = '<span style="color: #cbd5e0; font-size: 0.85em;">Gestionado por Cola</span>';
+        }
+        
+        return `
+            <tr>
+                <td><strong style="font-size: 1.05em;">${v.dominio}</strong></td>
+                <td>${v.marca_nombre || 'TOYOTA'}</td>
+                <td>${v.modelo_nombre || '-'}</td>
+                <td style="text-align: center;">
+                    <span class="badge-clasificacion ${badgeClass}">${v.clasificacion}</span>
+                </td>
+                <td style="text-align: center; color: #4a5568;">${ubicacion}</td>
+                <td style="text-align: center;">
+                    <button onclick="abrirModalHistorial(${v.id}, '${v.dominio}')" class="btn-historial">
+                        <i class="fas fa-history"></i> Ver Historial
+                    </button>
+                </td>
+                <td style="text-align: center;">
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                        ${botonTurno}
+                        ${userRole === 'supervisor' && (v.clasificacion === 'KINTO' || v.clasificacion === 'TEST DRIVE') ? `
+                            <button onclick="abrirModalEditar(${v.id}, '${v.dominio}', '${v.modelo_nombre || ''}', '${v.clasificacion}')" class="btn" style="background: #ed8936; color: white; padding: 6px 12px; font-size: 0.85em;">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="eliminarVehiculo(${v.id}, '${v.dominio}')" class="btn" style="background: #f56565; color: white; padding: 6px 12px; font-size: 0.85em;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function abrirModalNuevo(clasificacion) {
+    document.getElementById('clasificacionNuevo').value = clasificacion;
+    document.getElementById('tituloClasificacion').textContent = clasificacion;
+    document.getElementById('formNuevo').reset();
+    document.getElementById('marcaNuevo').value = 'TOYOTA';
+    document.getElementById('modalNuevo').style.display = 'flex';
+}
+
+function cerrarModalNuevo() {
+    document.getElementById('modalNuevo').style.display = 'none';
+}
+
+async function guardarNuevo(event) {
+    event.preventDefault();
+    
+    const data = {
+        dominio: document.getElementById('dominioNuevo').value.toUpperCase(),
+        modelo_nombre: document.getElementById('modeloNuevo').value,
+        clasificacion: document.getElementById('clasificacionNuevo').value
+    };
+    
+    try {
+        const response = await fetch('/api/usados/stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al crear vehículo');
+        }
+        
+        mostrarAlerta(`${data.clasificacion} creado exitosamente`, 'success');
+        cerrarModalNuevo();
+        cargarStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function abrirModalSolicitarTurno(ingresoId, dominio, clasificacion) {
+    vehiculoSeleccionadoStock = { id: ingresoId, dominio, clasificacion };
+    document.getElementById('turnoIngresoId').value = ingresoId;
+    document.getElementById('turnoVehiculo').textContent = dominio;
+    document.getElementById('turnoClasificacion').textContent = clasificacion;
+    
+    // Resetear calendario al mes actual
+    mesActualStock = new Date();
+    diaSeleccionadoStock = null;
+    gapsDisponibles = [];
+    
+    renderizarCalendarioStock();
+    
+    // Limpiar lista de turnos
+    document.getElementById('listaTurnosStock').innerHTML = `
+        <div style=\"text-align: center; padding: 80px 20px; color: #cbd5e0;\">
+            <i class=\"fas fa-calendar-alt\" style=\"font-size: 5em; margin-bottom: 15px; display: block;\"></i>
+            <p style=\"font-size: 1.1em;\">Selecciona un día en el calendario</p>
+        </div>
+    `;
+    
+    document.getElementById('modalSolicitarTurno').style.display = 'flex';
+}
+
+function cerrarModalSolicitarTurno() {
+    document.getElementById('modalSolicitarTurno').style.display = 'none';
+    vehiculoSeleccionadoStock = null;
+    diaSeleccionadoStock = null;
+    gapsDisponibles = [];
+}
+
+function renderizarCalendarioStock() {
+    const container = document.getElementById('calendarioStock');
+    const mes = mesActualStock.getMonth();
+    const anio = mesActualStock.getFullYear();
+    
+    // Actualizar título
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    document.getElementById('mesActualStock').textContent = `${meses[mes]} ${anio}`;
+    
+    // Días de la semana
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    let html = diasSemana.map(d => `<div class=\"dia-semana\">${d}</div>`).join('');
+    
+    // Primer día del mes
+    const primerDia = new Date(anio, mes, 1);
+    const ultimoDia = new Date(anio, mes + 1, 0);
+    const diasEnMes = ultimoDia.getDate();
+    const primerDiaSemana = primerDia.getDay();
+    
+    // Días vacíos al inicio
+    for (let i = 0; i < primerDiaSemana; i++) {
+        html += '<div class=\"dia-calendario vacio\"></div>';
+    }
+    
+    // Días del mes
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+        const fecha = new Date(anio, mes, dia);
+        fecha.setHours(0, 0, 0, 0);
+        
+        const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        const esHoy = fecha.getTime() === hoy.getTime();
+        const esPasado = fecha < hoy;
+        const esSeleccionado = diaSeleccionadoStock === fechaStr;
+        
+        let clases = 'dia-calendario';
+        if (esHoy) clases += ' hoy';
+        if (esPasado) clases += ' pasado';
+        if (esSeleccionado) clases += ' seleccionado';
+        
+        html += `<div class=\"${clases}\" onclick=\"seleccionarDiaStock('${fechaStr}', ${esPasado})\">${dia}</div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function mesAnteriorStock() {
+    mesActualStock.setMonth(mesActualStock.getMonth() - 1);
+    renderizarCalendarioStock();
+}
+
+function mesSiguienteStock() {
+    mesActualStock.setMonth(mesActualStock.getMonth() + 1);
+    renderizarCalendarioStock();
+}
+
+async function seleccionarDiaStock(fecha, esPasado) {
+    if (esPasado) {
+        mostrarAlerta('No puedes seleccionar fechas pasadas', 'error');
+        return;
+    }
+    
+    diaSeleccionadoStock = fecha;
+    renderizarCalendarioStock();
+    await cargarGapsStock(fecha);
+}
+
+async function cargarGapsStock(fecha) {
+    try {
+        // Usar el mismo endpoint que KINTO para obtener gaps
+        const response = await fetch(`/api/kinto/gaps/${fecha}`);
+        if (!response.ok) throw new Error('Error al cargar gaps');
+        
+        gapsDisponibles = await response.json();
+        renderizarGapsStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar turnos disponibles', 'error');
+    }
+}
+
+function renderizarGapsStock() {
+    const container = document.getElementById('listaTurnosStock');
+    
+    if (gapsDisponibles.length === 0) {
+        container.innerHTML = `
+            <div style=\"padding: 60px 20px; text-align: center;\">
+                <i class=\"fas fa-ban\" style=\"font-size: 4em; color: #f56565; margin-bottom: 20px; display: block;\"></i>
+                <h3 style=\"color: #2d3748; margin-bottom: 10px;\">Sin turnos disponibles</h3>
+                <p style=\"color: #718096; font-size: 0.95em;\">El Gantt está ocupado o los huecos son menores a 50 minutos (Standard Plus).</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = gapsDisponibles.map((gap, index) => {
+        const minutosDuracion = gap.duracion_minutos;
+        const horas = Math.floor(minutosDuracion / 60);
+        const minutos = minutosDuracion % 60;
+        const duracionTexto = horas > 0 
+            ? `${horas}h ${minutos}min` 
+            : `${minutos} min`;
+        
+        return `
+            <div class=\"gap-card\">
+                <div class=\"gap-card-header\">
+                    <div style=\"flex: 1;\">
+                        <div style=\"margin-bottom: 10px;\">
+                            <i class=\"fas fa-clock\" style=\"color: #48bb78; margin-right: 8px;\"></i>
+                            <span class=\"horario-badge\">${gap.hora_inicio} - ${gap.hora_fin}</span>
+                        </div>
+                        <div>
+                            <i class=\"fas fa-hourglass-half\" style=\"color: #EB0A1E; margin-right: 8px;\"></i>
+                            <span class=\"duracion-badge\">${duracionTexto} disponibles</span>
+                        </div>
+                    </div>
+                    <button onclick=\"confirmarGapStock(${index})\" class=\"btn btn-primary\" style=\"padding: 12px 24px;\">
+                        <i class=\"fas fa-calendar-plus\"></i> Reservar
+                    </button>
+                </div>
+                
+                <div style=\"margin-top: 15px; padding-top: 15px; border-top: 2px solid #e2e8f0;\">
+                    <div style=\"display: flex; gap: 20px; color: #718096; font-size: 0.9em; flex-wrap: wrap;\">
+                        <div>
+                            <i class=\"fas fa-stopwatch\"></i>
+                            <span>Inicio: <strong style=\"color: #2d3748;\">${gap.hora_inicio}</strong></span>
+                        </div>
+                        <div>
+                            <i class=\"fas fa-flag-checkered\"></i>
+                            <span>Fin: <strong style=\"color: #2d3748;\">${gap.hora_fin}</strong></span>
+                        </div>
+                        <div>
+                            <i class=\"fas fa-tachometer-alt\"></i>
+                            <span>Capacidad: <strong style=\"color: #2d3748;\">${duracionTexto}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function confirmarGapStock(gapIndex) {
+    const gap = gapsDisponibles[gapIndex];
+    
+    if (!vehiculoSeleccionadoStock || !diaSeleccionadoStock) {
+        mostrarAlerta('Error: Vehículo o fecha no seleccionados', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/stock/solicitar-turno-gap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ingreso_id: vehiculoSeleccionadoStock.id,
+                fecha: diaSeleccionadoStock,
+                hora_inicio: gap.hora_inicio
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al solicitar turno');
+        }
+        
+        mostrarAlerta(`✅ Turno programado para ${vehiculoSeleccionadoStock.dominio}`, 'success');
+        cerrarModalSolicitarTurno();
+        cargarStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+async function cambiarUbicacion(ingresoId, ubicacionActual) {
+    const esReparacion = ubicacionActual === 'Reparación';
+    const nuevaUbicacion = esReparacion ? 'Salón' : 'Reparación';
+    const mensaje = esReparacion 
+        ? '¿Mover este vehículo de REPARACIÓN a SALÓN?' 
+        : '¿Enviar este vehículo a REPARACIÓN?';
+    
+    if (!confirm(mensaje)) return;
+    
+    try {
+        const response = await fetch(`/api/usados/stock/${ingresoId}/ubicacion`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ubicacion: nuevaUbicacion })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al cambiar ubicación');
+        }
+        
+        const textoExito = esReparacion 
+            ? `Vehículo movido a Salón` 
+            : `Vehículo enviado a Reparación`;
+        mostrarAlerta(textoExito, 'success');
+        cargarStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function abrirModalEditar(id, dominio, modelo, clasificacion) {
+    document.getElementById('idEditar').value = id;
+    document.getElementById('dominioEditar').value = dominio;
+    document.getElementById('modeloEditar').value = modelo;
+    document.getElementById('clasificacionEditar').value = clasificacion;
+    document.getElementById('tituloClasificacionEditar').textContent = clasificacion;
+    document.getElementById('modalEditar').style.display = 'flex';
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditar').style.display = 'none';
+}
+
+async function guardarEdicion(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('idEditar').value;
+    const data = {
+        dominio: document.getElementById('dominioEditar').value.toUpperCase(),
+        modelo_nombre: document.getElementById('modeloEditar').value
+    };
+    
+    try {
+        const response = await fetch(`/api/usados/stock/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al actualizar vehículo');
+        }
+        
+        mostrarAlerta('Vehículo actualizado exitosamente', 'success');
+        cerrarModalEditar();
+        cargarStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+async function eliminarVehiculo(id, dominio) {
+    if (!confirm(`¿Estás seguro de eliminar el vehículo ${dominio}?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usados/stock/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al eliminar vehículo');
+        }
+        
+        mostrarAlerta(`Vehículo ${dominio} eliminado exitosamente`, 'success');
+        cargarStock();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const colores = {
+        success: { bg: '#48bb78', icon: 'check-circle' },
+        error: { bg: '#f56565', icon: 'exclamation-circle' },
+        info: { bg: '#4299e1', icon: 'info-circle' }
+    };
+    
+    const color = colores[tipo] || colores.info;
+    
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${color.bg};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-weight: 600;
+    `;
+    alerta.innerHTML = `<i class="fas fa-${color.icon}"></i> ${mensaje}`;
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => alerta.remove(), 3000);
+}
+
+// ==================== FUNCIONES MODAL HISTORIAL ====================
+
+async function abrirModalHistorial(ingresoId, dominio) {
+    document.getElementById('historialDominio').textContent = dominio;
+    document.getElementById('modalHistorialLavados').style.display = 'flex';
+    
+    // Mostrar loading
+    document.getElementById('contenidoHistorial').innerHTML = `
+        <div style="text-align: center; padding: 60px; color: #a0aec0;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3em; display: block; margin-bottom: 15px;"></i>
+            Cargando historial...
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`/api/usados/stock/${ingresoId}/historial-lavados`);
+        if (!response.ok) throw new Error('Error al cargar historial');
+        
+        const historial = await response.json();
+        renderizarHistorial(historial);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('contenidoHistorial').innerHTML = `
+            <div style="text-align: center; padding: 60px; color: #f56565;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3em; display: block; margin-bottom: 15px;"></i>
+                Error al cargar el historial
+            </div>
+        `;
+    }
+}
+
+function cerrarModalHistorial() {
+    document.getElementById('modalHistorialLavados').style.display = 'none';
+}
+
+function renderizarHistorial(historial) {
+    const container = document.getElementById('contenidoHistorial');
+    
+    if (historial.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px; color: #a0aec0;">
+                <i class="fas fa-inbox" style="font-size: 3em; display: block; margin-bottom: 15px;"></i>
+                No hay registros de lavados para este vehículo
+            </div>
+        `;
+        return;
+    }
+    
+    // Separar completados y programados
+    const completados = historial.filter(h => h.estado === 'Completado');
+    const programados = historial.filter(h => h.estado !== 'Completado');
+    
+    let html = '';
+    
+    // Sección de próximos lavados programados
+    if (programados.length > 0) {
+        html += `
+            <div style="margin-bottom: 30px;">
+                <h4 style="color: #2d3748; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-calendar-check" style="color: #4299e1;"></i>
+                    Próximos Lavados Programados (${programados.length})
+                </h4>
+                ${programados.map(p => {
+                    const claseEstado = p.estado === 'En Curso' ? 'en-curso' : 
+                                       p.estado === 'Vencido' ? 'vencido' : 'programado';
+                    const iconoEstado = p.estado === 'En Curso' ? 'fa-spinner fa-spin' :
+                                       p.estado === 'Vencido' ? 'fa-exclamation-triangle' : 'fa-clock';
+                    const colorEstado = p.estado === 'En Curso' ? '#ed8936' :
+                                       p.estado === 'Vencido' ? '#f56565' : '#4299e1';
+                    
+                    return `
+                        <div class="historial-item ${claseEstado}">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 15px;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 700; font-size: 1.1em; color: #2d3748; margin-bottom: 8px;">
+                                        ${p.operacion}
+                                    </div>
+                                    <div style="color: #4a5568; font-size: 0.9em; margin-bottom: 5px;">
+                                        <i class="fas fa-calendar" style="margin-right: 5px; color: ${colorEstado};"></i>
+                                        <strong>Fecha:</strong> ${formatearFecha(p.fecha_programada)}
+                                    </div>
+                                    <div style="color: #4a5568; font-size: 0.9em;">
+                                        <i class="fas fa-clock" style="margin-right: 5px; color: ${colorEstado};"></i>
+                                        <strong>Horario:</strong> ${p.hora_inicio} - ${p.hora_fin}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span style="background: ${colorEstado}; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fas ${iconoEstado}"></i>
+                                        ${p.estado}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // Sección de lavados completados
+    if (completados.length > 0) {
+        html += `
+            <div>
+                <h4 style="color: #2d3748; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle" style="color: #48bb78;"></i>
+                    Historial de Lavados Completados (${completados.length})
+                </h4>
+                ${completados.map(c => `
+                    <div class="historial-item completado">
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 15px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="font-weight: 700; font-size: 1.1em; color: #2d3748; margin-bottom: 8px;">
+                                    ${c.operacion}
+                                </div>
+                                <div style="color: #4a5568; font-size: 0.9em; margin-bottom: 5px;">
+                                    <i class="fas fa-calendar-check" style="margin-right: 5px; color: #48bb78;"></i>
+                                    <strong>Programado:</strong> ${formatearFecha(c.fecha_programada)} ${c.hora_inicio} - ${c.hora_fin}
+                                </div>
+                                <div style="color: #48bb78; font-size: 0.9em; font-weight: 600;">
+                                    <i class="fas fa-check-double" style="margin-right: 5px;"></i>
+                                    <strong>Completado:</strong> ${formatearFechaHora(c.fecha_completado)}
+                                </div>
+                            </div>
+                            <div>
+                                <span style="background: #48bb78; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-check-circle"></i>
+                                    Completado
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+function formatearFecha(fechaStr) {
+    if (!fechaStr) return '-';
+    const fecha = new Date(fechaStr + 'T00:00:00');
+    return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function formatearFechaHora(fechaHoraStr) {
+    if (!fechaHoraStr) return '-';
+    const fecha = new Date(fechaHoraStr);
+    return fecha.toLocaleString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+</script>
+{% endblock %}

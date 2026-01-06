@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empleados - RRHH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group select {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.activo {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.inactivo {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+        
+        .btn-icon.editar {
+            color: #3182CE;
+        }
+        
+        .btn-icon.eliminar {
+            color: #E53E3E;
+        }
+        
+        .btn-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #2D2D2D;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D3748;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-secondary {
+            background: #CBD5E0;
+            color: #2D3748;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #A0AEC0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        .precio {
+            color: #2D2D2D;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-id-badge"></i> Empleados</h1>
+        <a href="/rrhh" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a RRHH
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <h2 style="color: #2D2D2D; margin: 0;">
+                    <span id="contadorEmpleados">0 empleados</span>
+                </h2>
+                <div class="filter-group">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-search"></i> Buscar:
+                    </label>
+                    <input type="text" id="buscarNombre" placeholder="Nombre..." style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; width: 200px;" oninput="aplicarFiltros()">
+                </div>
+                <div class="filter-group">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-user-tie"></i> Superior:
+                    </label>
+                    <select id="filtroSuperior" onchange="aplicarFiltros()" style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; min-width: 150px; cursor: pointer;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="abrirModalNuevo()">
+                <i class="fas fa-plus"></i> Nuevo Empleado
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Legajo</th>
+                        <th><i class="fas fa-user"></i> Nombre Completo</th>
+                        <th><i class="fas fa-briefcase"></i> Posición</th>
+                        <th><i class="fas fa-user-tie"></i> Inmediato Superior</th>
+                        <th><i class="fas fa-trophy"></i> Premio Toyota</th>
+                        <th><i class="fas fa-calendar-plus"></i> Fecha Alta</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th style="text-align: center;"><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaEmpleados">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando empleados...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal para crear/editar empleado -->
+    <div id="modalEmpleado" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Nuevo Empleado</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <form id="formEmpleado" onsubmit="guardarEmpleado(event)">
+                <input type="hidden" id="empleadoId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="legajo">
+                            <i class="fas fa-hashtag"></i> Legajo *
+                        </label>
+                        <input type="text" id="legajo" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="posicion">
+                            <i class="fas fa-briefcase"></i> Posición
+                        </label>
+                        <select id="posicion">
+                            <option value="">Sin asignar</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nombreCompleto">
+                        <i class="fas fa-user"></i> Nombre Completo *
+                    </label>
+                    <input type="text" id="nombreCompleto" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="inmediatoSuperior">
+                        <i class="fas fa-user-tie"></i> Inmediato Superior
+                    </label>
+                    <select id="inmediatoSuperior">
+                        <option value="">Sin supervisor</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fechaAlta">
+                            <i class="fas fa-calendar-plus"></i> Fecha de Alta *
+                        </label>
+                        <input type="date" id="fechaAlta" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="estadoEmpleado">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </label>
+                        <select id="estadoEmpleado">
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="fechaBajaGroup" style="display: none;">
+                    <label for="fechaBaja">
+                        <i class="fas fa-calendar-minus"></i> Fecha de Baja
+                    </label>
+                    <input type="date" id="fechaBaja">
+                </div>
+                
+                <div class="form-group">
+                    <label for="observaciones">
+                        <i class="fas fa-comment"></i> Observaciones
+                    </label>
+                    <textarea id="observaciones"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let empleados = [];
+        let empleadosFiltrados = [];
+        let posiciones = [];
+        let supervisores = [];
+        
+        // Cargar datos al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarPosiciones();
+            cargarSupervisores();
+            cargarEmpleados();
+            
+            // Mostrar/ocultar fecha de baja según estado
+            document.getElementById('estadoEmpleado').addEventListener('change', function() {
+                const fechaBajaGroup = document.getElementById('fechaBajaGroup');
+                if (this.value === 'false') {
+                    fechaBajaGroup.style.display = 'block';
+                } else {
+                    fechaBajaGroup.style.display = 'none';
+                    document.getElementById('fechaBaja').value = '';
+                }
+            });
+        });
+        
+        function cargarPosiciones() {
+            fetch('/api/rrhh/posiciones')
+                .then(response => response.json())
+                .then(data => {
+                    posiciones = data.filter(p => p.activo);
+                    const select = document.getElementById('posicion');
+                    select.innerHTML = '<option value="">Sin asignar</option>';
+                    posiciones.forEach(pos => {
+                        const option = document.createElement('option');
+                        option.value = pos.id;
+                        option.textContent = pos.nombre;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        function cargarSupervisores() {
+            fetch('/api/rrhh/supervisores')
+                .then(response => response.json())
+                .then(data => {
+                    supervisores = data.filter(s => s.activo);
+                    const select = document.getElementById('inmediatoSuperior');
+                    select.innerHTML = '<option value="">Sin supervisor</option>';
+                    supervisores.forEach(sup => {
+                        const option = document.createElement('option');
+                        option.value = sup.nombre_completo;
+                        option.textContent = sup.nombre_completo;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        function cargarEmpleados() {
+            fetch('/api/rrhh/empleados')
+                .then(response => response.json())
+                .then(data => {
+                    empleados = data;
+                    cargarSuperiores();
+                    aplicarFiltros();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tablaEmpleados').innerHTML = `
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los empleados
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function aplicarFiltros() {
+            const buscarNombre = document.getElementById('buscarNombre').value.toLowerCase();
+            const filtroSuperior = document.getElementById('filtroSuperior').value;
+            
+            empleadosFiltrados = empleados.filter(e => {
+                // Filtro por nombre
+                const coincideNombre = !buscarNombre || 
+                    e.nombre_completo.toLowerCase().includes(buscarNombre) ||
+                    e.legajo.toLowerCase().includes(buscarNombre);
+                
+                // Filtro por inmediato superior
+                const coincideSuperior = !filtroSuperior || 
+                    (e.inmediato_superior && e.inmediato_superior === filtroSuperior);
+                
+                return coincideNombre && coincideSuperior;
+            });
+            
+            mostrarEmpleados();
+        }
+        
+        function cargarSuperiores() {
+            // Obtener lista única de inmediatos superiores
+            const superioresSet = new Set();
+            empleados.forEach(e => {
+                if (e.inmediato_superior) {
+                    superioresSet.add(e.inmediato_superior);
+                }
+            });
+            
+            const select = document.getElementById('filtroSuperior');
+            select.innerHTML = '<option value="">Todos</option>';
+            
+            Array.from(superioresSet).sort().forEach(superior => {
+                const option = document.createElement('option');
+                option.value = superior;
+                option.textContent = superior;
+                select.appendChild(option);
+            });
+        }
+        
+        function mostrarEmpleados() {
+            const tbody = document.getElementById('tablaEmpleados');
+            const contador = document.getElementById('contadorEmpleados');
+            
+            contador.textContent = `${empleadosFiltrados.length} empleado${empleadosFiltrados.length !== 1 ? 's' : ''}`;
+            
+            if (empleadosFiltrados.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay empleados con los filtros seleccionados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            empleadosFiltrados.forEach(empleado => {
+                const tr = document.createElement('tr');
+                
+                // Formatear fecha de alta
+                let fechaAlta = '-';
+                if (empleado.fecha_alta) {
+                    const fecha = new Date(empleado.fecha_alta);
+                    if (!isNaN(fecha)) {
+                        const dia = String(fecha.getUTCDate()).padStart(2, '0');
+                        const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+                        const anio = fecha.getUTCFullYear();
+                        fechaAlta = `${dia}/${mes}/${anio}`;
+                    }
+                }
+                
+                const premio = parseFloat(empleado.premio_toyota || 0);
+                const premioFormateado = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(premio);
+                
+                const estadoBadge = empleado.activo 
+                    ? '<span class="badge activo">Activo</span>'
+                    : '<span class="badge inactivo">Inactivo</span>';
+                
+                // Supervisor con hipervínculo
+                let supervisorHtml;
+                if (empleado.supervisor_id && empleado.inmediato_superior) {
+                    supervisorHtml = `<a href="/rrhh/supervisor/${empleado.supervisor_id}" style="color: #EB0A1E; text-decoration: none; font-weight: 600;" title="Ver perfil del supervisor">${empleado.inmediato_superior}</a>`;
+                } else if (empleado.inmediato_superior) {
+                    supervisorHtml = empleado.inmediato_superior;
+                } else {
+                    supervisorHtml = '<em style="color: #999;">-</em>';
+                }
+                
+                tr.innerHTML = `
+                    <td><strong>${empleado.legajo}</strong></td>
+                    <td>${empleado.nombre_completo}</td>
+                    <td>${empleado.posicion_nombre || '<em style="color: #999;">Sin asignar</em>'}</td>
+                    <td>${supervisorHtml}</td>
+                    <td class="precio">${premioFormateado}</td>
+                    <td>${fechaAlta}</td>
+                    <td>${estadoBadge}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-icon editar" onclick="editarEmpleado(${empleado.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon eliminar" onclick="eliminarEmpleado(${empleado.id}, '${empleado.nombre_completo}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function abrirModalNuevo() {
+            document.getElementById('modalTitulo').textContent = 'Nuevo Empleado';
+            document.getElementById('formEmpleado').reset();
+            document.getElementById('empleadoId').value = '';
+            document.getElementById('estadoEmpleado').value = 'true';
+            document.getElementById('fechaBajaGroup').style.display = 'none';
+            
+            // Establecer fecha de hoy por defecto
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaAlta').value = hoy;
+            
+            document.getElementById('modalEmpleado').style.display = 'block';
+        }
+        
+        function editarEmpleado(id) {
+            const empleado = empleados.find(e => e.id === id);
+            if (!empleado) return;
+            
+            document.getElementById('modalTitulo').textContent = 'Editar Empleado';
+            document.getElementById('empleadoId').value = empleado.id;
+            document.getElementById('legajo').value = empleado.legajo;
+            document.getElementById('nombreCompleto').value = empleado.nombre_completo;
+            document.getElementById('posicion').value = empleado.posicion_id || '';
+            document.getElementById('inmediatoSuperior').value = empleado.inmediato_superior || '';
+            
+            // Formatear fechas para input type="date" (YYYY-MM-DD)
+            if (empleado.fecha_alta) {
+                const fechaAlta = empleado.fecha_alta.split('T')[0];
+                document.getElementById('fechaAlta').value = fechaAlta;
+            } else {
+                document.getElementById('fechaAlta').value = '';
+            }
+            
+            if (empleado.fecha_baja) {
+                const fechaBaja = empleado.fecha_baja.split('T')[0];
+                document.getElementById('fechaBaja').value = fechaBaja;
+            } else {
+                document.getElementById('fechaBaja').value = '';
+            }
+            
+            document.getElementById('estadoEmpleado').value = empleado.activo.toString();
+            document.getElementById('observaciones').value = empleado.observaciones || '';
+            
+            // Mostrar/ocultar fecha de baja
+            if (!empleado.activo) {
+                document.getElementById('fechaBajaGroup').style.display = 'block';
+            } else {
+                document.getElementById('fechaBajaGroup').style.display = 'none';
+            }
+            
+            document.getElementById('modalEmpleado').style.display = 'block';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalEmpleado').style.display = 'none';
+        }
+        
+        function guardarEmpleado(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('empleadoId').value;
+            const posicionId = document.getElementById('posicion').value;
+            
+            const data = {
+                legajo: document.getElementById('legajo').value,
+                nombre_completo: document.getElementById('nombreCompleto').value,
+                posicion_id: posicionId ? parseInt(posicionId) : null,
+                inmediato_superior: document.getElementById('inmediatoSuperior').value,
+                fecha_alta: document.getElementById('fechaAlta').value,
+                fecha_baja: document.getElementById('fechaBaja').value || null,
+                activo: document.getElementById('estadoEmpleado').value === 'true',
+                observaciones: document.getElementById('observaciones').value
+            };
+            
+            const url = id ? `/api/rrhh/empleados/${id}` : '/api/rrhh/empleados';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cerrarModal();
+                    cargarEmpleados();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar el empleado');
+            });
+        }
+        
+        function eliminarEmpleado(id, nombre) {
+            if (!confirm(`¿Está seguro de eliminar al empleado "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            fetch(`/api/rrhh/empleados/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cargarEmpleados();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el empleado');
+            });
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalEmpleado');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+    </script>
+</body>
+</html>

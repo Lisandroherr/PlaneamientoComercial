@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis Seguimiento 2 - Sistema de Administración{% endblock %}
+{% block icon %}cogs{% endblock %}
+{% block page_title %}Análisis de Seguimiento 2{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div id="alert-container"></div>
+    
+    <!-- Sección de carga de archivo -->
+    <div style="background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%); padding: 25px; border-radius: 10px; border: 2px solid #feb2b2; margin-bottom: 30px;">
+        <h3 style="color: #C8102E; margin: 0 0 15px 0;">
+            <i class="fas fa-file-excel"></i> Cargar Archivo Excel
+        </h3>
+        <p style="color: #4a5568; margin-bottom: 20px; font-size: 0.9em;">
+            El archivo debe contener 3 hojas: <strong>hoy</strong>, <strong>ayer</strong> e <strong>integra</strong>
+        </p>
+        
+        <div class="drop-zone" id="dropZone" style="border-color: #EB0A1E; padding: 15px 20px; text-align: center;">
+            <i class="fas fa-cloud-upload-alt" style="color: #EB0A1E; font-size: 1.5em;"></i>
+            <p style="color: #2D2D2D; font-weight: 600; margin: 8px 0 2px 0; font-size: 0.95em;">
+                Arrastra el archivo Excel aquí o haz clic
+            </p>
+            <p class="hint" style="font-size: 0.8em; color: #718096; margin: 0;">
+                (.xlsx, .xls)
+            </p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+        </div>
+        
+        <div id="fileStatus" style="display: none; margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #EB0A1E;">
+            <i class="fas fa-check-circle" style="color: #EB0A1E;"></i>
+            <span id="fileName" style="font-weight: 600; margin-left: 10px;"></span>
+            <p style="margin: 8px 0 0 0; font-size: 0.85em; color: #718096;" id="fileInfo"></p>
+        </div>
+    </div>
+    
+    <!-- Botones de acción -->
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px;">
+        <button id="btnProcesar" class="btn btn-primary" disabled>
+            <i class="fas fa-cogs"></i> Procesar Archivo
+        </button>
+        <button id="btnGuardar" class="btn btn-success" style="display: none;">
+            <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+        <button id="btnDescargar" class="btn" style="display: none; background: #2D2D2D; color: white;">
+            <i class="fas fa-download"></i> Descargar Excel
+        </button>
+        <button id="btnLimpiar" class="btn btn-secondary">
+            <i class="fas fa-trash-alt"></i> Limpiar Todo
+        </button>
+    </div>
+    
+    <div class="spinner" id="spinner"></div>
+    
+    <!-- Sección de edición -->
+    <div id="editSection" style="display: none;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="color: #2D2D2D; margin-bottom: 15px;">
+                <i class="fas fa-edit"></i> Editar Registros Filtrados
+            </h3>
+            <p style="color: #718096; font-size: 0.9em; margin-bottom: 20px;">
+                Modifica los valores de las columnas permitidas. Los cambios se sincronizarán con la tabla principal usando la columna "Operación" como clave.
+            </p>
+            
+            <!-- Búsqueda y filtros -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; color: #4a5568; font-weight: 600; font-size: 0.9em;">
+                        <i class="fas fa-search"></i> Nro. Operación:
+                    </label>
+                    <input type="text" id="searchOperacion" placeholder="Buscar por número..." 
+                           style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.9em;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; color: #4a5568; font-weight: 600; font-size: 0.9em;">
+                        <i class="fas fa-user"></i> Ejecutivo:
+                    </label>
+                    <select id="filterEjecutivo" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.9em;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; color: #4a5568; font-weight: 600; font-size: 0.9em;">
+                        <i class="fas fa-check-circle"></i> Estado:
+                    </label>
+                    <select id="filterEstado" style="width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 6px; font-size: 0.9em;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button id="btnLimpiarFiltros" style="width: 100%; padding: 8px; background: #718096; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: background 0.3s;">
+                        <i class="fas fa-eraser"></i> Limpiar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabla editable -->
+        <div style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <table id="editableTable" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <thead style="background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);">
+                    <tr>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Operación</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Ejecutivo (O)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Estado (P)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Estado Seg Op (Q)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">EF Cancelad (AE)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Usado Comp (AF)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Cred Liq (AG)</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #EB0A1E; color: white; font-weight: 600;">Observaciones (AJ)</th>
+                    </tr>
+                </thead>
+                <tbody id="editableTableBody">
+                    <!-- Contenido dinámico -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center; color: #718096; font-size: 0.85em;">
+            <p id="recordCount"></p>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/modulo7.js') }}"></script>
+
+<style>
+    .drop-zone {
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        padding: 15px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .drop-zone:hover {
+        border-color: #EB0A1E;
+        background: #fff5f5;
+        transform: translateY(-2px);
+    }
+    
+    .drop-zone.dragover {
+        border-color: #EB0A1E;
+        background: #fff5f5;
+        transform: scale(1.02);
+    }
+    
+    #editableTable tbody tr {
+        border-bottom: 1px solid #e2e8f0;
+        transition: background 0.2s;
+    }
+    
+    #editableTable tbody tr:hover {
+        background: #f7fafc;
+    }
+    
+    #editableTable input, #editableTable select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        font-size: 0.9em;
+        transition: border-color 0.2s;
+    }
+    
+    #editableTable input:focus, #editableTable select:focus {
+        outline: none;
+        border-color: #EB0A1E;
+        box-shadow: 0 0 0 3px rgba(235, 10, 30, 0.1);
+    }
+    
+    #editableTable input.modified {
+        border-color: #48bb78;
+        background: #f0fff4;
+    }
+    
+    .spinner {
+        display: none;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #EB0A1E;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 30px auto;
+    }
+    
+    .spinner.show {
+        display: block;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95em;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    
+    .btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+        color: white;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        color: white;
+    }
+    
+    #btnLimpiarFiltros:hover {
+        background: #4a5568;
+    }
+</style>
+
+{% endblock %}

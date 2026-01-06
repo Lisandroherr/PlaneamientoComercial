@@ -376,7 +376,7 @@ tbody tr:last-child {
 .drop-zone {
     border: 3px dashed #A0A0A0;
     border-radius: 10px;
-    padding: 60px 40px;
+    padding: 30px 40px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -396,19 +396,19 @@ tbody tr:last-child {
 }
 
 .drop-zone i {
-    font-size: 4em;
+    font-size: 2.5em;
     color: #EB0A1E;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .drop-zone p {
-    font-size: 1.2em;
+    font-size: 1em;
     color: #2D2D2D;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .drop-zone .hint {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #58595B;
 }
 

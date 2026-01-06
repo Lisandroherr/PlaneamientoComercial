@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Usuario - Post Venta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #404041;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        .seccion {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .seccion h2 {
+            color: #2D2D2D;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #EB0A1E;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .seccion h3 {
+            color: #EB0A1E;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .seccion ul {
+            margin-left: 25px;
+            line-height: 1.8;
+        }
+        .seccion li {
+            margin-bottom: 8px;
+        }
+        .rol-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .badge-asesor {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .badge-gestion {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-supervisor {
+            background: #d4edda;
+            color: #155724;
+        }
+        .nota {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .paso {
+            background: #f7fafc;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-left: 3px solid #EB0A1E;
+            border-radius: 4px;
+        }
+        .paso strong {
+            color: #2D2D2D;
+        }
+        .restriccion {
+            display: none;
+        }
+        .restriccion.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-book"></i> Guía de Usuario - Post Venta</h1>
+        <a href="/postventa" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Post Venta
+        </a>
+    </div>
+    
+    <div class="container">
+        <!-- SECCIÓN: ÓRDENES DE TRABAJO (Asesores) -->
+        <div class="seccion">
+            <h2>
+                <i class="fas fa-clipboard-list"></i> 
+                Módulo: Órdenes de Trabajo
+                <span class="rol-badge badge-asesor">Asesor</span>
+            </h2>
+            
+            <p><strong>¿Quién accede?</strong> Asesores de Servicios, Recepcionistas y Supervisores</p>
+            
+            <h3><i class="fas fa-tasks"></i> Funciones del Asesor:</h3>
+            
+            <div class="paso">
+                <strong>1. Ver Ingresos Pendientes</strong>
+                <ul>
+                    <li>Visualiza los vehículos que te fueron asignados para atención</li>
+                    <li>En la pestaña "Ingresos" aparecerán los turnos que se te hayan asignado para atender </li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>2. Atender al Cliente (Primera vez)</strong>
+                <ul>
+                    <li>Presiona el botón <strong>"Atender"</strong> cuando el cliente llega</li>
+                    <li>Realizas la recepción del vehículo y la atención inicial</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>3. Pactar Hora con el Cliente</strong>
+                <ul>
+                    <li>Una vez revisado el vehículo, presiona <strong>"Pactar Hora"</strong></li>
+                    <li>Ingresa la fecha y hora comprometida para el retiro</li>
+                    <li>Esto genera el compromiso de entrega con el cliente</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>4. Atender Egreso del Cliente</strong>
+                <ul>
+                    <li>Cuando el cliente retorna, aparecerá en la pestaña "Egresos"</li>
+                    <li>Presiona <strong>"Atender"</strong> cuando lo recibas</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>5. Entregar Vehículo</strong>
+                <ul>
+                    <li>Una vez listo para entregar, presiona <strong>"Entregar"</strong></li>
+                    <li>Esto completa el ciclo del servicio</li>
+                    <li>El registro pasa a historial</li>
+                </ul>
+            </div>
+            
+            
+        </div>
+
+        {% if current_user.role in ['usuario_plus', 'supervisor', 'admin'] %}
+        <!-- SECCIÓN: GESTIÓN DE SERVICIOS (Usuario+) -->
+        <div class="seccion">
+            <h2>
+                <i class="fas fa-cogs"></i> 
+                Módulo: Gestión de Servicios
+                <span class="rol-badge badge-gestion">Recepcionistas</span>
+            </h2>
+            
+            <p><strong>¿Quién accede?</strong> Personal de recepción y Supervisores</p>
+            
+            <h3><i class="fas fa-plus-circle"></i> Funciones de recepción:</h3>
+            
+            <div class="paso">
+                <strong>1. Importar la base de datos de turnos desde Excel</strong>
+                <ul>
+                    <li>Arrastra el archivo .xslx al área designada, o haz click en ella para poder explorar tu equipo</li>
+                    <li>El sistema validará y cargará los turnos automáticamente</li>
+                    <li>Los turnos se crearán en estado "Por Asignar" y estarán disponible para su asignación</li>
+                    
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>2. Asignar a Asesor (AT o MT)</strong>
+                <ul>
+                    <li>En la pestaña "Por asignar" se habilitará la lista de turnos pendientes</li>
+                    <li>Selecciona el turno que deseas asignar</li>
+                    <li>Presiona <strong>AT</strong> (asignación automática) o <strong>MT</strong> (asignación manual)</li>
+                    <li>Cuando aplique, el sistema distribuira de manera equitativa los turnos entre los asesores disponibles</li>
+                    <li>Inicia el cronómetro de espera del cliente</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>3. Reasignar Turno</strong>
+                <ul>
+                    <li>Si un cronómetro está activo, puedes reasignar el turno</li>
+                    <li>Presiona <strong>"Reasignar"</strong> y selecciona el nuevo asesor</li>
+                    <li>El sistema registra el asesor original para reportes</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>4. Notificar Retiro del Cliente</strong>
+                <ul>
+                    <li>Cuando el cliente llega a retirar (estado: Hora Pactada)</li>
+                    <li>Presiona <strong>"Retiro"</strong></li>
+                    <li>Esto inicia el cronómetro de espera del egreso</li>
+                    <li>El turno pasa a "Esperando Retiro" para que el asesor lo atienda</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>5. Visualizar Cronómetros</strong>
+                <ul>
+                    <li><strong>Cronómetro Ingreso:</strong> Desde asignación hasta primera atención</li>
+                    <li><strong>Cronómetro Egreso:</strong> Desde retiro hasta atención del egreso</li>
+                    <li>Se actualizan automáticamente cada 5 segundos</li>
+                </ul>
+            </div>
+            
+            <div class="nota">
+                <strong><i class="fas fa-exclamation-triangle"></i> Reglas Importantes:</strong>
+                <ul>
+                    <li>No puedes reasignar si todos los cronómetros están detenidos</li>
+                    <li>El botón "Retiro" solo aparece cuando el estado es "Hora Pactada"</li>
+                    <li>Una vez entregado, el turno pasa automáticamente al historial</li>
+                </ul>
+            </div>
+        </div>
+
+        {% endif %}
+        
+        {% if current_user.role in ['supervisor', 'admin'] %}
+        <!-- SECCIÓN: REPORTES Y ADMINISTRACIÓN (Supervisor) -->
+        <div class="seccion">
+            <h2>
+                <i class="fas fa-chart-line"></i> 
+                Módulo: Registros y Reportes
+                <span class="rol-badge badge-supervisor">Supervisor/Admin</span>
+            </h2>
+            
+            <p><strong>¿Quién accede?</strong> Solo Supervisores y Administradores</p>
+            
+            <h3><i class="fas fa-file-alt"></i> Funcionalidades del Reporte:</h3>
+            
+            <div class="paso">
+                <strong>1. Historial Completo</strong>
+                <ul>
+                    <li>Visualiza todos los servicios entregados</li>
+                    <li>Filtra por fecha, asesor o sector</li>
+                    <li>Incluye 7 timestamps del ciclo completo</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>2. Detalle del Servicio</strong>
+                <ul>
+                    <li><strong>Línea de Tiempo Completa:</strong></li>
+                    <ul>
+                        <li>1. Asignado - Cuando gestión presiona AT/MT</li>
+                        <li>2. Atendido (Ingreso) - Primera atención al cliente</li>
+                        <li>3. Hora Pactada con Cliente - Momento del compromiso</li>
+                        <li>4. Hora Comprometida - Hora prometida para retiro</li>
+                        <li>5. Cliente Retira - Notificación de retorno</li>
+                        <li>6. Atendido (Egreso) - Atención del retiro</li>
+                        <li>7. Entregado - Cierre del servicio</li>
+                    </ul>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>3. Métricas Calculadas</strong>
+                <ul>
+                    <li><strong>Tiempo Espera Ingreso:</strong> Desde asignación hasta primera atención</li>
+                    <li><strong>Tiempo Atención Ingreso:</strong> Desde atender hasta pactar hora</li>
+                    <li><strong>Tiempo Espera Egreso:</strong> Desde retiro hasta atender egreso</li>
+                    <li><strong>Tiempo Atención Egreso:</strong> Desde atender egreso hasta entregar</li>
+                    <li><strong>Tiempo Total Servicio:</strong> Suma de los 4 tiempos anteriores</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>4. Tracking de Reasignaciones</strong>
+                <ul>
+                    <li>Visualiza si un turno fue reasignado</li>
+                    <li>Muestra el asesor original y el asesor final</li>
+                    <li>Identificado con indicador amarillo</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>5. Retiros Programados</strong>
+                <ul>
+                    <li>Tabla ordenada por horario pactado</li>
+                    <li>Muestra todos los turnos con hora comprometida</li>
+                    <li>Estados: Pendiente, Esperando Retiro, Listo, Entregado</li>
+                </ul>
+            </div>
+            
+            <div class="nota">
+                <strong><i class="fas fa-lightbulb"></i> Uso Estratégico:</strong>
+                <ul>
+                    <li>Identifica cuellos de botella en los tiempos de espera</li>
+                    <li>Evalúa desempeño de asesores por tiempos de atención</li>
+                    <li>Detecta frecuencia de reasignaciones para balancear carga</li>
+                    <li>Analiza cumplimiento de horarios pactados</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: ADMINISTRACIÓN (Supervisor/Admin) -->
+        <div class="seccion">
+            <h2>
+                <i class="fas fa-cog"></i> 
+                Módulos de Administración
+                <span class="rol-badge badge-supervisor">Supervisor/Admin</span>
+            </h2>
+            
+            <div class="paso">
+                <strong>Administración de Asesores</strong>
+                <ul>
+                    <li>Dar de alta/baja asesores de AT y MT</li>
+                    <li>Editar nombres y sectores</li>
+                    <li>Controlar disponibilidad activa/inactiva</li>
+                </ul>
+            </div>
+            
+            <div class="paso">
+                <strong>Administración de Servicios</strong>
+                <ul>
+                    <li>Crear tipos de servicio personalizados</li>
+                    <li>Asignar asesores fijos a servicios específicos</li>
+                    <li>Activar/desactivar servicios según necesidad</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

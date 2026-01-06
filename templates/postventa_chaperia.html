@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapería y Pintura - Post Venta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div style="background: #2D2D2D; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E;">
+        <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
+            <i class="fas fa-paint-brush"></i> Chapería y Pintura - Mis Tareas
+        </h1>
+        <a href="/postventa" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-arrow-left"></i> Volver a Post Venta
+        </a>
+    </div>
+    
+    <div class="content" style="padding: 40px;">
+<div class="card">
+    <div id="alertContainer"></div>
+    
+    <h2 style="margin-top: 0; color: var(--text-color); margin-bottom: 20px;">
+        <i class="fas fa-paint-brush"></i> Mis Tareas de Chapería y Pintura
+    </h2>
+    
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha Turno</th>
+                    <th>Dominio</th>
+                    <th>Cliente</th>
+                    <th>Servicio</th>
+                    <th>Marca/Modelo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaTareas"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Pactar Hora -->
+<div id="modalPactarHora" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color);">
+            <h2 style="margin: 0; color: #2d3748;">
+                <i class="fas fa-clock"></i> Pactar Hora de Entrega
+            </h2>
+            <button onclick="cerrarModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        
+        <form id="formPactarHora" onsubmit="guardarHoraPactada(event)">
+            <input type="hidden" id="turnoIdPactar">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748;">Fecha y Hora Pactada:</label>
+                <input type="datetime-local" id="fechaHoraPactada" required style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px;">
+                <p style="margin: 8px 0 0 0; font-size: 0.85em; color: #718096;">Acuerda con el cliente cuándo retirará el vehículo</p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModal()" class="btn" style="background: #cbd5e0; color: #2d3748;">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let tareas = [];
+const SECTOR = 'Chapería y Pintura';
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarTareas();
+    setInterval(cargarTareas, 30000);
+});
+
+async function cargarTareas() {
+    try {
+        const response = await fetch('/api/postventa/mis-tareas');
+        
+        if (response.ok) {
+            const todasTareas = await response.json();
+            tareas = todasTareas.filter(t => t.sector === SECTOR);
+            renderizarTareas();
+        } else {
+            console.error('Error al cargar tareas');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function renderizarTareas() {
+    const tbody = document.getElementById('tablaTareas');
+    
+    if (tareas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 60px; color: #999;"><i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 15px;"></i>No tienes tareas asignadas</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = tareas.map(tarea => `
+        <tr>
+            <td>${formatearFecha(tarea.fecha_turno)}</td>
+            <td><strong>${tarea.dominio || '-'}</strong></td>
+            <td>${tarea.cliente_nombre}</td>
+            <td>${tarea.servicio_nombre || '-'}</td>
+            <td style="font-size: 0.9em; color: #718096;">${tarea.marca_modelo || '-'}</td>
+            <td>${getEstadoBadge(tarea.estado)}</td>
+            <td>${getBotonesAccion(tarea)}</td>
+        </tr>
+    `).join('');
+}
+
+function getEstadoBadge(estado) {
+    const badges = {
+        'Asignado': '<span style="background: #cfe2ff; color: #084298; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Asignado</span>',
+        'En Atención': '<span style="background: #fff3cd; color: #664d03; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">En Atención</span>',
+        'Hora Pactada': '<span style="background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">Hora Pactada</span>',
+        'Entregado': '<span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">✓ Entregado</span>'
+    };
+    return badges[estado] || estado;
+}
+
+function getBotonesAccion(tarea) {
+    if (tarea.estado === 'Asignado') {
+        return `<button onclick="atenderTarea(${tarea.id})" class="btn btn-success" style="padding: 6px 14px; font-size: 0.85em;">Atender</button>`;
+    } else if (tarea.estado === 'En Atención') {
+        return `<button onclick="abrirModalPactar(${tarea.id})" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85em;">Pactar Hora</button>`;
+    } else if (tarea.estado === 'Hora Pactada') {
+        return `<button onclick="entregarVehiculo(${tarea.id})" class="btn" style="background: #2D2D2D; color: white; padding: 6px 14px; font-size: 0.85em;">Entregar</button>`;
+    } else {
+        return '<span style="color: #28a745;">✓ Completado</span>';
+    }
+}
+
+async function atenderTarea(tareaId) {
+    if (!confirm('¿Comenzar atención de este vehículo?')) return;
+    
+    try {
+        const response = await fetch('/api/postventa/atender', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({turno_id: tareaId})
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            mostrarAlerta('Atención registrada exitosamente', 'success');
+            cargarTareas();
+        } else {
+            mostrarAlerta(result.error || 'Error al registrar atención', 'error');
+        }
+    } catch (error) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+function abrirModalPactar(tareaId) {
+    document.getElementById('turnoIdPactar').value = tareaId;
+    
+    const ahora = new Date();
+    ahora.setHours(ahora.getHours() + 2);
+    const fechaSugerida = ahora.toISOString().slice(0, 16);
+    document.getElementById('fechaHoraPactada').value = fechaSugerida;
+    
+    document.getElementById('modalPactarHora').style.display = 'flex';
+}
+
+function cerrarModal() {
+    document.getElementById('modalPactarHora').style.display = 'none';
+}
+
+async function guardarHoraPactada(event) {
+    event.preventDefault();
+    
+    const tareaId = document.getElementById('turnoIdPactar').value;
+    const fechaHora = document.getElementById('fechaHoraPactada').value;
+    
+    try {
+        const response = await fetch('/api/postventa/pactar-hora', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                turno_id: tareaId,
+                fecha_hora_pactada: fechaHora
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            cerrarModal();
+            mostrarAlerta('Hora pactada registrada exitosamente', 'success');
+            cargarTareas();
+        } else {
+            mostrarAlerta(result.error || 'Error al registrar hora', 'error');
+        }
+    } catch (error) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+async function entregarVehiculo(tareaId) {
+    if (!confirm('¿Confirmar entrega del vehículo al cliente?')) return;
+    
+    try {
+        const response = await fetch('/api/postventa/entregar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({turno_id: tareaId})
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            mostrarAlerta('Entrega registrada exitosamente', 'success');
+            cargarTareas();
+        } else {
+            mostrarAlerta(result.error || 'Error al registrar entrega', 'error');
+        }
+    } catch (error) {
+        mostrarAlerta('Error de conexión', 'error');
+    }
+}
+
+function formatearFecha(fecha) {
+    const date = new Date(fecha + 'T00:00:00');
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    return `${dias[date.getDay()]} ${date.getDate()} ${meses[date.getMonth()]}`;
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const container = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.style.padding = '15px 20px';
+    alert.style.borderRadius = '8px';
+    alert.style.marginBottom = '20px';
+    alert.style.background = tipo === 'success' ? '#d4edda' : '#f8d7da';
+    alert.style.color = tipo === 'success' ? '#155724' : '#721c24';
+    alert.style.border = `1px solid ${tipo === 'success' ? '#c3e6cb' : '#f5c6cb'}`;
+    alert.textContent = mensaje;
+    
+    container.appendChild(alert);
+    
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+</script>
+</div>
+</body>
+</html>

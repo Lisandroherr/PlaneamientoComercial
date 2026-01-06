@@ -30,33 +30,11 @@ function cargarDisponibles() {
             disponiblesLoaded = true;
             console.log('✅ Unidades disponibles cargadas:', disponiblesData.length);
             
-            // DEBUG: Mostrar qué recibimos del backend
-            console.log('\n🔍 ============ DATOS RECIBIDOS EN JAVASCRIPT (MÓDULO 4) ============');
-            console.log('   Total unidades recibidas:', disponiblesData.length);
+            // Log simple de carga exitosa
+            console.log('✅ Unidades cargadas correctamente');
             if (disponiblesData.length > 0) {
-                console.log('\n   📥 Primera unidad recibida:');
-                console.log('      Nº Fábrica:', disponiblesData[0].numero_fabrica);
-                console.log('      Modelo:', disponiblesData[0].modelo_version);
-                console.log('      Precio Base:', disponiblesData[0].precio_base);
-                console.log('      Descuento Individual:', disponiblesData[0].descuento_individual, '%');
-                console.log('      Descuento Adicional:', disponiblesData[0].descuento_adicional, '%');
-                console.log('      Precio Final:', disponiblesData[0].precio_disponible);
-                
-                if (disponiblesData.length > 1) {
-                    console.log('\n   📥 Segunda unidad recibida:');
-                    console.log('      Nº Fábrica:', disponiblesData[1].numero_fabrica);
-                    console.log('      Modelo:', disponiblesData[1].modelo_version);
-                    console.log('      Descuento Individual:', disponiblesData[1].descuento_individual, '%');
-                }
-                
-                if (disponiblesData.length > 2) {
-                    console.log('\n   📥 Tercera unidad recibida:');
-                    console.log('      Nº Fábrica:', disponiblesData[2].numero_fabrica);
-                    console.log('      Modelo:', disponiblesData[2].modelo_version);
-                    console.log('      Descuento Individual:', disponiblesData[2].descuento_individual, '%');
-                }
+                console.log('   Primera unidad:', disponiblesData[0].numero_fabrica, '-', disponiblesData[0].modelo_version);
             }
-            console.log('   ====================================================================\n');
             
             if (reservadasLoaded) {
                 renderizarTabla();
@@ -125,7 +103,7 @@ function renderizarTabla() {
     if (disponiblesFiltrados.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" style="text-align: center; padding: 40px; color: #718096;">
+                <td colspan="7" style="text-align: center; padding: 40px; color: #718096;">
                     <i class="fas fa-inbox" style="font-size: 3em; margin-bottom: 10px; display: block;"></i>
                     <strong>No hay unidades disponibles</strong><br>
                     <small>Convierte datos desde el Módulo 3 usando el botón "Convertir a Disponible"</small>
@@ -163,61 +141,26 @@ function renderizarTabla() {
     disponiblesFiltrados.forEach((item, index) => {
         const tr = document.createElement('tr');
         
-        // DEBUG: Log para ver qué descuentos tiene cada item
-        if (index === 0) {
-            console.log('\n📋 ============ PRIMERA FILA QUE SE VA A MOSTRAR ============');
-            console.log('   Nº Fábrica:', item.numero_fabrica);
-            console.log('   Modelo:', item.modelo_version);
-            console.log('   Descuento Individual (del objeto):', item.descuento_individual);
-            console.log('   Descuento Adicional (del objeto):', item.descuento_adicional);
-            console.log('   Precio Base:', item.precio_base);
-            console.log('   Precio Final:', item.precio_disponible);
-        }
+        // Formatear fecha de despacho
+        const fechaDespacho = formatearFecha(item.despacho_estimado);
         
-        // Descuento individual - mostrar el valor que viene del backend
-        // (el backend ya consideró si califica o no para descuentos)
-        let descIndividualText = '0%';
-        if (item.descuento_individual && item.descuento_individual > 0) {
-            descIndividualText = `${item.descuento_individual}%`;
-        }
-        
-        if (index === 0) {
-            console.log('   Texto que se mostrará (Desc. Individual):', descIndividualText);
-        }
-        
-        // Descuentos adicionales - mostrar solo los detalles (sin incluir individual)
-        let descAdicionalText = 'Sin descuentos';
-        if (item.descuento_adicional && item.descuento_adicional > 0) {
-            descAdicionalText = item.detalles_descuento || `${item.descuento_adicional}%`;
-        }
-        
-        if (index === 0) {
-            console.log('   Texto que se mostrará (Desc. Adicional):', descAdicionalText);
-            console.log('   ============================================================\n');
-        }
-        
-        // Formatear fecha - NO mostrar si la ubicación es "Preventa"
-        let fechaFormateada = '';
+        // Formatear fecha de entrega - NO mostrar si la ubicación es "Preventa"
+        let fechaEntrega = '';
         if (item.ubicacion !== 'Preventa') {
-            fechaFormateada = formatearFecha(item.entrega_estimada);
+            fechaEntrega = formatearFecha(item.entrega_estimada);
         }
         
         tr.innerHTML = `
             <td>${item.numero_fabrica || ''}</td>
             <td><strong>${item.modelo_version || ''}</strong></td>
             <td>${item.color || ''}</td>
-            <td>${fechaFormateada}</td>
+            <td>${fechaDespacho}</td>
+            <td>${fechaEntrega}</td>
             <td>${item.ubicacion || ''}</td>
-            <td style="text-align: center;">${descIndividualText}</td>
-            <td>${descAdicionalText}</td>
             <td style="color: #48bb78; font-weight: 600;">$ ${formatearNumero(item.precio_disponible || 0)}</td>
         `;
         
         tbody.appendChild(tr);
-        
-        if (index === 0) {
-            console.log('✅ Primera fila agregada:', item.numero_fabrica, item.modelo_version);
-        }
     });
     
     console.log('✅ Renderizado completo. Total filas:', disponiblesFiltrados.length);
@@ -244,27 +187,92 @@ function closeReservadasModal() {
     modal.style.display = 'none';
 }
 
+// Buscar modelo automáticamente cuando se ingresa YAC
+function buscarModelo(yac) {
+    const modeloInfo = document.getElementById('modeloInfo');
+    const modeloEncontrado = document.getElementById('modeloEncontrado');
+    
+    if (!yac || yac.length < 5) {
+        modeloInfo.style.display = 'none';
+        return;
+    }
+    
+    // Buscar en los datos disponibles
+    const vehiculo = disponiblesData.find(v => 
+        v.numero_fabrica && v.numero_fabrica.toUpperCase() === yac.toUpperCase()
+    );
+    
+    if (vehiculo && vehiculo.modelo_version) {
+        modeloEncontrado.textContent = vehiculo.modelo_version;
+        modeloInfo.style.display = 'block';
+    } else {
+        modeloInfo.style.display = 'none';
+    }
+}
+
 // Renderizar lista de reservadas en el modal
 function renderizarListaReservadas() {
     const lista = document.getElementById('listaReservadas');
+    const totalSpan = document.getElementById('totalReservadas');
+    
+    if (totalSpan) {
+        totalSpan.textContent = unidadesReservadas.length;
+    }
     
     if (unidadesReservadas.length === 0) {
-        lista.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px;">No hay unidades reservadas</p>';
+        lista.innerHTML = `
+            <div style="text-align: center; color: #718096; padding: 60px 20px;">
+                <i class="fas fa-inbox" style="font-size: 3em; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
+                <p style="font-size: 1.1em; margin: 0;">No hay unidades reservadas</p>
+                <p style="font-size: 0.9em; margin-top: 8px; opacity: 0.8;">Agrega un YAC usando el formulario de arriba</p>
+            </div>
+        `;
         return;
     }
     
     lista.innerHTML = '';
-    unidadesReservadas.forEach(reserva => {
+    
+    // Ordenar por fecha de agregado (más reciente primero)
+    const reservadasOrdenadas = [...unidadesReservadas].reverse();
+    
+    reservadasOrdenadas.forEach((reserva, index) => {
+        // Buscar el modelo asociado en disponiblesData
+        const vehiculo = disponiblesData.find(v => 
+            v.numero_fabrica === reserva.numero_fabrica
+        );
+        
         const div = document.createElement('div');
         div.className = 'reservada-item';
-        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0;';
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #e2e8f0; transition: background 0.2s; gap: 15px;';
+        
+        // Hover effect
+        div.onmouseenter = function() { this.style.background = '#f7fafc'; };
+        div.onmouseleave = function() { this.style.background = 'transparent'; };
         
         div.innerHTML = `
-            <div style="flex: 1;">
-                <div style="font-weight: 600;">${reserva.numero_fabrica}</div>
-                <div style="font-size: 0.9em; color: #718096;"><i class="fas fa-user"></i> ${reserva.vendedor || 'Sin vendedor'}</div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <div style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85em;">
+                        #${unidadesReservadas.length - index}
+                    </div>
+                    <div style="font-weight: 700; font-size: 1.05em; color: #1f2937;">${reserva.numero_fabrica}</div>
+                </div>
+                <div style="display: grid; gap: 6px; margin-left: 10px;">
+                    ${vehiculo && vehiculo.modelo_version ? `
+                        <div style="font-size: 0.95em; color: #2563eb; font-weight: 600;">
+                            <i class="fas fa-car" style="margin-right: 6px;"></i>${vehiculo.modelo_version}
+                        </div>
+                    ` : ''}
+                    <div style="font-size: 0.9em; color: #6b7280;">
+                        <i class="fas fa-user" style="margin-right: 6px; color: #9ca3af;"></i>
+                        <span style="font-weight: 500;">${reserva.vendedor || 'Sin vendedor'}</span>
+                    </div>
+                </div>
             </div>
-            <button class="btn-delete" onclick="removeReservada('${reserva.numero_fabrica}')" style="background: #fc8181; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+            <button class="btn-delete" 
+                    onclick="removeReservada('${reserva.numero_fabrica}')" 
+                    title="Eliminar reserva"
+                    style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);">
                 <i class="fas fa-trash"></i>
             </button>
         `;
@@ -277,7 +285,7 @@ function renderizarListaReservadas() {
 function addReservada() {
     const inputNumero = document.getElementById('inputReservada');
     const inputVendedor = document.getElementById('inputVendedor');
-    const numero = inputNumero.value.trim();
+    const numero = inputNumero.value.trim().toUpperCase();
     const vendedor = inputVendedor.value.trim();
     
     if (!numero) {
@@ -296,6 +304,9 @@ function addReservada() {
         showError('Esta unidad ya está en la lista de reservadas');
         return;
     }
+    
+    // Buscar el modelo asociado
+    const vehiculo = disponiblesData.find(v => v.numero_fabrica === numero);
     
     // Enviar al servidor
     fetch('/api/unidades_reservadas', {
@@ -318,10 +329,16 @@ function addReservada() {
             
             inputNumero.value = '';
             inputVendedor.value = '';
+            
+            // Ocultar info del modelo
+            document.getElementById('modeloInfo').style.display = 'none';
+            
             renderizarListaReservadas();
             updateReservadasCount();
             renderizarTabla(); // Re-renderizar para aplicar filtro (quitar de disponibles)
-            showSuccess(`Unidad ${numero} reservada para ${vendedor}`);
+            
+            const modeloMsg = vehiculo && vehiculo.modelo_version ? ` (${vehiculo.modelo_version})` : '';
+            showSuccess(`✅ Unidad ${numero}${modeloMsg} reservada para ${vendedor}`);
         } else {
             showError(data.error || 'Error al agregar unidad reservada');
         }
@@ -523,7 +540,7 @@ function exportarAExcel() {
     let csvContent = '\uFEFF'; // BOM para UTF-8
     
     // Encabezados
-    csvContent += 'Nº Fábrica,Modelo/Versión,Color,Entrega Estimada,Ubicación,Desc. Individual,Desc. Adicionales,Precio Final\n';
+    csvContent += 'Nº Fábrica,Modelo/Versión,Color,Fecha de Despacho,Entrega Estimada,Ubicación,Precio Final\n';
     
     // Ordenar igual que la tabla
     disponiblesFiltrados.sort((a, b) => {
@@ -549,24 +566,22 @@ function exportarAExcel() {
     
     // Agregar filas
     disponiblesFiltrados.forEach(item => {
-        const descIndividual = item.descuento_individual || 0;
-        const descAdicional = item.descuento_adicional || 0;
-        const detalleDesc = item.detalles_descuento || 'Sin descuentos';
+        // Formatear fecha de despacho
+        const fechaDespacho = formatearFecha(item.despacho_estimado);
         
-        // NO mostrar fecha si la ubicación es "Preventa"
-        let fechaParaExcel = '';
+        // NO mostrar fecha de entrega si la ubicación es "Preventa"
+        let fechaEntrega = '';
         if (item.ubicacion !== 'Preventa') {
-            fechaParaExcel = formatearFecha(item.entrega_estimada);
+            fechaEntrega = formatearFecha(item.entrega_estimada);
         }
         
         const row = [
             item.numero_fabrica || '',
             `"${(item.modelo_version || '').replace(/"/g, '""')}"`,
             item.color || '',
-            fechaParaExcel,
+            fechaDespacho,
+            fechaEntrega,
             item.ubicacion || '',
-            `${descIndividual}%`,
-            descAdicional > 0 ? `${descAdicional}% (${detalleDesc})` : 'Sin descuentos',
             formatearNumero(item.precio_disponible || 0)
         ];
         

@@ -1,0 +1,842 @@
+{% extends "base.html" %}
+
+{% block title %}Ingresos y Egresos{% endblock %}
+{% block icon %}exchange-alt{% endblock %}
+{% block page_title %}Ingresos y Egresos{% endblock %}
+{% block back_url %}{{ url_for('usados') }}{% endblock %}
+{% block back_text %}Volver a Usados{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div>
+            <h2 style="margin: 0; color: #2d3748; font-size: 1.3em;">
+                <i class="fas fa-car"></i> Vehículos Ingresados
+            </h2>
+            <p style="color: #718096; margin-top: 8px;">
+                Registro y gestión de vehículos usados para preparación y lavado.
+            </p>
+        </div>
+        <button onclick="abrirModalNuevoIngreso()" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Ingreso
+        </button>
+    </div>
+
+    <!-- Tabla de Ingresos - Vista Desktop -->
+    <div class="table-container" style="max-height: 600px; overflow: auto;">
+        <table id="tablaIngresos">
+            <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                <tr>
+                    <th>Dominio</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Fecha Ingreso</th>
+                    <th>Limpieza Requerida</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaIngresosBody">
+                <!-- Generado dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Vista Mobile - Cards -->
+    <div class="mobile-card-view" id="mobileCardsContainer">
+        <!-- Generado dinámicamente -->
+    </div>
+</div>
+
+    <!-- Modal Nuevo Ingreso -->
+<div id="modalIngreso" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; margin: 20px auto;">
+        <h3 style="margin-top: 0;" id="modalTitulo">
+            <i class="fas fa-plus-circle"></i> Nuevo Ingreso
+        </h3>        <form id="formIngreso" onsubmit="guardarIngreso(event)">
+            <!-- Dominio -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-id-card"></i> Dominio *
+                </label>
+                <input type="text" id="dominio" required 
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; text-transform: uppercase;"
+                       placeholder="Ej: ABC123">
+            </div>
+
+            <!-- Marca -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-copyright"></i> Marca *
+                </label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="marca" required
+                            style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                        <option value="">Seleccionar marca...</option>
+                        <!-- Generado dinámicamente -->
+                    </select>
+                    <button type="button" onclick="abrirModalNuevaMarca()" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modelo -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-car-side"></i> Modelo *
+                </label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="modelo" required
+                            style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                        <option value="">Primero selecciona una marca...</option>
+                        <!-- Generado dinámicamente -->
+                    </select>
+                    <button type="button" onclick="abrirModalNuevoModelo()" class="btn btn-secondary" id="btnNuevoModelo" disabled>
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Limpieza Requerida -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-hands-wash"></i> Limpieza Requerida *
+                </label>
+                <select id="limpiezaRequerida" required
+                        style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+                    <option value="">Seleccionar...</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Standard Plus">Standard Plus</option>
+                    <option value="Standard Light">Standard Light</option>
+                </select>
+            </div>
+
+            <!-- Observaciones -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    <i class="fas fa-comment"></i> Observaciones
+                </label>
+                <textarea id="observaciones" rows="3"
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                          placeholder="Notas adicionales..."></textarea>
+            </div>
+
+            <!-- Botones -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
+                <button type="button" onclick="cerrarModalIngreso()" class="btn" style="background: #718096; color: white;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Nueva Marca -->
+<div id="modalMarca" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px;">
+        <h3 style="margin-top: 0;">
+            <i class="fas fa-plus-circle"></i> Nueva Marca
+        </h3>
+        
+        <form id="formMarca" onsubmit="guardarMarca(event)">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    Nombre de la Marca *
+                </label>
+                <input type="text" id="nombreMarca" required 
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Ej: Toyota">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalMarca()" class="btn" style="background: #718096; color: white;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Nuevo Modelo -->
+<div id="modalModelo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px;">
+        <h3 style="margin-top: 0;">
+            <i class="fas fa-plus-circle"></i> Nuevo Modelo
+        </h3>
+        
+        <form id="formModelo" onsubmit="guardarModelo(event)">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                    Nombre del Modelo *
+                </label>
+                <input type="text" id="nombreModelo" required 
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                       placeholder="Ej: Corolla">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalModelo()" class="btn" style="background: #718096; color: white;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Mobile-first design */
+.card {
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.table-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: auto;
+}
+
+/* Tabla tradicional - oculta en móvil */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #f7fafc;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #2d3748;
+    border-bottom: 2px solid #cbd5e0;
+    font-size: 0.85em;
+}
+
+td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9em;
+}
+
+tbody tr:hover {
+    background: #f7fafc;
+}
+
+/* Vista de cards para móvil */
+.mobile-card-view {
+    display: none;
+}
+
+.vehiculo-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.vehiculo-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.vehiculo-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.vehiculo-card-dominio {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #2d3748;
+    letter-spacing: 1px;
+}
+
+.vehiculo-card-info {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.vehiculo-card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vehiculo-card-label {
+    font-size: 0.85em;
+    color: #718096;
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.vehiculo-card-value {
+    font-size: 0.95em;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.vehiculo-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+}
+
+.btn-secondary {
+    background: #4299e1;
+    color: white;
+    padding: 12px 18px;
+}
+
+.btn-secondary:hover {
+    background: #3182ce;
+}
+
+.btn-sm {
+    padding: 10px 18px;
+    font-size: 0.95em;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.badge-playa {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-programado {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-salon {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .card > div:first-child {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+    
+    .card h2 {
+        font-size: 1.1em !important;
+    }
+    
+    .card p {
+        font-size: 0.85em;
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 14px 24px;
+        font-size: 1.05em;
+    }
+    
+    /* Ocultar tabla, mostrar cards */
+    .table-container {
+        display: none;
+    }
+    
+    .mobile-card-view {
+        display: block;
+    }
+    
+    /* Modales full-screen en móvil */
+    #modalIngreso > div,
+    #modalMarca > div,
+    #modalModelo > div {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        padding: 20px !important;
+    }
+    
+    #modalIngreso h3,
+    #modalMarca h3,
+    #modalModelo h3 {
+        font-size: 1.3em;
+        margin-bottom: 20px;
+    }
+    
+    /* Formularios más grandes en móvil */
+    input, select {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 14px !important;
+        border-width: 2px !important;
+    }
+    
+    label {
+        font-size: 0.95em !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Botones de formulario */
+    form button {
+        padding: 14px 24px !important;
+        font-size: 1.05em !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-card-view {
+        display: none;
+    }
+}
+</style>
+
+<script>
+let ingresoEditando = null;
+
+// Cargar datos al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    cargarMarcas();
+    cargarIngresos();
+});
+
+async function cargarMarcas() {
+    try {
+        const response = await fetch('/api/usados/marcas');
+        if (!response.ok) throw new Error('Error al cargar marcas');
+        
+        const marcas = await response.json();
+        const select = document.getElementById('marca');
+        
+        select.innerHTML = '<option value="">Seleccionar marca...</option>' +
+            marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Cargar modelos al seleccionar marca
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('marca').addEventListener('change', async function() {
+        const marcaId = this.value;
+        const selectModelo = document.getElementById('modelo');
+        const btnNuevoModelo = document.getElementById('btnNuevoModelo');
+        
+        if (!marcaId) {
+            selectModelo.innerHTML = '<option value="">Primero selecciona una marca...</option>';
+            btnNuevoModelo.disabled = true;
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/usados/modelos/${marcaId}`);
+            if (!response.ok) throw new Error('Error al cargar modelos');
+            
+            const modelos = await response.json();
+            selectModelo.innerHTML = '<option value="">Seleccionar modelo...</option>' +
+                modelos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+            
+            btnNuevoModelo.disabled = false;
+        } catch (error) {
+            console.error('Error:', error);
+            selectModelo.innerHTML = '<option value="">Error al cargar modelos</option>';
+        }
+    });
+});
+
+async function cargarIngresos() {
+    try {
+        const response = await fetch('/api/usados/ingresos');
+        if (!response.ok) throw new Error('Error al cargar ingresos');
+        
+        const ingresos = await response.json();
+        renderizarTablaIngresos(ingresos);
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta('Error al cargar los ingresos', 'error');
+    }
+}
+
+function renderizarTablaIngresos(ingresos) {
+    const tbody = document.getElementById('tablaIngresosBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
+    
+    if (ingresos.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: #718096;">
+                    <i class="fas fa-inbox" style="font-size: 3em; margin-bottom: 15px; display: block;"></i>
+                    <p style="font-size: 1.1em; margin: 0;">No hay vehículos ingresados</p>
+                </td>
+            </tr>
+        `;
+        mobileContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #718096;">
+                <i class="fas fa-inbox" style="font-size: 4em; margin-bottom: 20px; display: block;"></i>
+                <p style="font-size: 1.2em; margin: 0; font-weight: 600;">No hay vehículos ingresados</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Renderizar tabla desktop
+    tbody.innerHTML = ingresos.map(ingreso => {
+        const fechaIngreso = new Date(ingreso.fecha_ingreso).toLocaleString('es-AR');
+        let badgeEstado = '';
+        
+        switch(ingreso.estado) {
+            case 'Playa Lavadero':
+                badgeEstado = '<span class="badge badge-playa">Playa Lavadero</span>';
+                break;
+            case 'Lavado Programado':
+                badgeEstado = '<span class="badge badge-programado">Lavado Programado</span>';
+                break;
+            case 'Salón':
+                badgeEstado = '<span class="badge badge-salon">Salón</span>';
+                break;
+        }
+        
+        return `
+            <tr>
+                <td><strong>${ingreso.dominio}</strong></td>
+                <td>${ingreso.marca_nombre}</td>
+                <td>${ingreso.modelo_nombre}</td>
+                <td>${fechaIngreso}</td>
+                <td>${ingreso.limpieza_requerida}</td>
+                <td>${badgeEstado}</td>
+                <td>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button onclick="venderVehiculo(${ingreso.id}, '${ingreso.dominio}')" class="btn btn-sm" style="background: #48bb78; color: white;">
+                            <i class="fas fa-hand-holding-usd"></i> Vender
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Renderizar cards mobile
+    mobileContainer.innerHTML = ingresos.map(ingreso => {
+        const fechaIngreso = new Date(ingreso.fecha_ingreso).toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        let badgeEstado = '';
+        let iconoEstado = '';
+        
+        switch(ingreso.estado) {
+            case 'Playa Lavadero':
+                badgeEstado = '<span class="badge badge-playa"><i class="fas fa-parking"></i> Playa Lavadero</span>';
+                iconoEstado = 'parking';
+                break;
+            case 'Lavado Programado':
+                badgeEstado = '<span class="badge badge-programado"><i class="fas fa-calendar-check"></i> Programado</span>';
+                iconoEstado = 'calendar-check';
+                break;
+            case 'Salón':
+                badgeEstado = '<span class="badge badge-salon"><i class="fas fa-check-circle"></i> Salón</span>';
+                iconoEstado = 'check-circle';
+                break;
+        }
+        
+        return `
+            <div class="vehiculo-card">
+                <div class="vehiculo-card-header">
+                    <div class="vehiculo-card-dominio">
+                        <i class="fas fa-car" style="color: #EB0A1E;"></i> ${ingreso.dominio}
+                    </div>
+                    ${badgeEstado}
+                </div>
+                <div class="vehiculo-card-info">
+                    <div class="vehiculo-card-row">
+                        <i class="fas fa-copyright" style="color: #EB0A1E; font-size: 1.1em;"></i>
+                        <div class="vehiculo-card-label">Marca:</div>
+                        <div class="vehiculo-card-value">${ingreso.marca_nombre}</div>
+                    </div>
+                    <div class="vehiculo-card-row">
+                        <i class="fas fa-car-side" style="color: #EB0A1E; font-size: 1.1em;"></i>
+                        <div class="vehiculo-card-label">Modelo:</div>
+                        <div class="vehiculo-card-value">${ingreso.modelo_nombre}</div>
+                    </div>
+                    <div class="vehiculo-card-row">
+                        <i class="fas fa-hands-wash" style="color: #EB0A1E; font-size: 1.1em;"></i>
+                        <div class="vehiculo-card-label">Limpieza:</div>
+                        <div class="vehiculo-card-value">${ingreso.limpieza_requerida}</div>
+                    </div>
+                    <div class="vehiculo-card-row">
+                        <i class="fas fa-clock" style="color: #EB0A1E; font-size: 1.1em;"></i>
+                        <div class="vehiculo-card-label">Ingreso:</div>
+                        <div class="vehiculo-card-value">${fechaIngreso}</div>
+                    </div>
+                </div>
+                <div class="vehiculo-card-actions">
+                    <button onclick="venderVehiculo(${ingreso.id}, '${ingreso.dominio}')" class="btn btn-full" style="background: #48bb78; color: white;">
+                        <i class="fas fa-hand-holding-usd"></i> Vender Vehículo
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function abrirModalNuevoIngreso() {
+    ingresoEditando = null;
+    document.getElementById('modalTitulo').innerHTML = '<i class="fas fa-plus-circle"></i> Nuevo Ingreso de Vehículo';
+    document.getElementById('formIngreso').reset();
+    document.getElementById('modelo').innerHTML = '<option value="">Primero selecciona una marca...</option>';
+    document.getElementById('btnNuevoModelo').disabled = true;
+    document.getElementById('modalIngreso').style.display = 'flex';
+}
+
+function cerrarModalIngreso() {
+    document.getElementById('modalIngreso').style.display = 'none';
+}
+
+async function guardarIngreso(event) {
+    event.preventDefault();
+    
+    const data = {
+        dominio: document.getElementById('dominio').value.toUpperCase(),
+        marca_id: parseInt(document.getElementById('marca').value),
+        modelo_id: parseInt(document.getElementById('modelo').value),
+        limpieza_requerida: document.getElementById('limpiezaRequerida').value,
+        observaciones: document.getElementById('observaciones').value
+    };
+    
+    try {
+        const response = await fetch('/api/usados/ingresos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar');
+        }
+        
+        mostrarAlerta('Ingreso registrado exitosamente', 'success');
+        cerrarModalIngreso();
+        cargarIngresos();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function abrirModalNuevaMarca() {
+    document.getElementById('formMarca').reset();
+    document.getElementById('modalMarca').style.display = 'flex';
+}
+
+function cerrarModalMarca() {
+    document.getElementById('modalMarca').style.display = 'none';
+}
+
+async function guardarMarca(event) {
+    event.preventDefault();
+    
+    const data = {
+        nombre: document.getElementById('nombreMarca').value
+    };
+    
+    try {
+        const response = await fetch('/api/usados/marcas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar');
+        }
+        
+        const result = await response.json();
+        mostrarAlerta('Marca creada exitosamente', 'success');
+        cerrarModalMarca();
+        await cargarMarcas();
+        document.getElementById('marca').value = result.id;
+        
+        // Trigger change event para cargar modelos
+        document.getElementById('marca').dispatchEvent(new Event('change'));
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function abrirModalNuevoModelo() {
+    const marcaId = document.getElementById('marca').value;
+    if (!marcaId) {
+        mostrarAlerta('Primero selecciona una marca', 'error');
+        return;
+    }
+    document.getElementById('formModelo').reset();
+    document.getElementById('modalModelo').style.display = 'flex';
+}
+
+function cerrarModalModelo() {
+    document.getElementById('modalModelo').style.display = 'none';
+}
+
+async function guardarModelo(event) {
+    event.preventDefault();
+    
+    const btnSubmit = event.target.querySelector('button[type="submit"]');
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
+    const marcaId = document.getElementById('marca').value;
+    const data = {
+        marca_id: parseInt(marcaId),
+        nombre: document.getElementById('nombreModelo').value
+    };
+    
+    try {
+        const response = await fetch('/api/usados/modelos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar');
+        }
+        
+        const result = await response.json();
+        mostrarAlerta('Modelo creado exitosamente', 'success');
+        cerrarModalModelo();
+        
+        // Recargar modelos
+        const responseModelos = await fetch(`/api/usados/modelos/${marcaId}`);
+        const modelos = await responseModelos.json();
+        
+        const selectModelo = document.getElementById('modelo');
+        selectModelo.innerHTML = '<option value="">Seleccionar modelo...</option>' +
+            modelos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+        
+        // Seleccionar el nuevo modelo
+        selectModelo.value = result.id;
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = 'Guardar';
+    }
+}
+
+async function venderVehiculo(id, dominio) {
+    if (!confirm(`¿Confirmar venta del vehículo ${dominio}?\n\nEsto eliminará el vehículo del stock y de los registros de ingresos.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usados/ingresos/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al vender vehículo');
+        }
+        
+        mostrarAlerta(`✅ Vehículo ${dominio} vendido exitosamente`, 'success');
+        cargarIngresos();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarAlerta(error.message, 'error');
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const colores = {
+        success: { bg: '#48bb78', icon: 'check-circle' },
+        error: { bg: '#f56565', icon: 'exclamation-circle' },
+        info: { bg: '#4299e1', icon: 'info-circle' }
+    };
+    
+    const color = colores[tipo] || colores.info;
+    
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${color.bg};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        font-weight: 600;
+    `;
+    alerta.innerHTML = `<i class="fas fa-${color.icon}"></i> ${mensaje}`;
+    
+    document.body.appendChild(alerta);
+    
+    setTimeout(() => alerta.remove(), 3000);
+}
+</script>
+{% endblock %}

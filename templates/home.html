@@ -412,7 +412,7 @@
                 {% endif %}
                 
                 <!-- Aplicación BUSINESS INTELLIGENCE ANALYSIS -->
-                {% if current_user.has_permission('planeamiento') %}
+                {% if current_user.has_permission('bi') %}
                 <a href="/bi_analysis" class="app-card bi-analysis">
                     <i class="fas fa-chart-bar app-icon"></i>
                     <h3 class="app-title">BUSINESS INTELLIGENCE</h3>
@@ -441,6 +441,39 @@
                     <h3 class="app-title">ENTREGAS</h3>
                     <p class="app-description">
                         Control de entregas programadas, logística y coordinación de recepción.
+                    </p>
+                </a>
+                {% endif %}
+                
+                <!-- Aplicación RECURSOS HUMANOS -->
+                {% if current_user.has_permission('rrhh') %}
+                <a href="/rrhh" class="app-card rrhh">
+                    <i class="fas fa-users app-icon"></i>
+                    <h3 class="app-title">RECURSOS HUMANOS</h3>
+                    <p class="app-description">
+                        Gestión de empleados, posiciones de trabajo y administración de personal.
+                    </p>
+                </a>
+                {% endif %}
+                
+                <!-- Aplicación USADOS -->
+                {% if current_user.has_permission('usados') %}
+                <a href="/usados" class="app-card usados">
+                    <i class="fas fa-car app-icon"></i>
+                    <h3 class="app-title">USADOS</h3>
+                    <p class="app-description">
+                        Gestión de vehículos usados, lavadero y planificación de operaciones.
+                    </p>
+                </a>
+                {% endif %}
+                
+                <!-- Aplicación POST VENTA -->
+                {% if current_user.has_permission('postventa') %}
+                <a href="/postventa" class="app-card postventa">
+                    <i class="fas fa-wrench app-icon"></i>
+                    <h3 class="app-title">POST VENTA</h3>
+                    <p class="app-description">
+                        Gestión de servicios, chapería y pintura, turnos y reportes de atención.
                     </p>
                 </a>
                 {% endif %}

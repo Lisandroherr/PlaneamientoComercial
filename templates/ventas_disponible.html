@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Disponibles - Ventas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #EB0A1E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #C8102E;
+        }
+        .container {
+            background: white;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #58595B;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .precio {
+            color: #2D2D2D;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-car"></i> Disponibles</h1>
+        <a href="/ventas" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Ventas
+        </a>
+    </div>
+    
+    <div class="container">
+        <div style="padding: 20px; background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #2D2D2D; margin: 0;">
+                    <i class="fas fa-filter"></i> Filtros de Búsqueda
+                </h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="contadorResultados" style="color: #718096; font-size: 0.95em;">
+                        Cargando...
+                    </span>
+                    <button onclick="limpiarFiltros()" style="background: #718096; color: white; padding: 8px 16px; border-radius: 5px; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s;">
+                        <i class="fas fa-eraser"></i> Limpiar Filtros
+                    </button>
+                    <a href="/ventas/descuentos" style="background: #EB0A1E; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+                        <i class="fas fa-percentage"></i> Ver Matriz de Descuentos
+                    </a>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Familia</label>
+                    <select id="filtroFamilia" onchange="aplicarFiltros()" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em; cursor: pointer;">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Modelo/Versión</label>
+                    <input type="text" id="filtroModelo" onkeyup="aplicarFiltros()" placeholder="Buscar modelo..." style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em;">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Color</label>
+                    <select id="filtroColor" onchange="aplicarFiltros()" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em; cursor: pointer;">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Ubicación</label>
+                    <select id="filtroUbicacion" onchange="aplicarFiltros()" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em; cursor: pointer;">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Precio Mínimo</label>
+                    <input type="number" id="filtroPrecioMin" onchange="aplicarFiltros()" placeholder="$ 0" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em;">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2D2D2D; font-size: 0.9em;">Precio Máximo</label>
+                    <input type="number" id="filtroPrecioMax" onchange="aplicarFiltros()" placeholder="$ 999,999,999" style="width: 100%; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 0.95em;">
+                </div>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Nº Fábrica</th>
+                        <th><i class="fas fa-car"></i> Modelo/Versión</th>
+                        <th><i class="fas fa-palette"></i> Color</th>
+                        <th><i class="fas fa-shipping-fast"></i> Fecha de Despacho</th>
+                        <th><i class="fas fa-calendar-check"></i> Entrega Estimada</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
+                        <th><i class="fas fa-dollar-sign"></i> Precio Unidad</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDisponibles">
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando vehículos disponibles...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let todosDisponibles = [];
+        
+        // Cargar disponibles al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarDisponibles();
+        });
+        
+        function cargarDisponibles() {
+            const tbody = document.getElementById('tablaDisponibles');
+            
+            // Primero obtener las unidades reservadas
+            fetch('/api/unidades_reservadas')
+                .then(response => response.json())
+                .then(reservadas => {
+                    const reservadasSet = new Set(reservadas.map(r => r.numero_fabrica));
+                    
+                    // Luego obtener los disponibles
+                    return fetch('/api/disponibles')
+                        .then(response => response.json())
+                        .then(disponibles => {
+                            // Filtrar las unidades reservadas
+                            todosDisponibles = disponibles.filter(item => 
+                                !reservadasSet.has(item.numero_fabrica)
+                            );
+                            cargarOpcionesFiltros();
+                            aplicarFiltros();
+                        });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los datos
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function cargarOpcionesFiltros() {
+            // Cargar familias
+            const selectFamilia = document.getElementById('filtroFamilia');
+            const familias = new Set();
+            
+            // Cargar colores
+            const selectColor = document.getElementById('filtroColor');
+            const colores = new Set();
+            
+            // Cargar ubicaciones
+            const selectUbicacion = document.getElementById('filtroUbicacion');
+            const ubicaciones = new Set();
+            
+            todosDisponibles.forEach(item => {
+                if (item.familia) familias.add(item.familia);
+                if (item.color) colores.add(item.color);
+                if (item.ubicacion) ubicaciones.add(item.ubicacion);
+            });
+            
+            // Agregar opciones de familias
+            Array.from(familias).sort().forEach(familia => {
+                const option = document.createElement('option');
+                option.value = familia;
+                option.textContent = familia;
+                selectFamilia.appendChild(option);
+            });
+            
+            // Agregar opciones de colores
+            Array.from(colores).sort().forEach(color => {
+                const option = document.createElement('option');
+                option.value = color;
+                option.textContent = color;
+                selectColor.appendChild(option);
+            });
+            
+            // Agregar opciones de ubicaciones
+            Array.from(ubicaciones).sort().forEach(ubicacion => {
+                const option = document.createElement('option');
+                option.value = ubicacion;
+                option.textContent = ubicacion;
+                selectUbicacion.appendChild(option);
+            });
+        }
+        
+        function aplicarFiltros() {
+            const familiaSeleccionada = document.getElementById('filtroFamilia').value.toLowerCase();
+            const modeloBuscado = document.getElementById('filtroModelo').value.toLowerCase();
+            const colorSeleccionado = document.getElementById('filtroColor').value.toLowerCase();
+            const ubicacionSeleccionada = document.getElementById('filtroUbicacion').value.toLowerCase();
+            const precioMin = parseFloat(document.getElementById('filtroPrecioMin').value) || 0;
+            const precioMax = parseFloat(document.getElementById('filtroPrecioMax').value) || Infinity;
+            
+            let disponiblesFiltrados = todosDisponibles.filter(item => {
+                // Filtro de familia
+                if (familiaSeleccionada && item.familia.toLowerCase() !== familiaSeleccionada) {
+                    return false;
+                }
+                
+                // Filtro de modelo (búsqueda parcial)
+                if (modeloBuscado && !item.modelo_version.toLowerCase().includes(modeloBuscado)) {
+                    return false;
+                }
+                
+                // Filtro de color
+                if (colorSeleccionado && item.color.toLowerCase() !== colorSeleccionado) {
+                    return false;
+                }
+                
+                // Filtro de ubicación
+                if (ubicacionSeleccionada && item.ubicacion.toLowerCase() !== ubicacionSeleccionada) {
+                    return false;
+                }
+                
+                // Filtro de precio
+                const precio = item.precio_disponible || 0;
+                if (precio < precioMin || precio > precioMax) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            mostrarDisponibles(disponiblesFiltrados);
+        }
+        
+        function limpiarFiltros() {
+            document.getElementById('filtroFamilia').value = '';
+            document.getElementById('filtroModelo').value = '';
+            document.getElementById('filtroColor').value = '';
+            document.getElementById('filtroUbicacion').value = '';
+            document.getElementById('filtroPrecioMin').value = '';
+            document.getElementById('filtroPrecioMax').value = '';
+            aplicarFiltros();
+        }
+        
+        function mostrarDisponibles(disponibles) {
+            const tbody = document.getElementById('tablaDisponibles');
+            const contador = document.getElementById('contadorResultados');
+            
+            // Actualizar contador
+            contador.textContent = `${disponibles.length} vehículo${disponibles.length !== 1 ? 's' : ''} encontrado${disponibles.length !== 1 ? 's' : ''}`;
+            
+            if (!disponibles || disponibles.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay vehículos disponibles en este momento
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            // Ordenar alfabéticamente por Modelo/Versión (A-Z)
+            disponibles.sort((a, b) => {
+                const modeloA = (a.modelo_version || '').toLowerCase();
+                const modeloB = (b.modelo_version || '').toLowerCase();
+                return modeloA.localeCompare(modeloB);
+            });
+            
+            disponibles.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                // Formatear fecha de despacho
+                let fechaDespacho = '-';
+                if (item.despacho_estimado) {
+                    try {
+                        const fecha = new Date(item.despacho_estimado);
+                        fechaDespacho = fecha.toLocaleDateString('es-AR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    } catch (e) {
+                        fechaDespacho = '-';
+                    }
+                }
+                
+                // Formatear fecha de entrega - NO mostrar si la ubicación es "Preventa"
+                let fechaEntrega = '-';
+                if (item.ubicacion !== 'Preventa' && item.entrega_estimada) {
+                    try {
+                        const fecha = new Date(item.entrega_estimada);
+                        fechaEntrega = fecha.toLocaleDateString('es-AR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                    } catch (e) {
+                        fechaEntrega = item.entrega_estimada;
+                    }
+                }
+                
+                // Formatear precio
+                const precio = item.precio_disponible || 0;
+                const precioFormateado = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(precio);
+                
+                tr.innerHTML = `
+                    <td><strong>${item.numero_fabrica || '-'}</strong></td>
+                    <td>${item.modelo_version || '-'}</td>
+                    <td>${item.color || '-'}</td>
+                    <td>${fechaDespacho}</td>
+                    <td>${fechaEntrega}</td>
+                    <td>${item.ubicacion || '-'}</td>
+                    <td class="precio">${precioFormateado}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Planeamiento - Lista de Precios y Descuentos{% endblock %}
+{% block icon %}tags{% endblock %}
+{% block page_title %}Módulo 1 - Precios y Descuentos{% endblock %}
+
+{% block content %}
+<div class="card">
+    <!-- SECCIÓN 1: LISTA DE PRECIOS -->
+    <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #4299e1;">
+        <h2 style="margin-top: 0; color: #2d3748; font-size: 1.3em; margin-bottom: 20px;">
+            <i class="fas fa-dollar-sign"></i> Lista de Precios
+        </h2>
+        
+        <!-- Pestañas de Precios -->
+        <div style="margin-bottom: 20px;">
+            <ul class="nav nav-tabs" role="tablist" id="preciosTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-target="#preciosCorollaSedan" role="tab">
+                        COROLLA SEDAN (<span id="countCorollaSedan">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosCorollaCross" role="tab">
+                        COROLLA CROSS (<span id="countCorollaCross">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosHiace" role="tab">
+                        HIACE (<span id="countHiace">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosHilux4x2" role="tab">
+                        HILUX 4X2 (<span id="countHilux4x2">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosHilux4x4" role="tab">
+                        HILUX 4X4 (<span id="countHilux4x4">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosSw4" role="tab">
+                        SW4 (<span id="countSw4">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosYaris" role="tab">
+                        YARIS (<span id="countYaris">0</span>)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-target="#preciosOtros" role="tab">
+                        OTROS (<span id="countOtros">0</span>)
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            <!-- Tabla COROLLA SEDAN -->
+            <div class="tab-pane fade show active" id="preciosCorollaSedan">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCorollaSedan"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla COROLLA CROSS -->
+            <div class="tab-pane fade" id="preciosCorollaCross">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCorollaCross"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla HIACE -->
+            <div class="tab-pane fade" id="preciosHiace">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaHiace"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla HILUX 4X2 -->
+            <div class="tab-pane fade" id="preciosHilux4x2">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaHilux4x2"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla HILUX 4X4 -->
+            <div class="tab-pane fade" id="preciosHilux4x4">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaHilux4x4"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla SW4 -->
+            <div class="tab-pane fade" id="preciosSw4">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSw4"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla YARIS -->
+            <div class="tab-pane fade" id="preciosYaris">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaYaris"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla OTROS -->
+            <div class="tab-pane fade" id="preciosOtros">
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th style="width: 120px;">ID SalesForce</th>
+                                <th>Modelo</th>
+                                <th>Precio Unidad</th>
+                                <th>Flete y Formulario</th>
+                                <th>Patentamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaOtros"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="exportarPreciosExcel()" class="btn" style="background: #48bb78; color: white;">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </button>
+            <button onclick="guardarPrecios()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Lista de Precios
+            </button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2: TABLA DE DESCUENTOS -->
+    <div style="background: #fff5f5; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 2px solid #fc8181;">
+        <h2 style="margin-top: 0; color: #c53030; font-size: 1.3em; margin-bottom: 15px;">
+            <i class="fas fa-percentage"></i> Tabla de Descuentos
+        </h2>
+        
+        <p style="color: #718096; margin-bottom: 20px;">
+            <i class="fas fa-info-circle"></i> Configure los descuentos por <strong>Fecha de Despacho</strong> y <strong>Ubicación</strong> para cada modelo.
+            Estos descuentos se aplicarán automáticamente en los módulos de seguimiento, disponible y ventas.
+        </p>
+
+        <!-- Barra de búsqueda y filtros -->
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="buscarModelo" placeholder="🔍 Buscar modelo..." 
+                   style="flex: 1; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;"
+                   oninput="filtrarTablaDescuentos()">
+            <button onclick="expandirTodos()" class="btn btn-sm" style="background: #4299e1; color: white;">
+                <i class="fas fa-expand-alt"></i> Expandir Todos
+            </button>
+            <button onclick="contraerTodos()" class="btn btn-sm" style="background: #718096; color: white;">
+                <i class="fas fa-compress-alt"></i> Contraer Todos
+            </button>
+        </div>
+
+        <!-- Tabla de Descuentos con estructura de matriz -->
+        <div class="table-container" style="max-height: 600px; overflow: auto;">
+            <table id="tablaDescuentos" style="font-size: 0.9em;">
+                <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                    <tr>
+                        <th rowspan="2" style="vertical-align: middle; min-width: 300px;">
+                            <i class="fas fa-car"></i> Modelo
+                        </th>
+                        <th colspan="4" style="background: #EB0A1E; color: white;">
+                            <i class="fas fa-shipping-fast"></i> Descuentos por Fecha de Despacho
+                        </th>
+                        <th colspan="4" style="background: #58595B; color: white;">
+                            <i class="fas fa-map-marker-alt"></i> Descuentos por Ubicación
+                        </th>
+                    </tr>
+                    <tr>
+                        <!-- Fecha de Despacho -->
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Mes Actual -2</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Mes Actual -1</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Mes Actual</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Mes Actual +</th>
+                        <!-- Ubicación -->
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Stock</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Producción</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Playa Externa</th>
+                        <th style="background: white; color: #2D2D2D; min-width: 100px;">Otro</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDescuentosBody">
+                    <!-- Generado dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 15px; text-align: right;">
+            <button onclick="guardarDescuentos()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Descuentos
+            </button>
+        </div>
+    </div>
+
+    <!-- Botón de Gestión de Modelos -->
+    <div style="text-align: center; margin-top: 20px;">
+        <button onclick="abrirModalGestionModelos()" class="btn" style="background: #805ad5; color: white;">
+            <i class="fas fa-cog"></i> Gestionar Modelos Visibles
+        </button>
+    </div>
+</div>
+
+<!-- Modal de Gestión de Modelos -->
+<div id="modalGestionModelos" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin-top: 0;"><i class="fas fa-eye"></i> Gestionar Visibilidad de Modelos</h3>
+        <p style="color: #718096; margin-bottom: 10px;">Desmarca los modelos que deseas ocultar en las tablas de precios y descuentos.</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <p style="color: #e53e3e; margin: 0; font-size: 0.9em;">
+                <i class="fas fa-save"></i> <strong>Nota:</strong> Los cambios se guardarán automáticamente al aplicar.
+            </p>
+            <p style="margin: 0; font-weight: 600; color: #4299e1; font-size: 1em;">
+                <span id="contadorModelos">0</span> modelos seleccionados
+            </p>
+        </div>
+        <div id="listaGestionModelos" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+            <!-- Generado dinámicamente -->
+        </div>
+        <div style="text-align: right; gap: 10px; display: flex; justify-content: flex-end;">
+            <button onclick="cerrarModalGestionModelos()" class="btn" style="background: #718096; color: white;">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button onclick="aplicarCambiosModelos()" class="btn btn-primary" id="btnAplicarModelos">
+                <i class="fas fa-check"></i> Aplicar y Guardar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #f7fafc;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #2d3748;
+    border-bottom: 2px solid #cbd5e0;
+}
+
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+tbody tr:hover {
+    background: #f7fafc;
+}
+
+.form-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.95em;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #EB0A1E;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #C8102E;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.9em;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 5px;
+    border-bottom: 2px solid #e2e8f0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin: 0;
+}
+
+.nav-link {
+    display: block;
+    padding: 6px 12px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: #4a5568;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-size: 0.85em;
+}
+
+.nav-link:hover {
+    background: #edf2f7;
+}
+
+.nav-link.active {
+    background: white;
+    color: #2d3748;
+    border-color: #e2e8f0 #e2e8f0 white #e2e8f0;
+}
+
+.tab-content {
+    padding: 20px 0;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.show.active {
+    display: block;
+}
+
+/* Estilos para inputs editables en tabla de descuentos */
+.desc-input {
+    width: 80px;
+    padding: 4px 6px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.desc-input:focus {
+    outline: none;
+    border-color: #EB0A1E;
+    box-shadow: 0 0 0 2px rgba(235, 10, 30, 0.1);
+}
+
+/* Estilos para celdas de fecha */
+.fecha-cell {
+    background: white;
+}
+
+/* Estilos para celdas de ubicación */
+.ubicacion-cell {
+    background: white;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="{{ url_for('static', filename='js/modulo1_nuevo.js') }}"></script>
+{% endblock %}

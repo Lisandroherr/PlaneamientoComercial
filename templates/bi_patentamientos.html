@@ -290,6 +290,633 @@
             font-weight: 700;
             color: #EB0A1E;
         }
+        
+        .switch-container {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+        
+        body.dark-mode .switch-container {
+            background: #555;
+        }
+        
+        .switch-container.active {
+            background: #EB0A1E;
+        }
+        
+        .switch-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .switch-slider.active {
+            transform: translateX(24px);
+        }
+        
+        .toggle-switch label {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .data-table-container {
+            margin-top: 30px;
+        }
+        
+        .year-content {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .year-content::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .year-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        .year-content::-webkit-scrollbar-thumb {
+            background: #EB0A1E;
+            border-radius: 6px;
+        }
+        
+        .year-content::-webkit-scrollbar-thumb:hover {
+            background: #c00818;
+        }
+        
+        body.dark-mode .year-content::-webkit-scrollbar-track {
+            background: rgba(40, 40, 40, 0.8);
+        }
+        
+        body.dark-mode .year-content::-webkit-scrollbar-thumb {
+            background: #EB0A1E;
+        }
+        
+        .year-content {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .year-content::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .year-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        .year-content::-webkit-scrollbar-thumb {
+            background: #EB0A1E;
+            border-radius: 6px;
+        }
+        
+        .year-content::-webkit-scrollbar-thumb:hover {
+            background: #c00818;
+        }
+        
+        body.dark-mode .year-content::-webkit-scrollbar-track {
+            background: rgba(40, 40, 40, 0.8);
+        }
+        
+        body.dark-mode .year-content::-webkit-scrollbar-thumb {
+            background: #EB0A1E;
+        }
+        
+        .year-section {
+            margin-bottom: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        
+        body.dark-mode .year-section {
+            border-color: #2d2d2d;
+        }
+        
+        .year-header {
+            background: #EB0A1E;
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.1em;
+            transition: background 0.3s;
+            user-select: none;
+        }
+        
+        .year-header:hover {
+            background: #c00818;
+        }
+        
+        .year-header i {
+            transition: transform 0.3s;
+        }
+        
+        .year-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+        
+        .year-content {
+            display: block;
+        }
+        
+        .year-content.collapsed {
+            display: none;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.75em;
+        }
+        
+        .data-table th {
+            background: #58595B;
+            color: white;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #3a3a3a;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 5px 4px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 0.9em;
+        }
+        
+        body.dark-mode .data-table td {
+            border-color: #444;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        
+        body.dark-mode .data-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .data-table tbody tr:hover {
+            background: rgba(235, 10, 30, 0.05);
+        }
+        
+        .data-table th.marca-col {
+            font-weight: 700;
+            background: #EB0A1E !important;
+            color: white !important;
+            text-align: left;
+            padding-left: 8px;
+            min-width: 110px;
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 10 !important;
+        }
+        
+        .data-table td.marca-col {
+            font-weight: 600;
+            background: #f8f9fa !important;
+            color: var(--text-color) !important;
+            text-align: left;
+            padding-left: 8px;
+            position: sticky !important;
+            left: 0 !important;
+            z-index: 9 !important;
+        }
+        
+        body.dark-mode .data-table td.marca-col {
+            background: rgba(40, 40, 40, 0.98) !important;
+        }
+        
+        .data-table th.percent-col {
+            background: #EB0A1E;
+            font-size: 0.75em;
+        }
+        
+        .data-table td.percent-col {
+            background: #fff3cd;
+            font-weight: 600;
+            color: #856404;
+        }
+        
+        body.dark-mode .data-table td.percent-col {
+            background: rgba(133, 100, 4, 0.2);
+            color: #ffc107;
+        }
+        
+        .year-total-row {
+            background: #f8f9fa !important;
+            font-weight: 700;
+            border-top: 3px solid #EB0A1E !important;
+        }
+        
+        body.dark-mode .year-total-row {
+            background: rgba(40, 40, 40, 0.9) !important;
+        }
+        
+        .year-total-row td {
+            color: #EB0A1E;
+            font-size: 1em;
+            padding: 8px 4px !important;
+            font-weight: 700;
+        }
+        
+        .data-table-container {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        
+        .grand-total-section {
+            margin-top: 15px;
+            background: #EB0A1E;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        .grand-total-section .total-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .grand-total-section .total-item {
+            text-align: center;
+        }
+        
+        .grand-total-section .total-item .marca {
+            font-size: 0.75em;
+            opacity: 0.85;
+        }
+        
+        .grand-total-section .total-item .valor {
+            font-size: 1.1em;
+            margin-top: 3px;
+            font-weight: 700;
+        }
+        
+        /* ========================================
+           RESPONSIVE DESIGN - MOBILE FIRST
+           ======================================== */
+        
+        @media screen and (max-width: 768px) {
+            /* Content wrapper ajustado */
+            .content-wrapper {
+                padding: 15px 10px;
+            }
+            
+            /* Header navigation */
+            body > div:first-of-type {
+                padding: 10px 15px !important;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            body > div:first-of-type h1 {
+                font-size: 1.1em !important;
+            }
+            
+            body > div:first-of-type a {
+                font-size: 0.8em !important;
+                padding: 6px 12px !important;
+            }
+            
+            /* Chart containers */
+            .chart-container {
+                padding: 15px 10px;
+                margin-bottom: 20px;
+            }
+            
+            .chart-title {
+                font-size: 1em;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .chart-subtitle {
+                font-size: 0.8em;
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+            
+            /* Date filter */
+            .date-filter {
+                padding: 15px 10px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-filter label {
+                font-size: 0.9em;
+            }
+            
+            .date-filter input,
+            .date-filter select {
+                width: 100%;
+                font-size: 0.9em;
+            }
+            
+            .date-filter button {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            /* Zoom controls */
+            .zoom-controls {
+                flex-direction: column;
+            }
+            
+            .zoom-btn {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            /* Top modelos - stack vertically */
+            .top-modelos-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .top-modelos-card {
+                padding: 15px;
+            }
+            
+            .top-modelos-title {
+                font-size: 1em;
+            }
+            
+            /* Year sections */
+            .year-section {
+                margin-bottom: 10px;
+            }
+            
+            .year-header {
+                padding: 12px 10px;
+                font-size: 0.95em;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .year-header > div:last-child {
+                font-size: 0.75em;
+                align-self: flex-end;
+            }
+            
+            /* Data table - hacer scroll horizontal FORZADO */
+            .year-content {
+                width: 100%;
+                overflow-x: auto !important;
+                overflow-y: visible !important;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .data-table-container {
+                width: 100%;
+                overflow-x: auto !important;
+                overflow-y: visible !important;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 15px;
+                touch-action: pan-x pan-y;
+                scrollbar-width: thin;
+                position: relative;
+            }
+            
+            .data-table-container::-webkit-scrollbar {
+                height: 10px;
+            }
+            
+            .data-table-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+            
+            .data-table-container::-webkit-scrollbar-thumb {
+                background: #EB0A1E;
+                border-radius: 4px;
+            }
+            
+            /* SOLUCIÓN: Usar position relative en el contenedor */
+            .data-table-container {
+                position: relative;
+            }
+            
+            .data-table {
+                font-size: 0.75em;
+                width: 1400px !important;
+                min-width: 1400px !important;
+                border-collapse: separate;
+                border-spacing: 0;
+                position: relative;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 6px 4px;
+                font-size: 0.9em;
+                white-space: nowrap;
+                min-width: 60px;
+                border: 1px solid var(--border-color);
+            }
+            
+            /* Primera columna COMPLETAMENTE FIJA - SOLUCIÓN DEFINITIVA */
+            .data-table th.marca-col,
+            .data-table td.marca-col {
+                width: 110px !important;
+                min-width: 110px !important;
+                max-width: 110px !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                left: 0 !important;
+                background-clip: padding-box;
+                box-shadow: 3px 0 8px rgba(0,0,0,0.15);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.85em !important;
+                /* FORZAR STICKY CON TRANSFORM */
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                will-change: transform;
+            }
+            
+            .data-table thead th.marca-col {
+                background-color: #EB0A1E !important;
+                color: white !important;
+                z-index: 3;
+            }
+            
+            .data-table tbody td.marca-col {
+                background-color: #f8f9fa !important;
+                color: var(--text-color) !important;
+                z-index: 2;
+            }
+            
+            .data-table tbody tr:nth-child(even) td.marca-col {
+                background-color: #f8f9fa !important;
+            }
+            
+            .data-table tr.year-total-row td.marca-col {
+                background-color: #f8f9fa !important;
+                color: #EB0A1E !important;
+                font-weight: 700;
+                z-index: 2;
+            }
+            
+            body.dark-mode .data-table thead th.marca-col {
+                background-color: #EB0A1E !important;
+                box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+            }
+            
+            body.dark-mode .data-table tbody td.marca-col {
+                background-color: rgba(40, 40, 40, 0.98) !important;
+                color: var(--text-color) !important;
+                box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+            }
+            
+            body.dark-mode .data-table tbody tr:nth-child(even) td.marca-col {
+                background-color: rgba(40, 40, 40, 0.98) !important;
+            }
+            
+            body.dark-mode .data-table tr.year-total-row td.marca-col {
+                background-color: rgba(40, 40, 40, 0.98) !important;
+                color: #EB0A1E !important;
+                box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+            }
+            
+            .data-table th.percent-col,
+            .data-table td.percent-col {
+                width: 75px;
+                min-width: 75px;
+            }
+            
+            .data-table th.percent-col {
+                font-size: 0.7em;
+            }
+            
+            /* Year total row */
+            .year-total-row td {
+                font-size: 0.9em;
+                padding: 6px 2px !important;
+            }
+            
+            /* Grand total section */
+            .grand-total-section {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+            
+            .grand-total-section .total-grid {
+                gap: 10px;
+                font-size: 0.9em;
+            }
+            
+            .grand-total-section .total-item .marca {
+                font-size: 0.7em;
+            }
+            
+            .grand-total-section .total-item .valor {
+                font-size: 1em;
+            }
+            
+            /* Cache indicator */
+            #cache-indicator {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+            
+            #cache-indicator button {
+                padding: 4px 10px;
+                font-size: 0.8em;
+            }
+            
+            /* Loading spinner */
+            .loading {
+                padding: 30px 15px;
+            }
+            
+            .spinner {
+                width: 30px;
+                height: 30px;
+            }
+            
+            /* Error messages */
+            .error-message {
+                padding: 12px;
+                font-size: 0.9em;
+            }
+        }
+        
+        /* Tablets - optimización adicional */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .content-wrapper {
+                padding: 30px 20px;
+            }
+            
+            .chart-container {
+                padding: 20px 15px;
+            }
+            
+            .data-table {
+                font-size: 0.7em;
+            }
+            
+            .data-table-container {
+                overflow-x: auto;
+            }
+        }
+        
+        /* Landscape móvil */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .year-header {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .year-header > div:last-child {
+                align-self: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -347,6 +974,9 @@
                         <i class="fas fa-search-minus"></i> Restablecer Zoom
                     </button>
                 </div>
+                
+                <!-- Tabla de valores -->
+                <div id="table-argentina" class="data-table-container"></div>
             </div>
             
             <!-- Gráfico 2: Patentamientos - Mendoza -->
@@ -364,6 +994,9 @@
                         <i class="fas fa-search-minus"></i> Restablecer Zoom
                     </button>
                 </div>
+                
+                <!-- Tabla de valores -->
+                <div id="table-mendoza" class="data-table-container"></div>
             </div>
             
             <!-- Gráfico 3: Participación Comparativa Argentina vs Mendoza -->
@@ -383,23 +1016,23 @@
                 </div>
             </div>
             
-            <!-- TOP 5 MODELOS -->
-            <div class="top-modelos-container">
-                <div class="top-modelos-card">
-                    <h3 class="top-modelos-title">
-                        <i class="fas fa-trophy"></i>
-                        Top 5 Modelos - Argentina
-                    </h3>
-                    <ul class="top-modelos-list" id="top-argentina"></ul>
-                </div>
-                
-                <div class="top-modelos-card">
-                    <h3 class="top-modelos-title">
-                        <i class="fas fa-trophy"></i>
-                        Top 5 Modelos - Mendoza
-                    </h3>
-                    <ul class="top-modelos-list" id="top-mendoza"></ul>
-                </div>
+            <!-- TABLAS DE MODELOS -->
+            <div class="chart-container">
+                <h2 class="chart-title">
+                    <i class="fas fa-table"></i>
+                    Datos por Modelo - Argentina
+                </h2>
+                <p class="chart-subtitle">Patentamientos mensuales por modelo</p>
+                <div id="table-modelos-argentina" class="data-table-container"></div>
+            </div>
+            
+            <div class="chart-container">
+                <h2 class="chart-title">
+                    <i class="fas fa-table"></i>
+                    Datos por Modelo - Mendoza
+                </h2>
+                <p class="chart-subtitle">Patentamientos mensuales por modelo</p>
+                <div id="table-modelos-mendoza" class="data-table-container"></div>
             </div>
         </div>
     </div>
@@ -455,12 +1088,31 @@
                         // Configurar inputs de fecha personalizada
                         const firstDate = convertToYearMonth(labels[0]);
                         const lastDate = convertToYearMonth(labels[labels.length - 1]);
-                        document.getElementById('date-from').value = firstDate;
-                        document.getElementById('date-to').value = lastDate;
+                        
+                        // Obtener año actual
+                        const now = new Date();
+                        const currentYear = now.getFullYear();
+                        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+                        
+                        // Configurar fecha desde enero del año actual
+                        const defaultFromDate = `${currentYear}-01`;
+                        const defaultToDate = `${currentYear}-${currentMonth}`;
+                        
+                        // Verificar si las fechas por defecto están en el rango disponible
+                        const fromDate = (defaultFromDate >= firstDate && defaultFromDate <= lastDate) ? defaultFromDate : firstDate;
+                        const toDate = (defaultToDate >= firstDate && defaultToDate <= lastDate) ? defaultToDate : lastDate;
+                        
+                        document.getElementById('date-from').value = fromDate;
+                        document.getElementById('date-to').value = toDate;
                         document.getElementById('date-from').min = firstDate;
                         document.getElementById('date-from').max = lastDate;
                         document.getElementById('date-to').min = firstDate;
                         document.getElementById('date-to').max = lastDate;
+                        
+                        // Aplicar filtro por defecto al año actual
+                        if (fromDate !== firstDate || toDate !== lastDate) {
+                            filteredData = filterDataByCustomRange(fromDate, toDate);
+                        }
                     }
                     
                     renderCharts();
@@ -528,11 +1180,10 @@
                             labels: indices.map(i => labels[i])
                         };
                         
-                        // Copiar todas las marcas disponibles
-                        const marcas = ['toyota', 'ford', 'fiat', 'volkswagen', 'chevrolet', 'peugeot', 'otros'];
-                        marcas.forEach(marca => {
-                            if (allData[key][marca]) {
-                                filtered[key][marca] = indices.map(i => allData[key][marca][i]);
+                        // Copiar todas las marcas disponibles (sin filtrar)
+                        Object.keys(allData[key]).forEach(prop => {
+                            if (prop !== 'labels' && prop !== 'modelos' && Array.isArray(allData[key][prop])) {
+                                filtered[key][prop] = indices.map(i => allData[key][prop][i]);
                             }
                         });
                         
@@ -556,10 +1207,12 @@
             
             if (filteredData.argentina_marca) {
                 renderToyotaAbsolutos('chart-toyota-argentina', filteredData.argentina_marca, 'Argentina');
+                renderDataTable('table-argentina', filteredData.argentina_marca);
             }
             
             if (filteredData.mendoza_marca) {
                 renderToyotaAbsolutos('chart-toyota-mendoza', filteredData.mendoza_marca, 'Mendoza');
+                renderDataTable('table-mendoza', filteredData.mendoza_marca);
             }
             
             if (filteredData.argentina_marca && filteredData.mendoza_marca) {
@@ -609,6 +1262,174 @@
             });
         }
         
+        function renderDataTable(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!container || !data) return;
+            
+            // MOSTRAR TODAS LAS MARCAS DISPONIBLES EN LA DATA (sin filtrar)
+            const todasLasMarcas = Object.keys(data).filter(key => key !== 'labels' && Array.isArray(data[key]));
+            const activeMarcas = todasLasMarcas.filter(marca => {
+                // Verificar que la marca tenga al menos un valor > 0
+                return data[marca].some(val => val > 0);
+            }).sort((a, b) => {
+                // Ordenar por total descendente
+                const totalA = data[a].reduce((sum, val) => sum + val, 0);
+                const totalB = data[b].reduce((sum, val) => sum + val, 0);
+                return totalB - totalA;
+            });
+            
+            // Agrupar datos por año
+            const dataByYear = {};
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            
+            data.labels.forEach((label, idx) => {
+                const [month, year] = label.split('/');
+                const fullYear = '20' + year;
+                
+                if (!dataByYear[fullYear]) {
+                    dataByYear[fullYear] = {
+                        monthData: new Array(12).fill(null).map(() => ({})),
+                        data: {}
+                    };
+                    activeMarcas.forEach(marca => {
+                        dataByYear[fullYear].data[marca] = new Array(12).fill(0);
+                    });
+                }
+                
+                const monthIndex = parseInt(month) - 1;
+                activeMarcas.forEach(marca => {
+                    const valor = data[marca][idx] || 0;
+                    dataByYear[fullYear].data[marca][monthIndex] = valor;
+                });
+            });
+            
+            // Generar HTML con formato horizontal (meses en columnas, marcas en filas)
+            let html = '';
+            const years = Object.keys(dataByYear).sort();
+            
+            years.forEach(year => {
+                const yearData = dataByYear[year];
+                
+                // Calcular totales por mes (columnas) - siempre 12 meses
+                const totalesPorMes = [];
+                for (let i = 0; i < 12; i++) {
+                    let total = 0;
+                    activeMarcas.forEach(marca => {
+                        total += yearData.data[marca][i];
+                    });
+                    totalesPorMes.push(total);
+                }
+                
+                // Calcular totales por marca (filas)
+                const totalesPorMarca = {};
+                activeMarcas.forEach(marca => {
+                    totalesPorMarca[marca] = yearData.data[marca].reduce((sum, val) => sum + val, 0);
+                });
+                
+                const totalGeneral = Object.values(totalesPorMarca).reduce((sum, val) => sum + val, 0);
+                
+                // Encontrar el último mes con datos
+                let ultimoMesConDatos = 11;
+                for (let i = 11; i >= 0; i--) {
+                    if (totalesPorMes[i] > 0) {
+                        ultimoMesConDatos = i;
+                        break;
+                    }
+                }
+                const totalUltimoMes = totalesPorMes[ultimoMesConDatos];
+                
+                // Contar meses con datos para el header
+                const mesesConDatos = totalesPorMes.filter(t => t > 0).length;
+                
+                html += `
+                    <div class="year-section">
+                        <div class="year-header" onclick="toggleYear('${containerId}-${year}')">
+                            <div>
+                                <i class="fas fa-chevron-down" id="icon-${containerId}-${year}"></i>
+                                <span style="margin-left: 10px;">${year}</span>
+                                <span style="margin-left: 15px; font-weight: 400; font-size: 0.9em; opacity: 0.9;">
+                                    (${activeMarcas.length} marcas | ${mesesConDatos} meses | Total: ${totalGeneral.toLocaleString('es-AR')})
+                                </span>
+                            </div>
+                            <div style="font-size: 0.85em; opacity: 0.9;"><i class="fas fa-arrows-alt-v"></i> Scroll para ver todas las marcas</div>
+                        </div>
+                        <div class="year-content" id="content-${containerId}-${year}">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="marca-col">Marca</th>
+                                        ${monthNames.map(m => `<th>${m}</th>`).join('')}
+                                        <th class="percent-col">%Últ. Mes</th>
+                                        <th class="percent-col">% Total</th>
+                                        <th>TOTAL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                // Filas de marcas
+                activeMarcas.forEach(marca => {
+                    const nombreMarca = marca === 'otras' ? 'OTRAS' : marca.toUpperCase();
+                    const valorUltimoMes = yearData.data[marca][ultimoMesConDatos];
+                    const totalMarca = totalesPorMarca[marca];
+                    const pctUltimoMes = totalUltimoMes > 0 ? ((valorUltimoMes / totalUltimoMes) * 100) : 0;
+                    const pctTotal = totalGeneral > 0 ? ((totalMarca / totalGeneral) * 100) : 0;
+                    
+                    html += `<tr><td class="marca-col">${nombreMarca}</td>`;
+                    
+                    // Valores mensuales (siempre 12 columnas)
+                    for (let i = 0; i < 12; i++) {
+                        const valor = yearData.data[marca][i];
+                        if (valor > 0) {
+                            html += `<td>${valor.toLocaleString('es-AR')}</td>`;
+                        } else {
+                            html += `<td style="color: #ccc;">-</td>`;
+                        }
+                    }
+                    
+                    // Porcentajes y total
+                    html += `
+                        <td class="percent-col">${pctUltimoMes.toFixed(2)}%</td>
+                        <td class="percent-col">${pctTotal.toFixed(2)}%</td>
+                        <td style="font-weight: 700; color: #EB0A1E;">${totalMarca.toLocaleString('es-AR')}</td>
+                    </tr>`;
+                });
+                
+                // Fila de totales
+                html += `
+                                    <tr class="year-total-row">
+                                        <td class="marca-col">TOTAL</td>
+                                        ${totalesPorMes.map(t => t > 0 ? `<td>${t.toLocaleString('es-AR')}</td>` : `<td style="color: #ccc;">-</td>`).join('')}
+                                        <td class="percent-col">100.00%</td>
+                                        <td class="percent-col">100.00%</td>
+                                        <td>${totalGeneral.toLocaleString('es-AR')}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Nota: Los totales ya están incluidos en las tablas por año
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleYear(yearId) {
+            const content = document.getElementById('content-' + yearId);
+            const icon = document.getElementById('icon-' + yearId);
+            const header = icon.parentElement.parentElement;
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                header.classList.add('collapsed');
+            }
+        }
+        
         function renderParticipacionComparativa() {
             const ctx = document.getElementById('chart-participacion-comparativa').getContext('2d');
             
@@ -617,27 +1438,31 @@
             
             // Calcular participación Argentina
             const argPorcentajes = argData.labels.map((label, index) => {
+                if (!argData.toyota || !argData.toyota[index]) return 0;
+                
                 const toyota = argData.toyota[index];
-                const totalMercado = (argData.toyota[index] || 0) + 
-                                    (argData.ford[index] || 0) + 
-                                    (argData.fiat[index] || 0) + 
-                                    (argData.volkswagen[index] || 0) + 
-                                    (argData.chevrolet[index] || 0) + 
-                                    (argData.peugeot[index] || 0) + 
-                                    (argData.otros[index] || 0);
+                // Sumar TODAS las marcas disponibles
+                let totalMercado = 0;
+                Object.keys(argData).forEach(key => {
+                    if (key !== 'labels' && key !== 'modelos' && Array.isArray(argData[key])) {
+                        totalMercado += (argData[key][index] || 0);
+                    }
+                });
                 return totalMercado > 0 ? ((toyota / totalMercado) * 100) : 0;
             });
             
             // Calcular participación Mendoza
             const mdzPorcentajes = mdzData.labels.map((label, index) => {
+                if (!mdzData.toyota || !mdzData.toyota[index]) return 0;
+                
                 const toyota = mdzData.toyota[index];
-                const totalMercado = (mdzData.toyota[index] || 0) + 
-                                    (mdzData.ford[index] || 0) + 
-                                    (mdzData.fiat[index] || 0) + 
-                                    (mdzData.volkswagen[index] || 0) + 
-                                    (mdzData.chevrolet[index] || 0) + 
-                                    (mdzData.peugeot[index] || 0) + 
-                                    (mdzData.otros[index] || 0);
+                // Sumar TODAS las marcas disponibles
+                let totalMercado = 0;
+                Object.keys(mdzData).forEach(key => {
+                    if (key !== 'labels' && key !== 'modelos' && Array.isArray(mdzData[key])) {
+                        totalMercado += (mdzData[key][index] || 0);
+                    }
+                });
                 return totalMercado > 0 ? ((toyota / totalMercado) * 100) : 0;
             });
             
@@ -765,50 +1590,156 @@
         function renderTopModelos() {
             if (!filteredData.argentina_modelo || !filteredData.mendoza_modelo) return;
             
-            // Calcular Top 5 basándose en los datos filtrados (rango seleccionado)
-            const argTop = calcularTop5Filtrado(filteredData.argentina_modelo);
-            const mdzTop = calcularTop5Filtrado(filteredData.mendoza_modelo);
-            
-            renderTopList('top-argentina', argTop);
-            renderTopList('top-mendoza', mdzTop);
+            renderModeloTable('table-modelos-argentina', filteredData.argentina_modelo);
+            renderModeloTable('table-modelos-mendoza', filteredData.mendoza_modelo);
         }
         
-        function calcularTop5Filtrado(modeloData) {
-            if (!modeloData.modelos) return [];
+        function renderModeloTable(containerId, data) {
+            const container = document.getElementById(containerId);
+            if (!container || !data || !data.modelos) return;
             
-            // Sumar los valores del rango filtrado para cada modelo
-            const totales = modeloData.modelos.map(modelo => {
-                const total = modelo.valores.reduce((sum, val) => sum + val, 0);
-                return { nombre: modelo.nombre, cantidad: total };
-            });
+            // MOSTRAR TODOS LOS MODELOS (sin límite de top 10)
+            const modelosConTotal = data.modelos.map(modelo => ({
+                nombre: modelo.nombre,
+                valores: modelo.valores,
+                total: modelo.valores.reduce((sum, val) => sum + val, 0)
+            })).filter(m => m.total > 0)
+              .sort((a, b) => b.total - a.total);
             
-            // Filtrar modelos con cantidad > 0 y tomar top 5
-            return totales
-                .filter(item => item.cantidad > 0)
-                .sort((a, b) => b.cantidad - a.cantidad)
-                .slice(0, 5);
-        }
-        
-        function renderTopList(elementId, topList) {
-            const ul = document.getElementById(elementId);
-            ul.innerHTML = '';
-            
-            if (topList.length === 0) {
-                ul.innerHTML = '<li style="text-align: center; color: #999;">No hay datos disponibles</li>';
+            if (modelosConTotal.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No hay datos disponibles</p>';
                 return;
             }
             
-            topList.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div style="display: flex; align-items: center; flex: 1;">
-                        <span class="modelo-rank">${index + 1}</span>
-                        <span class="modelo-nombre">${item.nombre}</span>
-                    </div>
-                    <span class="modelo-cantidad">${item.cantidad.toLocaleString('es-AR')}</span>
-                `;
-                ul.appendChild(li);
+            // Agrupar datos por año
+            const dataByYear = {};
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            
+            data.labels.forEach((label, idx) => {
+                const [month, year] = label.split('/');
+                const fullYear = '20' + year;
+                
+                if (!dataByYear[fullYear]) {
+                    dataByYear[fullYear] = {
+                        data: {}
+                    };
+                    modelosConTotal.forEach(modelo => {
+                        dataByYear[fullYear].data[modelo.nombre] = new Array(12).fill(0);
+                    });
+                }
+                
+                const monthIndex = parseInt(month) - 1;
+                modelosConTotal.forEach(modelo => {
+                    dataByYear[fullYear].data[modelo.nombre][monthIndex] = modelo.valores[idx] || 0;
+                });
             });
+            
+            // Generar HTML
+            let html = '';
+            const years = Object.keys(dataByYear).sort();
+            
+            years.forEach(year => {
+                const yearData = dataByYear[year];
+                
+                // Calcular totales
+                const totalesPorMes = [];
+                for (let i = 0; i < 12; i++) {
+                    let total = 0;
+                    modelosConTotal.forEach(modelo => {
+                        total += yearData.data[modelo.nombre][i];
+                    });
+                    totalesPorMes.push(total);
+                }
+                
+                const mesesConDatos = totalesPorMes.filter(t => t > 0).length;
+                const totalGeneral = totalesPorMes.reduce((sum, val) => sum + val, 0);
+                
+                // Encontrar último mes con datos
+                let ultimoMesConDatos = 11;
+                for (let i = 11; i >= 0; i--) {
+                    if (totalesPorMes[i] > 0) {
+                        ultimoMesConDatos = i;
+                        break;
+                    }
+                }
+                const totalUltimoMes = totalesPorMes[ultimoMesConDatos];
+                
+                html += `
+                    <div class="year-section">
+                        <div class="year-header" onclick="toggleYear('${containerId}-${year}')">
+                            <div>
+                                <i class="fas fa-chevron-down" id="icon-${containerId}-${year}"></i>
+                                <span style="margin-left: 10px;">${year}</span>
+                                <span style="margin-left: 15px; font-weight: 400; font-size: 0.9em; opacity: 0.9;">
+                                    (${modelosConTotal.length} modelos | ${mesesConDatos} meses | Total: ${totalGeneral.toLocaleString('es-AR')})
+                                </span>
+                            </div>
+                            <div style="font-size: 0.85em; opacity: 0.9;"><i class="fas fa-arrows-alt-v"></i> Scroll para ver todos los modelos</div>
+                        </div>
+                        <div class="year-content" id="content-${containerId}-${year}">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="marca-col">Modelo</th>
+                                        ${monthNames.map(m => `<th>${m}</th>`).join('')}
+                                        <th class="percent-col">%Últ. Mes</th>
+                                        <th class="percent-col">% Total</th>
+                                        <th>TOTAL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                // Calcular totales y ordenar modelos de mayor a menor
+                const modelosOrdenados = modelosConTotal.map(modelo => ({
+                    nombre: modelo.nombre,
+                    totalDelAno: yearData.data[modelo.nombre].reduce((sum, val) => sum + val, 0),
+                    datos: yearData.data[modelo.nombre]
+                })).sort((a, b) => b.totalDelAno - a.totalDelAno);
+                
+                // Filas de modelos
+                modelosOrdenados.forEach(modelo => {
+                    const valorUltimoMes = modelo.datos[ultimoMesConDatos];
+                    const totalModelo = modelo.totalDelAno;
+                    const pctUltimoMes = totalUltimoMes > 0 ? ((valorUltimoMes / totalUltimoMes) * 100) : 0;
+                    const pctTotal = totalGeneral > 0 ? ((totalModelo / totalGeneral) * 100) : 0;
+                    
+                    html += `<tr><td class="marca-col">${modelo.nombre}</td>`;
+                    
+                    // Valores mensuales
+                    for (let i = 0; i < 12; i++) {
+                        const valor = modelo.datos[i];
+                        if (valor > 0) {
+                            html += `<td>${valor.toLocaleString('es-AR')}</td>`;
+                        } else {
+                            html += `<td style="color: #ccc;">-</td>`;
+                        }
+                    }
+                    
+                    html += `
+                        <td class="percent-col">${pctUltimoMes.toFixed(2)}%</td>
+                        <td class="percent-col">${pctTotal.toFixed(2)}%</td>
+                        <td style="font-weight: 700; color: #EB0A1E;">${totalModelo.toLocaleString('es-AR')}</td>
+                    </tr>`;
+                });
+                
+                // Fila de totales
+                html += `
+                                    <tr class="year-total-row">
+                                        <td class="marca-col">TOTAL</td>
+                                        ${totalesPorMes.map(t => t > 0 ? `<td>${t.toLocaleString('es-AR')}</td>` : `<td style="color: #ccc;">-</td>`).join('')}
+                                        <td class="percent-col">100.00%</td>
+                                        <td class="percent-col">100.00%</td>
+                                        <td>${totalGeneral.toLocaleString('es-AR')}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
         }
         
         function resetZoom(chartId) {

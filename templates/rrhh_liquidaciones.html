@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidaciones - RRHH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #2D2D2D;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #48BB78;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-secondary:hover {
+            background: #38A169;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9em;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.completado {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.pendiente {
+            background: #ED8936;
+            color: white;
+        }
+        
+        .badge.sin-evaluacion {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            color: #2D2D2D;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
+        .stat-card.highlight {
+            border-left: 4px solid #EB0A1E;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .money {
+            font-weight: 600;
+            color: #2D2D2D;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-file-invoice-dollar"></i> Liquidaciones</h1>
+        <a href="/rrhh" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a RRHH
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <h2 style="color: #2D2D2D; margin: 0;">
+                    <i class="fas fa-calendar-alt"></i> Período de Liquidación
+                </h2>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar"></i> Mes:</label>
+                    <select id="mesFiltro" onchange="cargarLiquidaciones()">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-check"></i> Año:</label>
+                    <select id="anioFiltro" onchange="cargarLiquidaciones()"></select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Buscar:</label>
+                    <input type="text" id="buscarEmpleado" placeholder="Legajo o nombre..." oninput="filtrarTabla()" style="width: 200px;">
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="exportarExcel()">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </button>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card highlight">
+                <h3><i class="fas fa-users"></i> Total Empleados</h3>
+                <div class="value" id="totalEmpleados">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-check-circle"></i> Con Evaluación</h3>
+                <div class="value" id="conEvaluacion">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-clock"></i> Pendientes</h3>
+                <div class="value" id="pendientes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3><i class="fas fa-chart-line"></i> Performance Promedio</h3>
+                <div class="value" id="performancePromedio">-</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Legajo</th>
+                        <th><i class="fas fa-user"></i> Nombre Completo</th>
+                        <th><i class="fas fa-briefcase"></i> Posición</th>
+                        <th><i class="fas fa-user-tie"></i> Inmediato Superior</th>
+                        <th class="text-right"><i class="fas fa-award"></i> Premio Toyota</th>
+                        <th class="text-center"><i class="fas fa-chart-line"></i> Performance</th>
+                        <th class="text-right"><i class="fas fa-dollar-sign"></i> Comisiones</th>
+                        <th class="text-right"><i class="fas fa-hand-holding-usd"></i> Anticipo Com.</th>
+                        <th class="text-right"><i class="fas fa-clock"></i> HE 50%</th>
+                        <th class="text-right"><i class="fas fa-clock"></i> HE 100%</th>
+                        <th class="text-center"><i class="fas fa-info-circle"></i> Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaLiquidaciones">
+                    <tr>
+                        <td colspan="11" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando liquidaciones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let liquidaciones = [];
+        let liquidacionesFiltradas = [];
+        
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            inicializarSelectores();
+            cargarLiquidaciones();
+        });
+        
+        function inicializarSelectores() {
+            const fecha = new Date();
+            const mesActual = fecha.getMonth() + 1;
+            const anioActual = fecha.getFullYear();
+            
+            // Configurar selector de mes
+            document.getElementById('mesFiltro').value = mesActual;
+            
+            // Configurar selector de año (últimos 3 años + 2 años futuros)
+            const selectAnio = document.getElementById('anioFiltro');
+            for (let i = anioActual - 3; i <= anioActual + 2; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === anioActual) option.selected = true;
+                selectAnio.appendChild(option);
+            }
+        }
+        
+        function cargarLiquidaciones() {
+            const mes = document.getElementById('mesFiltro').value;
+            const anio = document.getElementById('anioFiltro').value;
+            
+            console.log('Cargando liquidaciones para:', mes, anio);
+            
+            fetch(`/api/rrhh/liquidaciones?mes=${mes}&anio=${anio}`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error('Error response body:', text);
+                            throw new Error(`HTTP ${response.status}: ${text}`);
+                        });
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos recibidos:', data);
+                    console.log('Tipo de datos:', typeof data);
+                    console.log('Es array?', Array.isArray(data));
+                    
+                    if (!Array.isArray(data)) {
+                        console.error('Los datos no son un array:', data);
+                        liquidaciones = [];
+                    } else {
+                        console.log('Cantidad de registros:', data.length);
+                        liquidaciones = data;
+                    }
+                    
+                    filtrarTabla();
+                    actualizarEstadisticas();
+                })
+                .catch(error => {
+                    console.error('Error completo:', error);
+                    liquidaciones = [];
+                    document.getElementById('tablaLiquidaciones').innerHTML = `
+                        <tr>
+                            <td colspan="11" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar las liquidaciones: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function filtrarTabla() {
+            const busqueda = document.getElementById('buscarEmpleado').value.toLowerCase();
+            
+            liquidacionesFiltradas = liquidaciones.filter(emp => {
+                if (!busqueda) return true;
+                
+                const legajo = (emp.legajo || '').toLowerCase();
+                const nombre = (emp.nombre_completo || '').toLowerCase();
+                
+                return legajo.includes(busqueda) || nombre.includes(busqueda);
+            });
+            
+            console.log('Empleados filtrados:', liquidacionesFiltradas.length);
+            mostrarLiquidaciones();
+        }
+        
+        function mostrarLiquidaciones() {
+            const tbody = document.getElementById('tablaLiquidaciones');
+            
+            if (liquidacionesFiltradas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay empleados para mostrar
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            liquidacionesFiltradas.forEach(emp => {
+                const tr = document.createElement('tr');
+                
+                // Determinar estado
+                let estadoBadge;
+                if (emp.tiene_evaluacion) {
+                    const allFields = emp.performance !== null && 
+                                     emp.comisiones !== null && 
+                                     emp.anticipo_comisiones !== null && 
+                                     emp.horas_extras_50 !== null && 
+                                     emp.horas_extras_100 !== null;
+                    
+                    estadoBadge = allFields 
+                        ? '<span class="badge completado">Completado</span>'
+                        : '<span class="badge pendiente">Incompleto</span>';
+                } else {
+                    estadoBadge = '<span class="badge sin-evaluacion">Sin Evaluación</span>';
+                }
+                
+                // Formatear valores
+                const premioToyota = emp.premio_toyota !== null 
+                    ? `$${parseFloat(emp.premio_toyota).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : '<em style="color: #999;">-</em>';
+                
+                const performance = emp.performance !== null 
+                    ? `${parseFloat(emp.performance).toFixed(1)}%`
+                    : '<em style="color: #999;">-</em>';
+                
+                const comisiones = emp.comisiones !== null 
+                    ? `$${parseFloat(emp.comisiones).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : '<em style="color: #999;">-</em>';
+                
+                const anticipo = emp.anticipo_comisiones !== null 
+                    ? `$${parseFloat(emp.anticipo_comisiones).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : '<em style="color: #999;">-</em>';
+                
+                const he50 = emp.horas_extras_50 !== null 
+                    ? `${parseFloat(emp.horas_extras_50).toFixed(1)}h`
+                    : '<em style="color: #999;">-</em>';
+                
+                const he100 = emp.horas_extras_100 !== null 
+                    ? `${parseFloat(emp.horas_extras_100).toFixed(1)}h`
+                    : '<em style="color: #999;">-</em>';
+                
+                // Supervisor con hipervínculo (si tiene supervisor_id)
+                let supervisorHtml;
+                if (emp.supervisor_id && emp.inmediato_superior) {
+                    supervisorHtml = `<a href="/rrhh/supervisor/${emp.supervisor_id}" style="color: #EB0A1E; text-decoration: none; font-weight: 600;" title="Ver perfil del supervisor">${emp.inmediato_superior}</a>`;
+                } else if (emp.inmediato_superior) {
+                    supervisorHtml = emp.inmediato_superior;
+                } else {
+                    supervisorHtml = '<em style="color: #999;">-</em>';
+                }
+                
+                tr.innerHTML = `
+                    <td><strong>${emp.legajo}</strong></td>
+                    <td>${emp.nombre_completo}</td>
+                    <td>${emp.posicion || '<em style="color: #999;">-</em>'}</td>
+                    <td>${supervisorHtml}</td>
+                    <td class="text-right money">${premioToyota}</td>
+                    <td class="text-center"><strong>${performance}</strong></td>
+                    <td class="text-right money">${comisiones}</td>
+                    <td class="text-right money">${anticipo}</td>
+                    <td class="text-right">${he50}</td>
+                    <td class="text-right">${he100}</td>
+                    <td class="text-center">${estadoBadge}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function actualizarEstadisticas() {
+            const totalEmpleados = liquidaciones.length;
+            const conEvaluacion = liquidaciones.filter(e => e.tiene_evaluacion).length;
+            const pendientes = totalEmpleados - conEvaluacion;
+            
+            // Calcular performance promedio (solo de los que tienen evaluación)
+            const performanceData = liquidaciones
+                .filter(e => e.performance !== null)
+                .map(e => parseFloat(e.performance));
+            
+            const performancePromedio = performanceData.length > 0
+                ? (performanceData.reduce((a, b) => a + b, 0) / performanceData.length).toFixed(1) + '%'
+                : '-';
+            
+            document.getElementById('totalEmpleados').textContent = totalEmpleados;
+            document.getElementById('conEvaluacion').textContent = conEvaluacion;
+            document.getElementById('pendientes').textContent = pendientes;
+            document.getElementById('performancePromedio').textContent = performancePromedio;
+        }
+        
+        function exportarExcel() {
+            const mes = document.getElementById('mesFiltro').value;
+            const anio = document.getElementById('anioFiltro').value;
+            
+            // Crear tabla HTML para exportar
+            let html = '<table border="1">';
+            html += '<thead><tr>';
+            html += '<th>Legajo</th>';
+            html += '<th>Nombre Completo</th>';
+            html += '<th>Posición</th>';
+            html += '<th>Inmediato Superior</th>';
+            html += '<th>Premio Toyota</th>';
+            html += '<th>Performance (%)</th>';
+            html += '<th>Comisiones</th>';
+            html += '<th>Anticipo Comisiones</th>';
+            html += '<th>Horas Extras 50%</th>';
+            html += '<th>Horas Extras 100%</th>';
+            html += '<th>Estado</th>';
+            html += '</tr></thead><tbody>';
+            
+            liquidacionesFiltradas.forEach(emp => {
+                html += '<tr>';
+                html += `<td>${emp.legajo}</td>`;
+                html += `<td>${emp.nombre_completo}</td>`;
+                html += `<td>${emp.posicion || ''}</td>`;
+                html += `<td>${emp.inmediato_superior || ''}</td>`;
+                html += `<td>${emp.premio_toyota !== null ? parseFloat(emp.premio_toyota).toFixed(2) : ''}</td>`;
+                html += `<td>${emp.performance !== null ? parseFloat(emp.performance).toFixed(1) : ''}</td>`;
+                html += `<td>${emp.comisiones !== null ? parseFloat(emp.comisiones).toFixed(2) : ''}</td>`;
+                html += `<td>${emp.anticipo_comisiones !== null ? parseFloat(emp.anticipo_comisiones).toFixed(2) : ''}</td>`;
+                html += `<td>${emp.horas_extras_50 !== null ? parseFloat(emp.horas_extras_50).toFixed(1) : ''}</td>`;
+                html += `<td>${emp.horas_extras_100 !== null ? parseFloat(emp.horas_extras_100).toFixed(1) : ''}</td>`;
+                html += `<td>${emp.tiene_evaluacion ? 'Con Evaluación' : 'Sin Evaluación'}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            // Crear archivo para descargar
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Liquidaciones_${mes}_${anio}.xls`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

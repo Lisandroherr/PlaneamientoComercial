@@ -121,6 +121,22 @@
         color: white;
     }
     
+    .badge-usuario-plus {
+        background: #20c997;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .badge-supervisor {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .badge-rrhh {
+        background: #6f42c1;
+        color: white;
+    }
+    
     .badge-active {
         background: #28a745;
         color: white;
@@ -393,7 +409,15 @@
                 <div class="form-group">
                     <label for="create_role">Rol *</label>
                     <select class="form-control" id="create_role" required>
-                        <option value="user">Usuario</option>
+                        <option value="user">Clase A</option>
+                        <option value="usuario_plus">Clase B</option>
+                        <option value="usuario_plus_plus">Clase C</option>
+                        <option value="usuario_plus_plus_plus">Clase D</option>
+                        <option value="clase_e">Clase E</option>
+                        <option value="clase_f">Clase F</option>
+                        <option value="clase_g">Clase G</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="rrhh">RRHH</option>
                         <option value="admin">Administrador</option>
                     </select>
                 </div>
@@ -424,6 +448,30 @@
                             <input type="checkbox" id="create_permiso_entregas">
                             <label for="create_permiso_entregas">
                                 <i class="fas fa-truck"></i> Entregas
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_bi">
+                            <label for="create_permiso_bi">
+                                <i class="fas fa-chart-bar"></i> BI
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_rrhh">
+                            <label for="create_permiso_rrhh">
+                                <i class="fas fa-users"></i> RRHH
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_usados">
+                            <label for="create_permiso_usados">
+                                <i class="fas fa-car-side"></i> Usados
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="create_permiso_postventa">
+                            <label for="create_permiso_postventa">
+                                <i class="fas fa-wrench"></i> Post Venta
                             </label>
                         </div>
                     </div>
@@ -469,7 +517,15 @@
                 <div class="form-group">
                     <label for="edit_role">Rol</label>
                     <select class="form-control" id="edit_role">
-                        <option value="user">Usuario</option>
+                        <option value="user">Clase A</option>
+                        <option value="usuario_plus">Clase B</option>
+                        <option value="usuario_plus_plus">Clase C</option>
+                        <option value="usuario_plus_plus_plus">Clase D</option>
+                        <option value="clase_e">Clase E</option>
+                        <option value="clase_f">Clase F</option>
+                        <option value="clase_g">Clase G</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="rrhh">RRHH</option>
                         <option value="admin">Administrador</option>
                     </select>
                 </div>
@@ -500,6 +556,30 @@
                             <input type="checkbox" id="edit_permiso_entregas">
                             <label for="edit_permiso_entregas">
                                 <i class="fas fa-truck"></i> Entregas
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_bi">
+                            <label for="edit_permiso_bi">
+                                <i class="fas fa-chart-bar"></i> BI
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_rrhh">
+                            <label for="edit_permiso_rrhh">
+                                <i class="fas fa-users"></i> RRHH
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_usados">
+                            <label for="edit_permiso_usados">
+                                <i class="fas fa-car-side"></i> Usados
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="edit_permiso_postventa">
+                            <label for="edit_permiso_postventa">
+                                <i class="fas fa-wrench"></i> Post Venta
                             </label>
                         </div>
                     </div>
@@ -585,8 +665,36 @@ function renderUsers(users) {
     users.forEach(user => {
         const tr = document.createElement('tr');
         
-        const roleClass = user.role === 'admin' ? 'badge-admin' : 'badge-user';
-        const roleText = user.role === 'admin' ? 'Administrador' : 'Usuario';
+        let roleClass = 'badge-user';
+        let roleText = 'Clase A';
+        if (user.role === 'admin') {
+            roleClass = 'badge-admin';
+            roleText = 'Administrador';
+        } else if (user.role === 'usuario_plus') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase B';
+        } else if (user.role === 'usuario_plus_plus') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase C';
+        } else if (user.role === 'usuario_plus_plus_plus') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase D';
+        } else if (user.role === 'clase_e') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase E';
+        } else if (user.role === 'clase_f') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase F';
+        } else if (user.role === 'clase_g') {
+            roleClass = 'badge-usuario-plus';
+            roleText = 'Clase G';
+        } else if (user.role === 'supervisor') {
+            roleClass = 'badge-supervisor';
+            roleText = 'Supervisor';
+        } else if (user.role === 'rrhh') {
+            roleClass = 'badge-rrhh';
+            roleText = 'RRHH';
+        }
         const statusClass = user.active ? 'badge-active' : 'badge-inactive';
         const statusText = user.active ? 'Activo' : 'Inactivo';
         const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString('es-AR') : 'Nunca';
@@ -603,6 +711,10 @@ function renderUsers(users) {
             if (user.permiso_ventas) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">V</span>');
             if (user.permiso_gestoria) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">G</span>');
             if (user.permiso_entregas) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">E</span>');
+            if (user.permiso_bi) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">BI</span>');
+            if (user.permiso_rrhh) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">RH</span>');
+            if (user.permiso_usados) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">U</span>');
+            if (user.permiso_postventa) permisos.push('<span class="badge-permission" style="background: #EB0A1E; font-size: 0.7em; padding: 2px 5px; margin: 2px;">PV</span>');
             permisosHTML = permisos.length > 0 ? permisos.join('') : '<span style="color: #999; font-size: 0.85em;">Sin permisos</span>';
         }
         
@@ -643,19 +755,26 @@ function createUser() {
     const permiso_ventas = document.getElementById('create_permiso_ventas').checked;
     const permiso_gestoria = document.getElementById('create_permiso_gestoria').checked;
     const permiso_entregas = document.getElementById('create_permiso_entregas').checked;
+    const permiso_bi = document.getElementById('create_permiso_bi').checked;
+    const permiso_rrhh = document.getElementById('create_permiso_rrhh').checked;
+    const permiso_usados = document.getElementById('create_permiso_usados').checked;
+    const permiso_postventa = document.getElementById('create_permiso_postventa').checked;
 
     if (!username || !password) {
         showAlert('Usuario y contraseña son obligatorios', 'danger');
         return;
     }
 
+    const userData = {
+        username, password, full_name, email, role,
+        permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa
+    };
+    console.log('Creando usuario con datos:', userData);
+
     fetch('/api/users', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            username, password, full_name, email, role,
-            permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
-        })
+        body: JSON.stringify(userData)
     })
     .then(response => response.json())
     .then(data => {
@@ -690,6 +809,10 @@ function editUser(userId) {
                 document.getElementById('edit_permiso_ventas').checked = user.permiso_ventas || false;
                 document.getElementById('edit_permiso_gestoria').checked = user.permiso_gestoria || false;
                 document.getElementById('edit_permiso_entregas').checked = user.permiso_entregas || false;
+                document.getElementById('edit_permiso_bi').checked = user.permiso_bi || false;
+                document.getElementById('edit_permiso_rrhh').checked = user.permiso_rrhh || false;
+                document.getElementById('edit_permiso_usados').checked = user.permiso_usados || false;
+                document.getElementById('edit_permiso_postventa').checked = user.permiso_postventa || false;
                 
                 showModal('editUserModal');
             } else {
@@ -710,14 +833,20 @@ function updateUser() {
     const permiso_ventas = document.getElementById('edit_permiso_ventas').checked;
     const permiso_gestoria = document.getElementById('edit_permiso_gestoria').checked;
     const permiso_entregas = document.getElementById('edit_permiso_entregas').checked;
+    const permiso_bi = document.getElementById('edit_permiso_bi').checked;
+    const permiso_rrhh = document.getElementById('edit_permiso_rrhh').checked;
+    const permiso_usados = document.getElementById('edit_permiso_usados').checked;
+    const permiso_postventa = document.getElementById('edit_permiso_postventa').checked;
 
     const data = {
         username, full_name, email, role, active,
-        permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+        permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa
     };
     if (password) {
         data.password = password;
     }
+    
+    console.log('Actualizando usuario con datos:', data);
 
     fetch(`/api/users/${userId}`, {
         method: 'PUT',

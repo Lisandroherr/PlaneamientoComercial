@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posiciones de Trabajo - RRHH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-primary {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.activo {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.inactivo {
+            background: #CBD5E0;
+            color: #2D3748;
+        }
+        
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+        
+        .btn-icon.editar {
+            color: #3182CE;
+        }
+        
+        .btn-icon.eliminar {
+            color: #E53E3E;
+        }
+        
+        .btn-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #2D2D2D;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D3748;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-secondary {
+            background: #CBD5E0;
+            color: #2D3748;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #A0AEC0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        .precio {
+            color: #2D2D2D;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-briefcase"></i> Posiciones de Trabajo</h1>
+        <a href="/rrhh" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a RRHH
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <h2 style="color: #2D2D2D;">
+                <span id="contadorPosiciones">0 posiciones</span>
+            </h2>
+            <button class="btn-primary" onclick="abrirModalNueva()">
+                <i class="fas fa-plus"></i> Nueva Posición
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-tag"></i> Posición</th>
+                        <th><i class="fas fa-trophy"></i> Premio Toyota</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th style="text-align: center;"><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPosiciones">
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando posiciones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal para crear/editar posición -->
+    <div id="modalPosicion" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Nueva Posición</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <form id="formPosicion" onsubmit="guardarPosicion(event)">
+                <input type="hidden" id="posicionId">
+                
+                <div class="form-group">
+                    <label for="nombrePosicion">
+                        <i class="fas fa-briefcase"></i> Nombre de la Posición *
+                    </label>
+                    <input type="text" id="nombrePosicion" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="premioToyota">
+                        <i class="fas fa-trophy"></i> Premio Toyota (ARS) *
+                    </label>
+                    <input type="number" id="premioToyota" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="estadoPosicion">
+                        <i class="fas fa-toggle-on"></i> Estado
+                    </label>
+                    <select id="estadoPosicion">
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let posiciones = [];
+        
+        // Cargar posiciones al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarPosiciones();
+        });
+        
+        function cargarPosiciones() {
+            fetch('/api/rrhh/posiciones')
+                .then(response => response.json())
+                .then(data => {
+                    posiciones = data;
+                    mostrarPosiciones();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tablaPosiciones').innerHTML = `
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar las posiciones
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function mostrarPosiciones() {
+            const tbody = document.getElementById('tablaPosiciones');
+            const contador = document.getElementById('contadorPosiciones');
+            
+            contador.textContent = `${posiciones.length} posición${posiciones.length !== 1 ? 'es' : ''}`;
+            
+            if (posiciones.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay posiciones registradas
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            posiciones.forEach(posicion => {
+                const tr = document.createElement('tr');
+                
+                const premio = parseFloat(posicion.premio_toyota || 0);
+                const premioFormateado = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(premio);
+                
+                const estadoBadge = posicion.activo 
+                    ? '<span class="badge activo">Activo</span>'
+                    : '<span class="badge inactivo">Inactivo</span>';
+                
+                tr.innerHTML = `
+                    <td><strong>${posicion.nombre}</strong></td>
+                    <td class="precio">${premioFormateado}</td>
+                    <td>${estadoBadge}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-icon editar" onclick="editarPosicion(${posicion.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon eliminar" onclick="eliminarPosicion(${posicion.id}, '${posicion.nombre}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function abrirModalNueva() {
+            document.getElementById('modalTitulo').textContent = 'Nueva Posición';
+            document.getElementById('formPosicion').reset();
+            document.getElementById('posicionId').value = '';
+            document.getElementById('estadoPosicion').value = 'true';
+            document.getElementById('modalPosicion').style.display = 'block';
+        }
+        
+        function editarPosicion(id) {
+            const posicion = posiciones.find(p => p.id === id);
+            if (!posicion) return;
+            
+            document.getElementById('modalTitulo').textContent = 'Editar Posición';
+            document.getElementById('posicionId').value = posicion.id;
+            document.getElementById('nombrePosicion').value = posicion.nombre;
+            document.getElementById('premioToyota').value = posicion.premio_toyota;
+            document.getElementById('estadoPosicion').value = posicion.activo.toString();
+            document.getElementById('modalPosicion').style.display = 'block';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalPosicion').style.display = 'none';
+        }
+        
+        function guardarPosicion(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('posicionId').value;
+            const data = {
+                nombre: document.getElementById('nombrePosicion').value,
+                premio_toyota: parseFloat(document.getElementById('premioToyota').value),
+                activo: document.getElementById('estadoPosicion').value === 'true'
+            };
+            
+            const url = id ? `/api/rrhh/posiciones/${id}` : '/api/rrhh/posiciones';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cerrarModal();
+                    cargarPosiciones();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar la posición');
+            });
+        }
+        
+        function eliminarPosicion(id, nombre) {
+            if (!confirm(`¿Está seguro de eliminar la posición "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            fetch(`/api/rrhh/posiciones/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cargarPosiciones();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar la posición');
+            });
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalPosicion');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios - Post Venta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group select {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.activo {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.inactivo {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+        
+        .btn-icon.editar {
+            color: #3182CE;
+        }
+        
+        .btn-icon.eliminar {
+            color: #E53E3E;
+        }
+        
+        .btn-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #2D2D2D;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D3748;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-secondary {
+            background: #CBD5E0;
+            color: #2D3748;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #A0AEC0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #C6F6D5;
+            color: #22543D;
+            border-left: 4px solid #48BB78;
+        }
+        
+        .alert-error {
+            background: #FED7D7;
+            color: #742A2A;
+            border-left: 4px solid #E53E3E;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-tools"></i> Servicios de Post Venta</h1>
+        <a href="/postventa/gestion" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Gestión
+        </a>
+    </div>
+    
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <div class="toolbar">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <h2 style="color: #2D2D2D; margin: 0;">
+                    <span id="contadorServicios">0 servicios</span>
+                </h2>
+                <div class="filter-group">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-building"></i> Sector:
+                    </label>
+                    <select id="filtroSector" onchange="aplicarFiltros()">
+                        <option value="">Todos</option>
+                        <option value="Servicios">Servicios</option>
+                        <option value="Chapería y Pintura">Chapería y Pintura</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="abrirModalNuevo()">
+                <i class="fas fa-plus"></i> Nuevo Servicio
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-wrench"></i> Tipo de Servicio</th>
+                        <th><i class="fas fa-building"></i> Sector</th>
+                        <th><i class="fas fa-star"></i> Ranking</th>
+                        <th><i class="fas fa-user-tie"></i> Asignación</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th style="text-align: center;"><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaServicios">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando servicios...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal para crear/editar servicio -->
+    <div id="modalServicio" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Nuevo Servicio</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <form id="formServicio" onsubmit="guardarServicio(event)">
+                <input type="hidden" id="servicioId">
+                
+                <div class="form-group">
+                    <label for="nombre">
+                        <i class="fas fa-wrench"></i> Tipo de Servicio *
+                    </label>
+                    <input type="text" id="nombre" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sector">
+                            <i class="fas fa-building"></i> Sector *
+                        </label>
+                        <select id="sector" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Chapería y Pintura">Chapería y Pintura</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ranking">
+                            <i class="fas fa-star"></i> Ranking de Comisiones *
+                        </label>
+                        <select id="ranking" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="1">★ (1)</option>
+                            <option value="2">★★ (2)</option>
+                            <option value="3">★★★ (3)</option>
+                            <option value="4">★★★★ (4)</option>
+                            <option value="5">★★★★★ (5)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="asesorFijo">
+                        <i class="fas fa-user-tie"></i> Asignación
+                    </label>
+                    <select id="asesorFijo">
+                        <option value="">Aleatorio (sin asesor fijo)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="estadoServicio">
+                        <i class="fas fa-toggle-on"></i> Estado
+                    </label>
+                    <select id="estadoServicio">
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let servicios = [];
+        let serviciosFiltrados = [];
+        let asesores = [];
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarAsesores();
+            cargarServicios();
+        });
+        
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = '';
+            container.appendChild(alertDiv);
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+        
+        function cargarAsesores() {
+            fetch('/api/postventa/asesores')
+                .then(response => response.json())
+                .then(data => {
+                    asesores = Array.isArray(data) ? data : [];
+                    actualizarSelectAsesores();
+                })
+                .catch(error => console.error('Error cargando asesores:', error));
+        }
+        
+        function actualizarSelectAsesores() {
+            const select = document.getElementById('asesorFijo');
+            select.innerHTML = '<option value="">Aleatorio (sin asesor fijo)</option>';
+            asesores.filter(a => a.activo).forEach(a => {
+                const option = document.createElement('option');
+                option.value = a.id;
+                option.textContent = `${a.nombre} - ${a.sector}`;
+                select.appendChild(option);
+            });
+        }
+        
+        function cargarServicios() {
+            fetch('/api/postventa/servicios')
+                .then(response => response.json())
+                .then(data => {
+                    servicios = Array.isArray(data) ? data : [];
+                    aplicarFiltros();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tablaServicios').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los servicios
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function aplicarFiltros() {
+            const filtroSector = document.getElementById('filtroSector').value;
+            
+            serviciosFiltrados = servicios.filter(s => {
+                return !filtroSector || s.sector === filtroSector;
+            });
+            
+            mostrarServicios();
+        }
+        
+        function mostrarServicios() {
+            const tbody = document.getElementById('tablaServicios');
+            const contador = document.getElementById('contadorServicios');
+            
+            contador.textContent = `${serviciosFiltrados.length} servicio${serviciosFiltrados.length !== 1 ? 's' : ''}`;
+            
+            if (serviciosFiltrados.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay servicios registrados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            serviciosFiltrados.forEach(servicio => {
+                const tr = document.createElement('tr');
+                
+                const estadoBadge = servicio.activo 
+                    ? '<span class="badge activo">Activo</span>'
+                    : '<span class="badge inactivo">Inactivo</span>';
+                
+                const asignacion = servicio.asesor_nombre
+                    ? `<span class="badge activo" style="font-size: 0.85em;">${servicio.asesor_nombre}</span>`
+                    : '<em style="color: #999;">Aleatorio</em>';
+                
+                const ranking = '★'.repeat(servicio.ranking || 0);
+                
+                tr.innerHTML = `
+                    <td><strong>${servicio.nombre}</strong></td>
+                    <td>${servicio.sector}</td>
+                    <td style="color: #F6AD55; font-size: 1.1em;">${ranking}</td>
+                    <td>${asignacion}</td>
+                    <td>${estadoBadge}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-icon editar" onclick="editarServicio(${servicio.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon eliminar" onclick="eliminarServicio(${servicio.id}, '${servicio.nombre}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function abrirModalNuevo() {
+            document.getElementById('modalTitulo').textContent = 'Nuevo Servicio';
+            document.getElementById('formServicio').reset();
+            document.getElementById('servicioId').value = '';
+            document.getElementById('estadoServicio').value = 'true';
+            document.getElementById('modalServicio').style.display = 'block';
+        }
+        
+        function editarServicio(id) {
+            const servicio = servicios.find(s => s.id === id);
+            if (!servicio) return;
+            
+            document.getElementById('modalTitulo').textContent = 'Editar Servicio';
+            document.getElementById('servicioId').value = servicio.id;
+            document.getElementById('nombre').value = servicio.nombre;
+            document.getElementById('sector').value = servicio.sector;
+            document.getElementById('ranking').value = servicio.ranking;
+            document.getElementById('asesorFijo').value = servicio.asesor_fijo_id || '';
+            document.getElementById('estadoServicio').value = servicio.activo.toString();
+            
+            document.getElementById('modalServicio').style.display = 'block';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalServicio').style.display = 'none';
+        }
+        
+        function guardarServicio(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('servicioId').value;
+            
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                sector: document.getElementById('sector').value,
+                ranking: parseInt(document.getElementById('ranking').value),
+                asesor_fijo_id: document.getElementById('asesorFijo').value || null,
+                activo: document.getElementById('estadoServicio').value === 'true'
+            };
+            
+            const url = id ? `/api/postventa/servicios/${id}` : '/api/postventa/servicios';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showAlert('Error: ' + result.error, 'error');
+                } else {
+                    showAlert('✅ Servicio guardado exitosamente', 'success');
+                    cerrarModal();
+                    cargarServicios();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error al guardar el servicio', 'error');
+            });
+        }
+        
+        function eliminarServicio(id, nombre) {
+            if (!confirm(`¿Está seguro de eliminar el servicio "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            fetch(`/api/postventa/servicios/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    showAlert('Error: ' + result.error, 'error');
+                } else {
+                    showAlert('✅ Servicio eliminado exitosamente', 'success');
+                    cargarServicios();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error al eliminar el servicio', 'error');
+            });
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalServicio');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+    </script>
+</body>
+</html>

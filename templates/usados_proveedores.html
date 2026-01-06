@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - Usados</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #404041;
+        }
+        .container {
+            background: white;
+        }
+        .toolbar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .toolbar-left {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #2D2D2D;
+        }
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 0.95em;
+            min-width: 180px;
+        }
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        .btn-nuevo {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-nuevo:hover {
+            background: #c00818;
+        }
+        .btn-limpiar {
+            background: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-limpiar:hover {
+            background: #5a6268;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th {
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #58595B;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        .btn-accion {
+            padding: 6px 12px;
+            margin: 0 3px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        .btn-editar {
+            background: #4299e1;
+            color: white;
+        }
+        .btn-editar:hover {
+            background: #3182ce;
+        }
+        .btn-eliminar {
+            background: #f56565;
+            color: white;
+        }
+        .btn-eliminar:hover {
+            background: #e53e3e;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .close:hover {
+            color: #EB0A1E;
+        }
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2D2D2D;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .modal-footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-cancelar {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-cancelar:hover {
+            background: #5a6268;
+        }
+        .btn-guardar {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-guardar:hover {
+            background: #c00818;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-activo {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-inactivo {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-truck"></i> Proveedores</h1>
+        <a href="/usados" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Usados
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="filter-group">
+                    <label><i class="fas fa-briefcase"></i> Rubro</label>
+                    <select id="filtroRubro" onchange="aplicarFiltros()">
+                        <option value="">Todos los rubros</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i> Buscar</label>
+                    <input type="text" id="filtroBuscar" placeholder="Nombre, CUIT, Ubicación..." onkeyup="aplicarFiltros()">
+                </div>
+                
+                <button class="btn-limpiar" onclick="limpiarFiltros()">
+                    <i class="fas fa-eraser"></i> Limpiar
+                </button>
+            </div>
+            
+            <button class="btn-nuevo" onclick="abrirModalNuevo()">
+                <i class="fas fa-plus"></i> Nuevo Proveedor
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-building"></i> Proveedor</th>
+                        <th><i class="fas fa-id-card"></i> CUIT</th>
+                        <th><i class="fas fa-briefcase"></i> Rubro</th>
+                        <th><i class="fas fa-star"></i> Especialidad</th>
+                        <th><i class="fas fa-phone"></i> Teléfono</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaProveedores">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando proveedores...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal Nuevo/Editar Proveedor -->
+    <div id="modalProveedor" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo"><i class="fas fa-plus"></i> Nuevo Proveedor</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formProveedor">
+                    <input type="hidden" id="proveedorId">
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-building"></i> Nombre del Proveedor *</label>
+                        <input type="text" id="nombre" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> CUIT *</label>
+                        <input type="text" id="cuit" required placeholder="XX-XXXXXXXX-X">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-briefcase"></i> Rubro</label>
+                        <input type="text" id="rubro" placeholder="Ej: Mecánica, Electricidad, Pintura...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-star"></i> Especialidad</label>
+                        <textarea id="especialidad" placeholder="Detalle de servicios o especialidades..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="text" id="telefono" placeholder="Ej: +54 261 123-4567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Ubicación</label>
+                        <input type="text" id="ubicacion" placeholder="Dirección o zona">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="activo" checked>
+                            <i class="fas fa-toggle-on"></i> Proveedor activo
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="cerrarModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-guardar" onclick="guardarProveedor()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+let proveedoresData = [];
+let proveedoresFiltrados = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarProveedores();
+});
+
+function cargarProveedores() {
+    fetch('/api/usados/proveedores')
+        .then(response => response.json())
+        .then(data => {
+            proveedoresData = data;
+            poblarFiltroRubros();
+            aplicarFiltros();
+        })
+        .catch(error => {
+            console.error('Error al cargar proveedores:', error);
+            document.getElementById('tablaProveedores').innerHTML = 
+                '<tr><td colspan="8" class="empty-state"><i class="fas fa-exclamation-triangle"></i>Error al cargar los datos</td></tr>';
+        });
+}
+
+function poblarFiltroRubros() {
+    const rubrosUnicos = [...new Set(proveedoresData.map(p => p.rubro).filter(r => r))];
+    const select = document.getElementById('filtroRubro');
+    
+    select.innerHTML = '<option value="">Todos los rubros</option>';
+    
+    rubrosUnicos.sort().forEach(rubro => {
+        const option = document.createElement('option');
+        option.value = rubro;
+        option.textContent = rubro;
+        select.appendChild(option);
+    });
+}
+
+function aplicarFiltros() {
+    const filtroRubro = document.getElementById('filtroRubro').value.toLowerCase();
+    const filtroBuscar = document.getElementById('filtroBuscar').value.toLowerCase();
+    
+    proveedoresFiltrados = proveedoresData.filter(proveedor => {
+        // Filtro por rubro
+        if (filtroRubro && (!proveedor.rubro || proveedor.rubro.toLowerCase() !== filtroRubro)) {
+            return false;
+        }
+        
+        // Filtro por búsqueda general
+        if (filtroBuscar) {
+            const buscarEn = [
+                proveedor.nombre,
+                proveedor.cuit,
+                proveedor.rubro,
+                proveedor.especialidad,
+                proveedor.telefono,
+                proveedor.ubicacion
+            ].filter(v => v).map(v => v.toLowerCase()).join(' ');
+            
+            if (!buscarEn.includes(filtroBuscar)) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    renderizarTabla();
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtroRubro').value = '';
+    document.getElementById('filtroBuscar').value = '';
+    aplicarFiltros();
+}
+
+function renderizarTabla() {
+    const tbody = document.getElementById('tablaProveedores');
+    
+    if (proveedoresFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i>No se encontraron proveedores</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    proveedoresFiltrados.forEach(proveedor => {
+        const estadoBadge = proveedor.activo 
+            ? '<span class="badge badge-activo">✓ Activo</span>'
+            : '<span class="badge badge-inactivo">✗ Inactivo</span>';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${proveedor.nombre}</strong></td>
+            <td>${proveedor.cuit}</td>
+            <td>${proveedor.rubro || '-'}</td>
+            <td>${proveedor.especialidad || '-'}</td>
+            <td>${proveedor.telefono || '-'}</td>
+            <td>${proveedor.ubicacion || '-'}</td>
+            <td>${estadoBadge}</td>
+            <td>
+                <button class="btn-accion btn-editar" onclick="abrirModalEditar(${proveedor.id})">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                ${proveedor.telefono ? `<button class="btn-accion" style="background: #25D366; color: white;" onclick="abrirWhatsApp('${proveedor.telefono}', '${proveedor.nombre}')" title="Enviar WhatsApp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>` : ''}
+                <button class="btn-accion btn-eliminar" onclick="eliminarProveedor(${proveedor.id})">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function abrirModalNuevo() {
+    document.getElementById('modalTitulo').innerHTML = '<i class="fas fa-plus"></i> Nuevo Proveedor';
+    document.getElementById('formProveedor').reset();
+    document.getElementById('proveedorId').value = '';
+    document.getElementById('activo').checked = true;
+    document.getElementById('modalProveedor').style.display = 'block';
+}
+
+function abrirModalEditar(id) {
+    const proveedor = proveedoresData.find(p => p.id === id);
+    if (!proveedor) return;
+    
+    document.getElementById('modalTitulo').innerHTML = '<i class="fas fa-edit"></i> Editar Proveedor';
+    document.getElementById('proveedorId').value = proveedor.id;
+    document.getElementById('nombre').value = proveedor.nombre;
+    document.getElementById('cuit').value = proveedor.cuit;
+    document.getElementById('rubro').value = proveedor.rubro || '';
+    document.getElementById('especialidad').value = proveedor.especialidad || '';
+    document.getElementById('telefono').value = proveedor.telefono || '';
+    document.getElementById('ubicacion').value = proveedor.ubicacion || '';
+    document.getElementById('activo').checked = proveedor.activo;
+    document.getElementById('modalProveedor').style.display = 'block';
+}
+
+function cerrarModal() {
+    document.getElementById('modalProveedor').style.display = 'none';
+}
+
+function guardarProveedor() {
+    const id = document.getElementById('proveedorId').value;
+    const nombre = document.getElementById('nombre').value.trim();
+    const cuit = document.getElementById('cuit').value.trim();
+    
+    if (!nombre || !cuit) {
+        alert('Por favor complete los campos obligatorios (Nombre y CUIT)');
+        return;
+    }
+    
+    const data = {
+        nombre: nombre,
+        cuit: cuit,
+        rubro: document.getElementById('rubro').value.trim() || null,
+        especialidad: document.getElementById('especialidad').value.trim() || null,
+        telefono: document.getElementById('telefono').value.trim() || null,
+        ubicacion: document.getElementById('ubicacion').value.trim() || null,
+        activo: document.getElementById('activo').checked
+    };
+    
+    const url = id ? `/api/usados/proveedores/${id}` : '/api/usados/proveedores';
+    const method = id ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert('Error: ' + result.error);
+        } else {
+            cerrarModal();
+            cargarProveedores();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el proveedor');
+    });
+}
+
+function eliminarProveedor(id) {
+    const proveedor = proveedoresData.find(p => p.id === id);
+    if (!proveedor) return;
+    
+    if (!confirm(`¿Está seguro que desea eliminar el proveedor "${proveedor.nombre}"?`)) {
+        return;
+    }
+    
+    fetch(`/api/usados/proveedores/${id}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert('Error: ' + result.error);
+        } else {
+            cargarProveedores();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar el proveedor');
+    });
+}
+
+function abrirWhatsApp(telefono, nombre) {
+    // Limpiar número (solo dígitos)
+    let numeroLimpio = telefono.replace(/\D/g, '');
+    
+    // Si no empieza con código de país, agregar 54 (Argentina)
+    if (!numeroLimpio.startsWith('54')) {
+        numeroLimpio = '54' + numeroLimpio;
+    }
+    
+    const mensaje = encodeURIComponent(`Hola ${nombre}, me contacto desde Gestión de Usados.`);
+    const urlWhatsApp = `https://wa.me/${numeroLimpio}?text=${mensaje}`;
+    
+    window.open(urlWhatsApp, '_blank');
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('modalProveedor');
+    if (event.target === modal) {
+        cerrarModal();
+    }
+}
+</script>
+</body>
+</html>

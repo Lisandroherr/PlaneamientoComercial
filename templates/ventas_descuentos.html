@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Descuentos - Ventas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        .btn-volver {
+            background: #EB0A1E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-volver:hover {
+            background: #C8102E;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+        }
+        .info-banner {
+            background: #e6f7ff;
+            padding: 15px 20px;
+            border-left: 4px solid #1890ff;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info-banner i {
+            color: #1890ff;
+            margin-right: 10px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th {
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #58595B;
+            font-size: 0.9em;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .modelo-cell {
+            text-align: left;
+            font-weight: 500;
+            color: #2D2D2D;
+        }
+        .fecha-cell {
+            background-color: white;
+        }
+        .ubicacion-cell {
+            background-color: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-percentage"></i> Matriz de Descuentos</h1>
+        <a href="/ventas" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Ventas
+        </a>
+    </div>
+    
+    <div class="container">
+        <div style="padding: 20px; background: #f7fafc; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: 600; color: #2D2D2D;">
+                    <i class="fas fa-filter"></i> Filtrar por Modelo:
+                </label>
+                <input type="text" id="filtroModelo" placeholder="Buscar modelo..." 
+                       style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; min-width: 300px;">
+                <span id="contadorResultados" style="color: #718096; font-size: 0.95em; margin-left: 10px;">
+                    Cargando...
+                </span>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="vertical-align: middle;">
+                            <i class="fas fa-car"></i> Modelo
+                        </th>
+                        <th colspan="4" style="background: #EB0A1E; color: white;">
+                            <i class="fas fa-shipping-fast"></i> Descuentos por Fecha de Despacho
+                        </th>
+                        <th colspan="4" style="background: #58595B; color: white;">
+                            <i class="fas fa-map-marker-alt"></i> Descuentos por Ubicación
+                        </th>
+                    </tr>
+                    <tr>
+                        <!-- Descuentos por Fecha -->
+                        <th class="fecha-cell" id="headerMenosDos" style="color: #2D2D2D;">Mes -2</th>
+                        <th class="fecha-cell" id="headerMenosUno" style="color: #2D2D2D;">Mes -1</th>
+                        <th class="fecha-cell" id="headerActual" style="color: #2D2D2D;">Mes Actual</th>
+                        <th class="fecha-cell" id="headerPosterior" style="color: #2D2D2D;">Posterior</th>
+                        <!-- Descuentos por Ubicación -->
+                        <th class="ubicacion-cell" style="color: #2D2D2D;">Stock</th>
+                        <th class="ubicacion-cell" style="color: #2D2D2D;">Producción</th>
+                        <th class="ubicacion-cell" style="color: #2D2D2D;">Playa Externa</th>
+                        <th class="ubicacion-cell" style="color: #2D2D2D;">Otro</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDescuentos">
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando matriz de descuentos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let descuentosData = [];
+        let modelosOcultos = [];
+        
+        // Cargar descuentos al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarModelosOcultos();
+            actualizarEncabezadosMeses();
+            document.getElementById('filtroModelo').addEventListener('input', aplicarFiltro);
+        });
+        
+        function cargarModelosOcultos() {
+            // Primero cargar la lista de modelos ocultos desde precios
+            fetch('/api/precios')
+                .then(response => response.json())
+                .then(data => {
+                    modelosOcultos = data.modelos_ocultos || [];
+                    console.log('✅ Modelos ocultos cargados:', modelosOcultos.length);
+                    // Luego cargar los descuentos
+                    cargarDescuentos();
+                })
+                .catch(error => {
+                    console.error('Error al cargar modelos ocultos:', error);
+                    // Continuar cargando descuentos aunque falle
+                    cargarDescuentos();
+                });
+        }
+        
+        function cargarDescuentos() {
+            const tbody = document.getElementById('tablaDescuentos');
+            
+            fetch('/api/descuentos_matriz')
+                .then(response => response.json())
+                .then(data => {
+                    descuentosData = data;
+                    renderizarTabla();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los descuentos
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function obtenerNombresMeses() {
+            const meses = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            const hoy = new Date();
+            const mesActual = hoy.getMonth(); // 0 = Enero, 11 = Diciembre
+            
+            const indiceMenosDos = (mesActual - 2 + 12) % 12;
+            const indiceMenosUno = (mesActual - 1 + 12) % 12;
+            
+            return {
+                menosDos: meses[indiceMenosDos],
+                menosUno: meses[indiceMenosUno],
+                actual: meses[mesActual]
+            };
+        }
+        
+        function actualizarEncabezadosMeses() {
+            const nombresMeses = obtenerNombresMeses();
+            
+            document.getElementById('headerMenosDos').textContent = nombresMeses.menosDos;
+            document.getElementById('headerMenosUno').textContent = nombresMeses.menosUno;
+            document.getElementById('headerActual').textContent = nombresMeses.actual;
+            document.getElementById('headerPosterior').textContent = 'Posterior';
+        }
+        
+        function aplicarFiltro() {
+            const filtro = document.getElementById('filtroModelo').value.toLowerCase();
+            const filtrados = descuentosData.filter(item => {
+                // Filtrar por texto de búsqueda y excluir modelos ocultos
+                const coincideBusqueda = (item.modelo || '').toLowerCase().includes(filtro);
+                const noEstaOculto = !modelosOcultos.includes(item.modelo);
+                return coincideBusqueda && noEstaOculto;
+            });
+            renderizarTabla(filtrados);
+        }
+        
+        function renderizarTabla(datos = null) {
+            const tbody = document.getElementById('tablaDescuentos');
+            let dataToRender = datos;
+            
+            // Si no se pasaron datos filtrados, aplicar filtro de modelos ocultos a todos
+            if (dataToRender === null) {
+                dataToRender = descuentosData.filter(item => !modelosOcultos.includes(item.modelo));
+            }
+            
+            const contador = document.getElementById('contadorResultados');
+            
+            // Actualizar contador
+            contador.textContent = `${dataToRender.length} modelo${dataToRender.length !== 1 ? 's' : ''} encontrado${dataToRender.length !== 1 ? 's' : ''}`;
+            
+            if (!dataToRender || dataToRender.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay descuentos configurados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            dataToRender.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                // Función helper para formatear descuentos
+                const formatDesc = (valor) => {
+                    const num = Math.round(valor || 0);
+                    return num === 0 ? '-' : `<strong>${num}%</strong>`;
+                };
+                
+                tr.innerHTML = `
+                    <td class="modelo-cell">${item.modelo || '-'}</td>
+                    <td class="fecha-cell">${formatDesc(item.desc_mes_actual_menos_2)}</td>
+                    <td class="fecha-cell">${formatDesc(item.desc_mes_actual_menos_1)}</td>
+                    <td class="fecha-cell">${formatDesc(item.desc_mes_actual)}</td>
+                    <td class="fecha-cell">${formatDesc(item.desc_mes_actual_mas)}</td>
+                    <td class="ubicacion-cell">${formatDesc(item.desc_stock)}</td>
+                    <td class="ubicacion-cell">${formatDesc(item.desc_produccion)}</td>
+                    <td class="ubicacion-cell">${formatDesc(item.desc_playa_externa)}</td>
+                    <td class="ubicacion-cell">${formatDesc(item.desc_otro)}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

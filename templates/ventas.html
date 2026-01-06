@@ -3,295 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Disponibles</title>
+    <title>Módulo Comercial - Ventas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Variables */
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+            --card-bg: white;
+            --nav-bg: #2D2D2D;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
+            background: var(--bg-color);
+            transition: background 0.3s ease;
+            margin: 0;
+            padding: 0;
+            position: relative;
         }
-        .header {
-            background: #2D2D2D;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid #EB0A1E;
+        
+        .content-wrapper {
+            padding: 40px;
+            min-height: calc(100vh - 65px);
+            position: relative;
+            z-index: 1;
+            background: rgba(245, 245, 245, 0.95);
         }
-        .header h1 {
-            font-size: 1.3em;
-            font-weight: 600;
+        
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
-        .btn-volver {
-            background: #EB0A1E;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
+        
+        @media (min-width: 1200px) {
+            .cards-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1199px) and (min-width: 769px) {
+            .cards-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .modulo-card {
+            padding: 30px;
+            border-radius: 10px;
+            color: var(--text-color);
+            background: white;
             cursor: pointer;
-        }
-        .btn-volver:hover {
-            background: #C8102E;
-        }
-        .container {
-            background: white;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        thead {
-            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        th {
-            padding: 15px;
+            transition: all 0.4s ease;
             text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #58595B;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 160px;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            border: 2px solid var(--border-color);
         }
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e2e8f0;
+        
+        .modulo-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(235, 10, 30, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
-        tbody tr:hover {
-            background-color: #f7fafc;
+        
+        .modulo-card:hover::before {
+            width: 500px;
+            height: 500px;
         }
-        tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
+        
+        .modulo-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(235, 10, 30, 0.3);
+            border-color: #EB0A1E;
         }
-        .precio {
-            color: #2D2D2D;
-            font-weight: 600;
-            font-size: 1.05em;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #718096;
-        }
-        .empty-state i {
-            font-size: 4em;
-            margin-bottom: 20px;
+        
+        .modulo-card i {
+            font-size: 2.5em;
+            margin-bottom: 15px;
             display: block;
-            opacity: 0.3;
+            position: relative;
+            z-index: 1;
+            color: #EB0A1E;
+        }
+        
+        .modulo-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+            color: var(--text-color);
+        }
+        
+        .modulo-card p {
+            font-size: 0.88em;
+            opacity: 0.9;
+            margin-bottom: 0;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+            color: var(--text-secondary);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 15px;
+            position: relative;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1><i class="fas fa-car"></i> Disponibles</h1>
-        <a href="/" class="btn-volver">
+    <div style="background: var(--nav-bg); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #EB0A1E; position: relative; z-index: 100;">
+        <h1 style="color: white; font-size: 1.3em; font-weight: 600; margin: 0;">
+            <i class="fas fa-store"></i> Módulo Comercial
+        </h1>
+        <a href="/" style="background: #58595B; color: white; padding: 8px 18px; border-radius: 5px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
             <i class="fas fa-arrow-left"></i> Volver al Inicio
         </a>
     </div>
     
-    <div class="container">
-        <div style="padding: 20px; background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
-            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                <label style="font-weight: 600; color: #2D2D2D;">
-                    <i class="fas fa-filter"></i> Filtrar por Familia:
-                </label>
-                <select id="filtroFamilia" style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; min-width: 200px; cursor: pointer;">
-                    <option value="">Todas las Familias</option>
-                </select>
-                <span id="contadorResultados" style="color: #718096; font-size: 0.95em; margin-left: 10px;">
-                    Cargando...
-                </span>
-            </div>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th><i class="fas fa-hashtag"></i> Nº Fábrica</th>
-                        <th><i class="fas fa-car"></i> Modelo/Versión</th>
-                        <th><i class="fas fa-palette"></i> Color</th>
-                        <th><i class="fas fa-calendar-check"></i> Entrega Estimada</th>
-                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
-                        <th><i class="fas fa-percentage"></i> Desc. Individual</th>
-                        <th><i class="fas fa-tags"></i> Desc. Adicionales</th>
-                        <th><i class="fas fa-dollar-sign"></i> Precio Unidad</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaDisponibles">
-                    <tr>
-                        <td colspan="8" class="empty-state">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            Cargando vehículos disponibles...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="content-wrapper">
+        <div class="cards-container">
+            <!-- Disponible -->
+            <a href="/ventas/disponible" class="modulo-card">
+                <i class="fas fa-car"></i>
+                <h3>Disponible</h3>
+                <p>Consulta el inventario de vehículos disponibles con precios actualizados, fechas de entrega y ubicaciones.</p>
+            </a>
+            
+            <!-- Descuentos -->
+            <a href="/ventas/descuentos" class="modulo-card">
+                <i class="fas fa-percentage"></i>
+                <h3>Matriz de Descuentos</h3>
+                <p>Visualiza la matriz de descuentos por fecha y ubicación aplicables a cada modelo de vehículo.</p>
+            </a>
+            
+            <!-- Cotizador de Créditos -->
+            <a href="/ventas/cotizador" class="modulo-card">
+                <i class="fas fa-calculator"></i>
+                <h3>Cotizador de Créditos</h3>
+                <p>Calcula opciones de financiación para tus clientes según el vehículo, descuento e importe a financiar.</p>
+            </a>
         </div>
     </div>
-    
-    <script>
-        let todosDisponibles = [];
-        
-        // Cargar disponibles al inicio
-        window.addEventListener('DOMContentLoaded', function() {
-            cargarDisponibles();
-            document.getElementById('filtroFamilia').addEventListener('change', aplicarFiltro);
-        });
-        
-        function cargarDisponibles() {
-            const tbody = document.getElementById('tablaDisponibles');
-            
-            // Primero obtener las unidades reservadas
-            fetch('/api/unidades_reservadas')
-                .then(response => response.json())
-                .then(reservadas => {
-                    const reservadasSet = new Set(reservadas.map(r => r.numero_fabrica));
-                    
-                    // Luego obtener los disponibles
-                    return fetch('/api/disponibles')
-                        .then(response => response.json())
-                        .then(disponibles => {
-                            // Filtrar las unidades reservadas
-                            todosDisponibles = disponibles.filter(item => 
-                                !reservadasSet.has(item.numero_fabrica)
-                            );
-                            cargarFamilias();
-                            mostrarDisponibles(todosDisponibles);
-                        });
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="8" class="empty-state">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Error al cargar los datos
-                            </td>
-                        </tr>
-                    `;
-                });
-        }
-        
-        function cargarFamilias() {
-            const select = document.getElementById('filtroFamilia');
-            const familias = new Set();
-            
-            todosDisponibles.forEach(item => {
-                if (item.familia) {
-                    familias.add(item.familia);
-                }
-            });
-            
-            const familiasOrdenadas = Array.from(familias).sort();
-            familiasOrdenadas.forEach(familia => {
-                const option = document.createElement('option');
-                option.value = familia;
-                option.textContent = familia;
-                select.appendChild(option);
-            });
-        }
-        
-        function aplicarFiltro() {
-            const familiaSeleccionada = document.getElementById('filtroFamilia').value;
-            
-            let disponiblesFiltrados = todosDisponibles;
-            if (familiaSeleccionada) {
-                disponiblesFiltrados = todosDisponibles.filter(item => 
-                    item.familia === familiaSeleccionada
-                );
-            }
-            
-            mostrarDisponibles(disponiblesFiltrados);
-        }
-        
-        function mostrarDisponibles(disponibles) {
-            const tbody = document.getElementById('tablaDisponibles');
-            const contador = document.getElementById('contadorResultados');
-            
-            // Actualizar contador
-            contador.textContent = `${disponibles.length} vehículo${disponibles.length !== 1 ? 's' : ''} encontrado${disponibles.length !== 1 ? 's' : ''}`;
-            
-            if (!disponibles || disponibles.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="empty-state">
-                            <i class="fas fa-inbox"></i>
-                            No hay vehículos disponibles en este momento
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            tbody.innerHTML = '';
-            
-            // Ordenar alfabéticamente por Modelo/Versión (A-Z)
-            disponibles.sort((a, b) => {
-                const modeloA = (a.modelo_version || '').toLowerCase();
-                const modeloB = (b.modelo_version || '').toLowerCase();
-                return modeloA.localeCompare(modeloB);
-            });
-            
-            disponibles.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                // Formatear fecha - NO mostrar si la ubicación es "Preventa"
-                let fechaFormateada = '-';
-                if (item.ubicacion !== 'Preventa' && item.entrega_estimada) {
-                    try {
-                        const fecha = new Date(item.entrega_estimada);
-                        fechaFormateada = fecha.toLocaleDateString('es-AR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                        });
-                    } catch (e) {
-                        fechaFormateada = item.entrega_estimada;
-                    }
-                }
-                
-                // Formatear precio
-                const precio = item.precio_disponible || 0;
-                const precioFormateado = new Intl.NumberFormat('es-AR', {
-                    style: 'currency',
-                    currency: 'ARS',
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                }).format(precio);
-                
-                // Formatear descuentos - mostrar lo que viene del backend
-                const descIndividual = item.descuento_individual ? `${item.descuento_individual}%` : '0%';
-                const descAdicional = item.descuento_adicional && item.descuento_adicional > 0 
-                    ? (item.detalles_descuento || `${item.descuento_adicional}%`)
-                    : '0%';
-                
-                tr.innerHTML = `
-                    <td><strong>${item.numero_fabrica || '-'}</strong></td>
-                    <td>${item.modelo_version || '-'}</td>
-                    <td>${item.color || '-'}</td>
-                    <td>${fechaFormateada}</td>
-                    <td>${item.ubicacion || '-'}</td>
-                    <td style="text-align: center;">${descIndividual}</td>
-                    <td>${descAdicional}</td>
-                    <td class="precio">${precioFormateado}</td>
-                `;
-                
-                tbody.appendChild(tr);
-            });
-        }
-    </script>
 </body>
 </html>

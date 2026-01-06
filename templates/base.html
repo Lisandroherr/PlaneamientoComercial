@@ -283,8 +283,8 @@
 <body>
     <div class="header">
         <h1><i class="fas fa-{% block icon %}cogs{% endblock %}"></i> {% block page_title %}Módulo{% endblock %}</h1>
-        <a href="{{ url_for('planeamiento') }}" class="btn-volver">
-            <i class="fas fa-arrow-left"></i> Volver a Planeamiento
+        <a href="{% block back_url %}{{ url_for('planeamiento') }}{% endblock %}" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> {% block back_text %}Volver a Planeamiento{% endblock %}
         </a>
     </div>
     

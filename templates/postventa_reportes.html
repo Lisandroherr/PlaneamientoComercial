@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+
+{% block title %}Registros y Reportes - Post Venta{% endblock %}
+{% block icon %}chart-bar{% endblock %}
+{% block page_title %}Registros y Reportes - Post Venta{% endblock %}
+{% block back_url %}{{ url_for('postventa') }}{% endblock %}
+{% block back_text %}Volver a Post Venta{% endblock %}
+
+{% block content %}
+<div class="card">
+    <!-- Filtros compactos -->
+    <div style="background: #f7fafc; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <div style="display: flex; gap: 10px; align-items: end;">
+            <div style="flex: 0 0 140px;">
+                <label style="display: block; margin-bottom: 3px; font-weight: 600; font-size: 0.8em; color: #2d3748;">Desde:</label>
+                <input type="date" id="filtroFechaDesde" style="width: 100%; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85em;">
+            </div>
+            <div style="flex: 0 0 140px;">
+                <label style="display: block; margin-bottom: 3px; font-weight: 600; font-size: 0.8em; color: #2d3748;">Hasta:</label>
+                <input type="date" id="filtroFechaHasta" style="width: 100%; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85em;">
+            </div>
+            <div style="flex: 0 0 140px;">
+                <label style="display: block; margin-bottom: 3px; font-weight: 600; font-size: 0.8em; color: #2d3748;">Sector:</label>
+                <select id="filtroSector" style="width: 100%; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85em;">
+                    <option value="">Todos</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Chapería y Pintura">Chapería y Pintura</option>
+                </select>
+            </div>
+            <div style="flex: 0 0 140px;">
+                <label style="display: block; margin-bottom: 3px; font-weight: 600; font-size: 0.8em; color: #2d3748;">Asesor:</label>
+                <select id="filtroAsesor" style="width: 100%; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85em;">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <button onclick="aplicarFiltros()" class="btn btn-primary" style="background: #dc3545; border-color: #dc3545; color: white; padding: 6px 12px; font-size: 0.85em;">
+                Aplicar
+            </button>
+            <button onclick="limpiarFiltros()" class="btn" style="background: #cbd5e0; color: #2d3748; padding: 6px 12px; font-size: 0.85em;">
+                Limpiar
+            </button>
+        </div>
+    </div>
+    
+    <!-- Estadísticas compactas con colores Toyota -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <div style="background: #1a1a1a; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;" id="statTotal">0</div>
+            <div style="font-size: 0.85em; opacity: 0.9;">Total de Servicios</div>
+        </div>
+        <div style="background: #dc3545; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;" id="statServicios">0</div>
+            <div style="font-size: 0.85em; opacity: 0.9;">Servicios</div>
+        </div>
+        <div style="background: #4a4a4a; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;" id="statChaperia">0</div>
+            <div style="font-size: 0.85em; opacity: 0.9;">Chapería y Pintura</div>
+        </div>
+        <div style="background: #0d47a1; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;" id="statTiempoEspera">-</div>
+            <div style="font-size: 0.85em; opacity: 0.9;">Tiempo Espera Prom.</div>
+        </div>
+        <div style="background: #6b6b6b; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;" id="statTiempoPromedio">-</div>
+            <div style="font-size: 0.85em; opacity: 0.9;">Tiempo Total Prom.</div>
+        </div>
+    </div>
+    
+    <!-- Distribución de turnos por asesor -->
+    <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+        <h3 style="margin: 0 0 12px 0; color: #2d3748; font-size: 1em;">
+            Distribución de Turnos por Asesor
+        </h3>
+        <div id="distribucionAsesores" style="display: grid; gap: 8px;"></div>
+    </div>
+    
+    <!-- Tabla de Historial -->
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Dominio</th>
+                    <th>Servicio</th>
+                    <th>Atendido</th>
+                    <th>Pactado</th>
+                    <th>Entregado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaHistorial"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles -->
+<div id="modalDetalles" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color);">
+            <h2 style="margin: 0; color: #2d3748;">
+                Detalles del Servicio
+            </h2>
+            <button onclick="cerrarModalDetalles()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        
+        <div id="contenidoDetalles" style="line-height: 1.8;"></div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+            <button onclick="cerrarModalDetalles()" class="btn" style="background: #cbd5e0; color: #2d3748;">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let historialData = [];
+let asesoresData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const hoy = new Date();
+    const hace30dias = new Date();
+    hace30dias.setDate(hoy.getDate() - 30);
+    
+    document.getElementById('filtroFechaDesde').value = hace30dias.toISOString().split('T')[0];
+    document.getElementById('filtroFechaHasta').value = hoy.toISOString().split('T')[0];
+    
+    cargarAsesores();
+    aplicarFiltros();
+});
+
+async function cargarAsesores() {
+    try {
+        const response = await fetch('/api/postventa/asesores');
+        if (response.ok) {
+            asesoresData = await response.json();
+            const select = document.getElementById('filtroAsesor');
+            select.innerHTML = '<option value="">Todos</option>' +
+                asesoresData.map(a => `<option value="${a.nombre}">${a.nombre} (${a.sector})</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function aplicarFiltros() {
+    try {
+        const params = new URLSearchParams();
+        
+        const fechaDesde = document.getElementById('filtroFechaDesde').value;
+        const fechaHasta = document.getElementById('filtroFechaHasta').value;
+        const sector = document.getElementById('filtroSector').value;
+        const asesor = document.getElementById('filtroAsesor').value;
+        
+        if (fechaDesde) params.append('fecha_desde', fechaDesde);
+        if (fechaHasta) params.append('fecha_hasta', fechaHasta);
+        if (sector) params.append('sector', sector);
+        if (asesor) params.append('asesor_nombre', asesor);
+        
+        const response = await fetch(`/api/postventa/historial?${params.toString()}`);
+        
+        if (response.ok) {
+            historialData = await response.json();
+            renderizarHistorial();
+            calcularEstadisticas();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function limpiarFiltros() {
+    const hoy = new Date();
+    const hace30dias = new Date();
+    hace30dias.setDate(hoy.getDate() - 30);
+    
+    document.getElementById('filtroFechaDesde').value = hace30dias.toISOString().split('T')[0];
+    document.getElementById('filtroFechaHasta').value = hoy.toISOString().split('T')[0];
+    document.getElementById('filtroSector').value = '';
+    document.getElementById('filtroAsesor').value = '';
+    
+    aplicarFiltros();
+}
+
+function renderizarHistorial() {
+    const tbody = document.getElementById('tablaHistorial');
+    
+    if (historialData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 60px; color: #999;">No hay registros para mostrar</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = historialData.map(registro => {
+        return `
+            <tr>
+                <td>${formatearFecha(registro.fecha_turno)}</td>
+                <td>${registro.cliente_nombre}</td>
+                <td><strong>${registro.dominio || '-'}</strong></td>
+                <td>${registro.servicio_nombre || '-'}</td>
+                <td style="font-size: 0.9em;">${formatearSoloHora(registro.hora_atender)}</td>
+                <td style="font-size: 0.9em;">${formatearSoloHora(registro.hora_pactada)}</td>
+                <td style="font-size: 0.9em;">${formatearSoloHora(registro.hora_entregado)}</td>
+                <td>
+                    <div style="display: flex; gap: 5px; justify-content: center;">
+                        <button onclick='verDetalles(${JSON.stringify(registro)})' class="btn" style="background: #1a1a1a; color: white; padding: 5px 10px; font-size: 0.8em;" title="Ver detalles">
+                            Ver
+                        </button>
+                        <button onclick="eliminarRegistro(${registro.id})" class="btn" style="background: #dc3545; color: white; padding: 5px 10px; font-size: 0.8em;" title="Eliminar">
+                            Eliminar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function calcularEstadisticas() {
+    const total = historialData.length;
+    const servicios = historialData.filter(r => r.sector === 'Servicios').length;
+    const chaperia = historialData.filter(r => r.sector === 'Chapería y Pintura').length;
+    
+    // Tiempo promedio total (desde atender hasta entregar)
+    const tiemposTotal = historialData
+        .filter(r => r.hora_atender && r.hora_entregado)
+        .map(r => {
+            const inicio = new Date(r.hora_atender);
+            const fin = new Date(r.hora_entregado);
+            return (fin - inicio) / (1000 * 60 * 60);
+        });
+    
+    const promedioHorasTotal = tiemposTotal.length > 0 
+        ? tiemposTotal.reduce((a, b) => a + b, 0) / tiemposTotal.length 
+        : 0;
+    
+    // Tiempo promedio de espera del cliente (desde asignar hasta atender)
+    const tiemposEspera = historialData
+        .filter(r => r.fecha_registro && r.hora_atender)
+        .map(r => calcularTiempoEspera(r.fecha_registro, r.hora_atender))
+        .filter(t => t !== null);
+    
+    const promedioEspera = tiemposEspera.length > 0
+        ? tiemposEspera.reduce((a, b) => a + b, 0) / tiemposEspera.length
+        : 0;
+    
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statServicios').textContent = servicios;
+    document.getElementById('statChaperia').textContent = chaperia;
+    document.getElementById('statTiempoEspera').textContent = 
+        promedioEspera > 0 ? `${Math.round(promedioEspera)} min` : '-';
+    document.getElementById('statTiempoPromedio').textContent = 
+        promedioHorasTotal > 0 ? `${promedioHorasTotal.toFixed(1)}h` : '-';
+    
+    // Calcular distribución por asesor
+    mostrarDistribucionAsesores();
+}
+
+function mostrarDistribucionAsesores() {
+    const distribucion = {};
+    
+    historialData.forEach(r => {
+        const asesor = r.asesor_nombre || 'Sin asignar';
+        if (!distribucion[asesor]) {
+            distribucion[asesor] = { total: 0, servicios: 0, chaperia: 0 };
+        }
+        distribucion[asesor].total++;
+        if (r.sector === 'Servicios') {
+            distribucion[asesor].servicios++;
+        } else if (r.sector === 'Chapería y Pintura') {
+            distribucion[asesor].chaperia++;
+        }
+    });
+    
+    const container = document.getElementById('distribucionAsesores');
+    
+    if (Object.keys(distribucion).length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #999; padding: 10px; font-size: 0.9em;">No hay datos para mostrar</div>';
+        return;
+    }
+    
+    const maxTurnos = Math.max(...Object.values(distribucion).map(d => d.total));
+    
+    container.innerHTML = Object.entries(distribucion)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([asesor, datos]) => {
+            const porcentaje = maxTurnos > 0 ? (datos.total / maxTurnos) * 100 : 0;
+            return `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="min-width: 120px; font-weight: 600; font-size: 0.85em; color: #2d3748;">${asesor}</div>
+                    <div style="flex: 1; background: #e2e8f0; height: 24px; border-radius: 4px; position: relative; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #dc3545 0%, #ff4d5e 100%); height: 100%; width: ${porcentaje}%; transition: width 0.3s ease;"></div>
+                        <div style="position: absolute; top: 0; right: 5px; height: 100%; display: flex; align-items: center; font-size: 0.8em; font-weight: 600; color: ${porcentaje > 50 ? 'white' : '#2d3748'};">
+                            ${datos.total} turnos
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+}
+
+function calcularTiempoTotal(registro) {
+    if (!registro.hora_atender || !registro.hora_entregado) {
+        return '<span style="color: #999;">-</span>';
+    }
+    
+    const inicio = new Date(registro.hora_atender);
+    const fin = new Date(registro.hora_entregado);
+    const diffMs = fin - inicio;
+    
+    const horas = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `<span style="background: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; font-weight: 600; color: #495057;">${horas}h ${minutos}m</span>`;
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '-';
+    const date = new Date(fecha + 'T00:00:00');
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const año = date.getFullYear();
+    
+    return `${dia}/${mes}/${año}`;
+}
+
+function formatearHora(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp);
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const hora = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${dia}/${mes} ${hora}:${min}`;
+}
+
+function formatearTiempo(minutos) {
+    if (!minutos && minutos !== 0) return '-';
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    if (horas > 0) {
+        return `${horas}h ${mins}min`;
+    }
+    return `${mins} min`;
+}
+
+function calcularTiempoEspera(fechaRegistro, horaAtender) {
+    if (!fechaRegistro || !horaAtender) return null;
+    const inicio = new Date(fechaRegistro);
+    const fin = new Date(horaAtender);
+    const diffMs = fin - inicio;
+    const minutos = Math.floor(diffMs / (1000 * 60));
+    return minutos >= 0 ? minutos : null;
+}
+
+function calcularTiempoAtencionEgreso(horaAtenderRetiro, horaEntregado) {
+    if (!horaAtenderRetiro || !horaEntregado) return null;
+    const inicio = new Date(horaAtenderRetiro);
+    const fin = new Date(horaEntregado);
+    const diffMs = fin - inicio;
+    const minutos = Math.floor(diffMs / (1000 * 60));
+    return minutos >= 0 ? minutos : null;
+}
+
+function formatearSoloHora(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp);
+    const hora = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${hora}:${min}`;
+}
+
+function calcularDiferenciaHorarios(registro) {
+    // Hora Turno: hora_inicio del turno
+    let horaTurno = '-';
+    if (registro.hora_inicio) {
+        const partes = registro.hora_inicio.split(':');
+        horaTurno = `${partes[0]}:${partes[1]}`;
+    }
+    
+    // Hora Arribo: fecha_registro (cuando se asigna el turno)
+    let horaArribo = '-';
+    if (registro.fecha_registro) {
+        const dateArribo = new Date(registro.fecha_registro);
+        horaArribo = `${String(dateArribo.getHours()).padStart(2, '0')}:${String(dateArribo.getMinutes()).padStart(2, '0')}`;
+    }
+    
+    // Calcular diferencia
+    let diferencia = '-';
+    let colorDiff = '#666';
+    let badgeDiff = '';
+    
+    if (registro.hora_inicio && registro.fecha_registro) {
+        // Crear fecha base (hoy) para comparar horas
+        const fechaBase = new Date();
+        fechaBase.setHours(0, 0, 0, 0);
+        
+        // Hora del turno
+        const partesInicio = registro.hora_inicio.split(':');
+        const horaTurnoDate = new Date(fechaBase);
+        horaTurnoDate.setHours(parseInt(partesInicio[0]), parseInt(partesInicio[1]), 0, 0);
+        
+        // Hora de arribo
+        const horaArriboDate = new Date(registro.fecha_registro);
+        const arriboEnBase = new Date(fechaBase);
+        arriboEnBase.setHours(horaArriboDate.getHours(), horaArriboDate.getMinutes(), 0, 0);
+        
+        // Diferencia en minutos
+        const diffMs = arriboEnBase - horaTurnoDate;
+        const diffMin = Math.floor(diffMs / 60000);
+        
+        if (diffMin < 0) {
+            // Llegó antes
+            diferencia = `${Math.abs(diffMin)} min antes`;
+            colorDiff = '#28a745'; // Verde
+            badgeDiff = 'background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 12px; font-weight: 600;';
+        } else if (diffMin === 0) {
+            diferencia = 'A tiempo';
+            colorDiff = '#28a745'; // Verde
+            badgeDiff = 'background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 12px; font-weight: 600;';
+        } else if (diffMin <= 15) {
+            // Hasta 15 minutos tarde
+            diferencia = `+${diffMin} min`;
+            colorDiff = '#ffc107'; // Amarillo
+            badgeDiff = 'background: #fff3cd; color: #856404; padding: 6px 12px; border-radius: 12px; font-weight: 600;';
+        } else {
+            // Más de 15 minutos tarde
+            diferencia = `+${diffMin} min`;
+            colorDiff = '#dc3545'; // Rojo
+            badgeDiff = 'background: #f8d7da; color: #721c24; padding: 6px 12px; border-radius: 12px; font-weight: 600;';
+        }
+    }
+    
+    return { horaTurno, horaArribo, diferencia, colorDiff, badgeDiff };
+}
+
+function verDetalles(registro) {
+    const sector = registro.sector || '-';
+    const badgeColor = sector === 'Servicios' ? '#007bff' : '#ffc107';
+    const badgeTextColor = sector === 'Servicios' ? 'white' : '#333';
+    
+    const tiempoTotal = calcularTiempoTotal(registro);
+    const { horaTurno, horaArribo, diferencia, colorDiff, badgeDiff } = calcularDiferenciaHorarios(registro);
+    
+    const contenido = `
+        <div style="display: grid; gap: 15px;">
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Fecha del Turno</div>
+                <div style="font-size: 1.1em;">${formatearFecha(registro.fecha_turno)}</div>
+            </div>
+            
+            <!-- Comparación de Horarios -->
+            <div style="background: #fff8e1; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <div style="font-weight: 600; color: #2d3748; margin-bottom: 12px;">Comparación de Horarios</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.8em; color: #666; margin-bottom: 4px;">Hora del Turno</div>
+                        <div style="font-size: 1.3em; font-weight: 700; color: #2d3748;">${horaTurno}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.8em; color: #666; margin-bottom: 4px;">Hora de Arribo</div>
+                        <div style="font-size: 1.3em; font-weight: 700; color: #2d3748;">${horaArribo}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.8em; color: #666; margin-bottom: 4px;">Diferencia</div>
+                        <div style="font-size: 1.1em; margin-top: 2px;"><span style="${badgeDiff}">${diferencia}</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Cliente</div>
+                    <div>${registro.cliente_nombre}</div>
+                </div>
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Dominio</div>
+                    <div><strong>${registro.dominio || '-'}</strong></div>
+                </div>
+            </div>
+            
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Vehículo</div>
+                <div>${registro.marca_modelo || '-'}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Servicio</div>
+                    <div>${registro.servicio_nombre || '-'}</div>
+                </div>
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Sector</div>
+                    <div><span style="background: ${badgeColor}; color: ${badgeTextColor}; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">${sector}</span></div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Asesor Asignado</div>
+                    <div>${registro.asesor_original_nombre || registro.asesor_nombre || 'Sin asignar'}</div>
+                </div>
+                <div style="background: ${registro.fue_reasignado ? '#fff3cd' : '#f7fafc'}; padding: 15px; border-radius: 8px; ${registro.fue_reasignado ? 'border-left: 4px solid #ffc107;' : ''}">
+                    <div style="font-weight: 600; color: ${registro.fue_reasignado ? '#856404' : '#2d3748'}; margin-bottom: 8px;">Asesor Reasignado</div>
+                    <div style="${registro.fue_reasignado ? 'font-weight: 600; color: #333;' : ''}">${registro.fue_reasignado ? registro.asesor_nombre : '-'}</div>
+                </div>
+            </div>
+            
+            <div style="background: #e6f3ff; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Línea de Tiempo Completa</div>
+                <div style="display: grid; gap: 8px; margin-top: 10px;">
+                    ${registro.fecha_registro ? `
+                        <div style="padding: 8px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px;">
+                            <strong>1. Asignado:</strong> ${formatearHora(registro.fecha_registro)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(inicia cronómetro ingreso)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.hora_atender ? `
+                        <div style="padding: 8px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px;">
+                            <strong>2. Atendido (Ingreso):</strong> ${formatearHora(registro.hora_atender)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(detiene cronómetro ingreso)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.hora_pactada_registro ? `
+                        <div style="padding: 8px; background: #fefce8; border-left: 3px solid #eab308; border-radius: 4px;">
+                            <strong>3. Hora Pactada con Cliente:</strong> ${formatearHora(registro.hora_pactada_registro)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(momento en que se pacta)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.fecha_hora_pactada ? `
+                        <div style="padding: 8px; background: #fff7ed; border-left: 3px solid #f97316; border-radius: 4px;">
+                            <strong>4. Hora Comprometida:</strong> ${formatearHora(registro.fecha_hora_pactada)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(hora pactada para retiro)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.hora_retiro_inicio ? `
+                        <div style="padding: 8px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px;">
+                            <strong>5. Cliente Retira:</strong> ${formatearHora(registro.hora_retiro_inicio)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(inicia cronómetro egreso)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.hora_atender_retiro ? `
+                        <div style="padding: 8px; background: #dcfce7; border-left: 3px solid #22c55e; border-radius: 4px;">
+                            <strong>6. Atendido (Egreso):</strong> ${formatearHora(registro.hora_atender_retiro)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(detiene cronómetro egreso)</span>
+                        </div>
+                    ` : ''}
+                    ${registro.hora_entregado ? `
+                        <div style="padding: 8px; background: #d1fae5; border-left: 3px solid #059669; border-radius: 4px;">
+                            <strong>7. Entregado:</strong> ${formatearHora(registro.hora_entregado)}
+                            <span style="font-size: 0.8em; color: #666; margin-left: 8px;">(cierre del servicio)</span>
+                        </div>
+                    ` : ''}
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #cbd5e0; display: grid; gap: 6px;">
+                        ${(() => {
+                            const tiempoEspera = calcularTiempoEspera(registro.fecha_registro, registro.hora_atender);
+                            return tiempoEspera !== null ? `
+                                <div style="background: #fff; padding: 8px; border-radius: 4px;">
+                                    <strong>Tiempo Espera Ingreso:</strong> 
+                                    <span style="color: #6f42c1; font-weight: 600;">${formatearTiempo(tiempoEspera)}</span>
+                                    <span style="font-size: 0.85em; color: #666;"> (Asignado - Atendido Ingreso)</span>
+                                </div>
+                            ` : '';
+                        })()}
+                        ${registro.tiempo_atencion_minutos ? `
+                            <div style="background: #fff; padding: 8px; border-radius: 4px;">
+                                <strong>Tiempo Atención Ingreso:</strong> 
+                                <span style="color: #007bff; font-weight: 600;">${formatearTiempo(registro.tiempo_atencion_minutos)}</span>
+                                <span style="font-size: 0.85em; color: #666;"> (Atendido Ingreso - Pactar Hora)</span>
+                            </div>
+                        ` : ''}
+                        ${registro.tiempo_espera_egreso_minutos ? `
+                            <div style="background: #fff; padding: 8px; border-radius: 4px;">
+                                <strong>Tiempo Espera Egreso:</strong> 
+                                <span style="color: #f59e0b; font-weight: 600;">${formatearTiempo(registro.tiempo_espera_egreso_minutos)}</span>
+                                <span style="font-size: 0.85em; color: #666;"> (Retiro - Atendido Egreso)</span>
+                            </div>
+                        ` : ''}
+                        ${(() => {
+                            const tiempoAtencionEgreso = calcularTiempoAtencionEgreso(registro.hora_atender_retiro, registro.hora_entregado);
+                            return tiempoAtencionEgreso !== null ? `
+                                <div style="background: #fff; padding: 8px; border-radius: 4px;">
+                                    <strong>Tiempo Atención Egreso:</strong> 
+                                    <span style="color: #10b981; font-weight: 600;">${formatearTiempo(tiempoAtencionEgreso)}</span>
+                                    <span style="font-size: 0.85em; color: #666;"> (Atendido Egreso - Entregado)</span>
+                                </div>
+                            ` : '';
+                        })()}
+                        ${(() => {
+                            // Calcular tiempo total del servicio como la suma de los 4 tiempos
+                            const tiempoEsperaIngreso = calcularTiempoEspera(registro.fecha_registro, registro.hora_atender);
+                            const tiempoAtencionIngreso = registro.tiempo_atencion_minutos || 0;
+                            const tiempoEsperaEgreso = registro.tiempo_espera_egreso_minutos || 0;
+                            const tiempoAtencionEgreso = calcularTiempoAtencionEgreso(registro.hora_atender_retiro, registro.hora_entregado);
+                            
+                            const tiempoTotal = (tiempoEsperaIngreso || 0) + tiempoAtencionIngreso + tiempoEsperaEgreso + (tiempoAtencionEgreso || 0);
+                            
+                            return tiempoTotal > 0 ? `
+                                <div style="background: #1a1a1a; color: white; padding: 8px; border-radius: 4px;">
+                                    <strong>Tiempo Total Servicio:</strong> 
+                                    <span style="font-weight: 600;">${formatearTiempo(tiempoTotal)}</span>
+                                    <span style="font-size: 0.85em; opacity: 0.9;"> (Suma de todos los tiempos)</span>
+                                </div>
+                            ` : '';
+                        })()}
+                    </div>
+                </div>
+            </div>
+            
+            ${registro.observaciones ? `
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Observaciones</div>
+                    <div style="font-style: italic;">${registro.observaciones}</div>
+                </div>
+            ` : ''}
+            
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px;">
+                <div style="font-weight: 600; color: #2d3748; margin-bottom: 8px;">Estado</div>
+                <div>${getEstadoBadge(registro.estado)}</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('contenidoDetalles').innerHTML = contenido;
+    document.getElementById('modalDetalles').style.display = 'flex';
+}
+
+function cerrarModalDetalles() {
+    document.getElementById('modalDetalles').style.display = 'none';
+}
+
+function getEstadoBadge(estado) {
+    const badges = {
+        'En Atención': '<span style="background: #fff3cd; color: #664d03; padding: 6px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">En Atención</span>',
+        'Hora Pactada': '<span style="background: #d1ecf1; color: #0c5460; padding: 6px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">Hora Pactada</span>',
+        'Entregado': '<span style="background: #d4edda; color: #155724; padding: 6px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">✓ Entregado</span>',
+        'Asignado': '<span style="background: #e9ecef; color: #495057; padding: 6px 12px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">Asignado</span>'
+    };
+    return badges[estado] || estado;
+}
+
+async function eliminarRegistro(turnoId) {
+    if (!confirm('¿Está seguro de eliminar este registro? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/postventa/turno/${turnoId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('Registro eliminado exitosamente');
+            aplicarFiltros(); // Recargar tabla
+        } else {
+            const result = await response.json();
+            alert('Error: ' + (result.error || 'No se pudo eliminar el registro'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión al eliminar el registro');
+    }
+}
+</script>
+{% endblock %}

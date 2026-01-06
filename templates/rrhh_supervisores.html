@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisores - RRHH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group select {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #EB0A1E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #C8102E;
+            transform: translateY(-2px);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.activo {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.inactivo {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+        
+        .btn-icon.editar {
+            color: #3182CE;
+        }
+        
+        .btn-icon.eliminar {
+            color: #E53E3E;
+        }
+        
+        .btn-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #2D2D2D;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D3748;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-secondary {
+            background: #CBD5E0;
+            color: #2D3748;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #A0AEC0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.3;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 0 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-user-tie"></i> Supervisores</h1>
+        <a href="/rrhh" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a RRHH
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="toolbar">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <h2 style="color: #2D2D2D; margin: 0;">
+                    <span id="contadorSupervisores">0 supervisores</span>
+                </h2>
+                <div class="filter-group">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-search"></i> Buscar:
+                    </label>
+                    <input type="text" id="buscarNombre" placeholder="Nombre..." style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; width: 200px;" oninput="aplicarFiltros()">
+                </div>
+                <div class="filter-group">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-building"></i> Área:
+                    </label>
+                    <select id="filtroArea" onchange="aplicarFiltros()" style="padding: 8px 15px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 1em; min-width: 150px; cursor: pointer;">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="abrirModalNuevo()">
+                <i class="fas fa-plus"></i> Nuevo Supervisor
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user"></i> Nombre Completo</th>
+                        <th><i class="fas fa-envelope"></i> Email</th>
+                        <th><i class="fas fa-phone"></i> Teléfono</th>
+                        <th><i class="fas fa-building"></i> Área</th>
+                        <th><i class="fas fa-user-circle"></i> Usuario App</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th style="text-align: center;"><i class="fas fa-cog"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaSupervisores">
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando supervisores...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal para crear/editar supervisor -->
+    <div id="modalSupervisor" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Nuevo Supervisor</h2>
+                <span class="close" onclick="cerrarModal()">&times;</span>
+            </div>
+            <form id="formSupervisor" onsubmit="guardarSupervisor(event)">
+                <input type="hidden" id="supervisorId">
+                
+                <div class="form-group">
+                    <label for="nombreCompleto">
+                        <i class="fas fa-user"></i> Nombre Completo *
+                    </label>
+                    <input type="text" id="nombreCompleto" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input type="email" id="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono">
+                            <i class="fas fa-phone"></i> Teléfono
+                        </label>
+                        <input type="text" id="telefono">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="area">
+                            <i class="fas fa-building"></i> Área
+                        </label>
+                        <input type="text" id="area">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="estadoSupervisor">
+                            <i class="fas fa-toggle-on"></i> Estado
+                        </label>
+                        <select id="estadoSupervisor">
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observaciones">
+                        <i class="fas fa-comment"></i> Observaciones
+                    </label>
+                    <textarea id="observaciones"></textarea>
+                </div>
+                
+                <div class="form-group" style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+                    <div class="form-check" style="margin-bottom: 15px;">
+                        <input type="checkbox" id="crearUsuario" onchange="toggleUserFields()">
+                        <label for="crearUsuario" style="font-weight: 600;">
+                            <i class="fas fa-user-plus"></i> Crear usuario de aplicación para este supervisor
+                        </label>
+                    </div>
+                    
+                    <div id="userFields" style="display: none; padding-left: 20px; border-left: 3px solid #EB0A1E;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">
+                                    <i class="fas fa-user-circle"></i> Nombre de Usuario *
+                                </label>
+                                <input type="text" id="username">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="password">
+                                    <i class="fas fa-key"></i> Contraseña *
+                                </label>
+                                <input type="password" id="password" placeholder="supervisor123">
+                            </div>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: -10px;">
+                            <i class="fas fa-info-circle"></i> Se creará un usuario con rol "Supervisor" y se asignará automáticamente.
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let supervisores = [];
+        let supervisoresFiltrados = [];
+        
+        // Cargar datos al inicio
+        window.addEventListener('DOMContentLoaded', function() {
+            cargarSupervisores();
+        });
+        
+        function cargarSupervisores() {
+            fetch('/api/rrhh/supervisores')
+                .then(response => response.json())
+                .then(data => {
+                    supervisores = data;
+                    cargarAreas();
+                    aplicarFiltros();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tablaSupervisores').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error al cargar los supervisores
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        function aplicarFiltros() {
+            const buscarNombre = document.getElementById('buscarNombre').value.toLowerCase();
+            const filtroArea = document.getElementById('filtroArea').value;
+            
+            supervisoresFiltrados = supervisores.filter(s => {
+                // Filtro por nombre
+                const coincideNombre = !buscarNombre || 
+                    s.nombre_completo.toLowerCase().includes(buscarNombre);
+                
+                // Filtro por área
+                const coincideArea = !filtroArea || 
+                    (s.area && s.area === filtroArea);
+                
+                return coincideNombre && coincideArea;
+            });
+            
+            mostrarSupervisores();
+        }
+        
+        function cargarAreas() {
+            // Obtener lista única de áreas
+            const areasSet = new Set();
+            supervisores.forEach(s => {
+                if (s.area) {
+                    areasSet.add(s.area);
+                }
+            });
+            
+            const select = document.getElementById('filtroArea');
+            select.innerHTML = '<option value="">Todas</option>';
+            
+            Array.from(areasSet).sort().forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                select.appendChild(option);
+            });
+        }
+        
+        function mostrarSupervisores() {
+            const tbody = document.getElementById('tablaSupervisores');
+            const contador = document.getElementById('contadorSupervisores');
+            
+            contador.textContent = `${supervisoresFiltrados.length} supervisor${supervisoresFiltrados.length !== 1 ? 'es' : ''}`;
+            
+            if (supervisoresFiltrados.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            No hay supervisores con los filtros seleccionados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            supervisoresFiltrados.forEach(supervisor => {
+                const tr = document.createElement('tr');
+                
+                const estadoBadge = supervisor.activo 
+                    ? '<span class="badge activo">Activo</span>'
+                    : '<span class="badge inactivo">Inactivo</span>';
+                
+                let usuarioBadge = '<em style="color: #999;">Sin usuario</em>';
+                if (supervisor.username) {
+                    const userStatus = supervisor.user_active ? 'activo' : 'inactivo';
+                    usuarioBadge = `<span class="badge ${userStatus}" style="font-size: 0.85em;">${supervisor.username}</span>`;
+                }
+                
+                tr.innerHTML = `
+                    <td><strong>${supervisor.nombre_completo}</strong></td>
+                    <td>${supervisor.email || '<em style="color: #999;">-</em>'}</td>
+                    <td>${supervisor.telefono || '<em style="color: #999;">-</em>'}</td>
+                    <td>${supervisor.area || '<em style="color: #999;">-</em>'}</td>
+                    <td>${usuarioBadge}</td>
+                    <td>${estadoBadge}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-icon editar" onclick="editarSupervisor(${supervisor.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon eliminar" onclick="eliminarSupervisor(${supervisor.id}, '${supervisor.nombre_completo}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function toggleUserFields() {
+            const checked = document.getElementById('crearUsuario').checked;
+            document.getElementById('userFields').style.display = checked ? 'block' : 'none';
+            
+            if (checked) {
+                document.getElementById('username').required = true;
+                document.getElementById('password').required = true;
+            } else {
+                document.getElementById('username').required = false;
+                document.getElementById('password').required = false;
+            }
+        }
+        
+        function abrirModalNuevo() {
+            document.getElementById('modalTitulo').textContent = 'Nuevo Supervisor';
+            document.getElementById('formSupervisor').reset();
+            document.getElementById('supervisorId').value = '';
+            document.getElementById('estadoSupervisor').value = 'true';
+            document.getElementById('crearUsuario').checked = false;
+            document.getElementById('userFields').style.display = 'none';
+            document.getElementById('modalSupervisor').style.display = 'block';
+        }
+        
+        function editarSupervisor(id) {
+            const supervisor = supervisores.find(s => s.id === id);
+            if (!supervisor) return;
+            
+            document.getElementById('modalTitulo').textContent = 'Editar Supervisor';
+            document.getElementById('supervisorId').value = supervisor.id;
+            document.getElementById('nombreCompleto').value = supervisor.nombre_completo;
+            document.getElementById('email').value = supervisor.email || '';
+            document.getElementById('telefono').value = supervisor.telefono || '';
+            document.getElementById('area').value = supervisor.area || '';
+            document.getElementById('estadoSupervisor').value = supervisor.activo.toString();
+            document.getElementById('observaciones').value = supervisor.observaciones || '';
+            
+            document.getElementById('modalSupervisor').style.display = 'block';
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalSupervisor').style.display = 'none';
+        }
+        
+        function guardarSupervisor(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('supervisorId').value;
+            const crearUsuario = document.getElementById('crearUsuario').checked;
+            
+            const data = {
+                nombre_completo: document.getElementById('nombreCompleto').value,
+                email: document.getElementById('email').value || null,
+                telefono: document.getElementById('telefono').value || null,
+                area: document.getElementById('area').value || null,
+                activo: document.getElementById('estadoSupervisor').value === 'true',
+                observaciones: document.getElementById('observaciones').value || null,
+                crear_usuario: crearUsuario,
+                username: crearUsuario ? document.getElementById('username').value : null,
+                password: crearUsuario ? document.getElementById('password').value || 'supervisor123' : null
+            };
+            
+            const url = id ? `/api/rrhh/supervisores/${id}` : '/api/rrhh/supervisores';
+            const method = id ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cerrarModal();
+                    cargarSupervisores();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar el supervisor');
+            });
+        }
+        
+        function eliminarSupervisor(id, nombre) {
+            if (!confirm(`¿Está seguro de eliminar al supervisor "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            fetch(`/api/rrhh/supervisores/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    cargarSupervisores();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el supervisor');
+            });
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalSupervisor');
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+    </script>
+</body>
+</html>

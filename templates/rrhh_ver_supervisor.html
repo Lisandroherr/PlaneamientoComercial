@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil del Supervisor - RRHH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #2D2D2D;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #EB0A1E;
+        }
+        
+        .header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .btn-volver {
+            background: #58595B;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-volver:hover {
+            background: #2D2D2D;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .supervisor-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .supervisor-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .supervisor-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #EB0A1E 0%, #C8102E 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .supervisor-info h2 {
+            color: #2D2D2D;
+            margin-bottom: 5px;
+        }
+        
+        .supervisor-info p {
+            color: #58595B;
+            margin: 5px 0;
+        }
+        
+        .supervisor-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #EB0A1E;
+        }
+        
+        .stat-card i {
+            color: #EB0A1E;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .label {
+            color: #58595B;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            color: #2D2D2D;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .section-title {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .section-title h3 {
+            color: #2D2D2D;
+            font-size: 1.3em;
+        }
+        
+        .periodo-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .periodo-selector select {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2D2D2D 0%, #58595B 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9em;
+        }
+        
+        tbody tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge.activo {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.inactivo {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .badge.completado {
+            background: #48BB78;
+            color: white;
+        }
+        
+        .badge.pendiente {
+            background: #ED8936;
+            color: white;
+        }
+        
+        .badge.sin-evaluacion {
+            background: #E53E3E;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+        
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #cbd5e0;
+        }
+        
+        .precio {
+            font-weight: 600;
+            color: #2D882D;
+        }
+        
+        .search-box {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+            width: 250px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #EB0A1E;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .money {
+            font-weight: 600;
+            color: #2D2D2D;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-user-tie"></i> Perfil del Supervisor</h1>
+        <a href="/rrhh/empleados" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver a Empleados
+        </a>
+    </div>
+    
+    <div class="container">
+        <!-- Información del Supervisor -->
+        <div class="supervisor-card">
+            <div class="supervisor-header">
+                <div class="supervisor-avatar" id="supervisorAvatar">?</div>
+                <div class="supervisor-info">
+                    <h2 id="supervisorNombre">Cargando...</h2>
+                    <p><i class="fas fa-calendar-plus"></i> Alta: <span id="supervisorFechaAlta">-</span></p>
+                    <p id="supervisorEstado"></p>
+                </div>
+            </div>
+            
+            <div class="supervisor-stats">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="label">Empleados a Cargo</div>
+                    <div class="value" id="totalEmpleados">0</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-user-check"></i>
+                    <div class="label">Empleados Activos</div>
+                    <div class="value" id="empleadosActivos">0</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-trophy"></i>
+                    <div class="label">Premio Toyota Total</div>
+                    <div class="value" id="premioToyotaTotal">$0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipo a Cargo con Evaluaciones -->
+        <div class="section-title">
+            <h3><i class="fas fa-clipboard-check"></i> Equipo y Evaluaciones</h3>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="periodo-selector">
+                    <label style="font-weight: 600; color: #2D2D2D;">
+                        <i class="fas fa-calendar-alt"></i> Período:
+                    </label>
+                    <select id="mesFiltro" onchange="cargarEvaluaciones()">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                    <select id="anioFiltro" onchange="cargarEvaluaciones()">
+                        <!-- Se llenará dinámicamente -->
+                    </select>
+                </div>
+                <input type="text" class="search-box" id="buscarEmpleado" placeholder="Buscar empleado..." oninput="filtrarEquipo()">
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> Legajo</th>
+                        <th><i class="fas fa-user"></i> Nombre Completo</th>
+                        <th><i class="fas fa-briefcase"></i> Posición</th>
+                        <th class="text-right"><i class="fas fa-trophy"></i> Premio Toyota</th>
+                        <th class="text-center"><i class="fas fa-chart-line"></i> Performance</th>
+                        <th class="text-right"><i class="fas fa-dollar-sign"></i> Comisiones</th>
+                        <th class="text-right"><i class="fas fa-hand-holding-usd"></i> Anticipo Com.</th>
+                        <th class="text-right"><i class="fas fa-clock"></i> HE 50%</th>
+                        <th class="text-right"><i class="fas fa-clock"></i> HE 100%</th>
+                        <th class="text-center"><i class="fas fa-info-circle"></i> Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaEquipo">
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Cargando equipo...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let supervisor = null;
+        let equipo = [];
+        let equipoFiltrado = [];
+        let evaluaciones = {};
+        
+        // Obtener ID del supervisor de la URL
+        const supervisorId = window.location.pathname.split('/').pop();
+        
+        // Cargar datos al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarSelectores();
+            cargarDatosSupervisor();
+        });
+        
+        function inicializarSelectores() {
+            const fecha = new Date();
+            const mesActual = fecha.getMonth() + 1;
+            const anioActual = fecha.getFullYear();
+            
+            // Configurar selector de mes
+            document.getElementById('mesFiltro').value = mesActual;
+            
+            // Configurar selector de año (últimos 3 años + 2 años futuros)
+            const selectAnio = document.getElementById('anioFiltro');
+            for (let i = anioActual - 3; i <= anioActual + 2; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === anioActual) option.selected = true;
+                selectAnio.appendChild(option);
+            }
+        }
+        
+        async function cargarDatosSupervisor() {
+            try {
+                const response = await fetch(`/api/rrhh/supervisor/${supervisorId}`);
+                if (!response.ok) {
+                    throw new Error('Error al cargar datos del supervisor');
+                }
+                
+                const data = await response.json();
+                console.log('Datos recibidos del servidor:', data);
+                console.log('Supervisor:', data.supervisor);
+                console.log('Equipo:', data.equipo);
+                console.log('Primer empleado:', data.equipo[0]);
+                
+                supervisor = data.supervisor;
+                equipo = data.equipo;
+                equipoFiltrado = equipo;
+                
+                mostrarSupervisor();
+                cargarEvaluaciones();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los datos del supervisor');
+            }
+        }
+        
+        function mostrarSupervisor() {
+            if (!supervisor) return;
+            
+            // Avatar con iniciales
+            const iniciales = supervisor.nombre_completo
+                .split(' ')
+                .map(n => n[0])
+                .slice(0, 2)
+                .join('');
+            document.getElementById('supervisorAvatar').textContent = iniciales;
+            
+            // Nombre
+            document.getElementById('supervisorNombre').textContent = supervisor.nombre_completo;
+            
+            // Fecha de alta
+            if (supervisor.fecha_creacion) {
+                const fecha = new Date(supervisor.fecha_creacion);
+                const dia = String(fecha.getUTCDate()).padStart(2, '0');
+                const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+                const anio = fecha.getUTCFullYear();
+                document.getElementById('supervisorFechaAlta').textContent = `${dia}/${mes}/${anio}`;
+            }
+            
+            // Estado
+            const estadoBadge = supervisor.activo 
+                ? '<span class="badge activo">Activo</span>'
+                : '<span class="badge inactivo">Inactivo</span>';
+            document.getElementById('supervisorEstado').innerHTML = `<i class="fas fa-circle"></i> Estado: ${estadoBadge}`;
+            
+            // Estadísticas
+            const totalEmpleados = equipo.length;
+            const empleadosActivos = equipo.filter(e => e.activo).length;
+            const premioTotal = equipo
+                .filter(e => e.activo)
+                .reduce((sum, e) => sum + (parseFloat(e.premio_toyota) || 0), 0);
+            
+            document.getElementById('totalEmpleados').textContent = totalEmpleados;
+            document.getElementById('empleadosActivos').textContent = empleadosActivos;
+            document.getElementById('premioToyotaTotal').textContent = new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(premioTotal);
+        }
+        
+        async function cargarEvaluaciones() {
+            const mes = document.getElementById('mesFiltro').value;
+            const anio = document.getElementById('anioFiltro').value;
+            
+            try {
+                const response = await fetch(`/api/rrhh/evaluaciones?mes=${mes}&anio=${anio}&supervisor_id=${supervisorId}`);
+                if (!response.ok) {
+                    throw new Error('Error al cargar evaluaciones');
+                }
+                
+                const data = await response.json();
+                
+                // Crear mapa de evaluaciones por empleado_id
+                evaluaciones = {};
+                data.forEach(ev => {
+                    evaluaciones[ev.empleado_id] = ev;
+                });
+                
+                console.log('Evaluaciones cargadas:', evaluaciones);
+                mostrarEquipo();
+            } catch (error) {
+                console.error('Error:', error);
+                evaluaciones = {};
+                mostrarEquipo();
+            }
+        }
+        
+        function mostrarEquipo() {
+            const tbody = document.getElementById('tablaEquipo');
+            
+            console.log('mostrarEquipo - equipoFiltrado:', equipoFiltrado);
+            console.log('mostrarEquipo - primer empleado:', equipoFiltrado[0]);
+            
+            if (equipoFiltrado.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <i class="fas fa-users-slash"></i>
+                            <p>No hay empleados en este equipo</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            equipoFiltrado.forEach((empleado, index) => {
+                console.log(`Empleado ${index}:`, empleado);
+                console.log(`  - legajo: ${empleado.legajo}`);
+                console.log(`  - nombre_completo: ${empleado.nombre_completo}`);
+                console.log(`  - posicion_nombre: ${empleado.posicion_nombre}`);
+                
+                const tr = document.createElement('tr');
+                const ev = evaluaciones[empleado.id] || {};
+                
+                // Determinar estado de evaluación
+                let estadoBadge;
+                if (ev.id) {
+                    const allFields = ev.performance !== null && 
+                                     ev.comisiones !== null && 
+                                     ev.anticipo_comisiones !== null && 
+                                     ev.horas_extras_50 !== null && 
+                                     ev.horas_extras_100 !== null;
+                    
+                    estadoBadge = allFields 
+                        ? '<span class="badge completado">Completado</span>'
+                        : '<span class="badge pendiente">Incompleto</span>';
+                } else {
+                    estadoBadge = '<span class="badge sin-evaluacion">Sin Evaluación</span>';
+                }
+                
+                // Formatear valores
+                const premio = parseFloat(empleado.premio_toyota || 0);
+                const premioFormateado = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(premio);
+                
+                const performance = ev.performance !== null 
+                    ? `${parseFloat(ev.performance).toFixed(1)}%`
+                    : '<em style="color: #999;">-</em>';
+                
+                const comisiones = ev.comisiones !== null 
+                    ? `$${parseFloat(ev.comisiones).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : '<em style="color: #999;">-</em>';
+                
+                const anticipo = ev.anticipo_comisiones !== null 
+                    ? `$${parseFloat(ev.anticipo_comisiones).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                    : '<em style="color: #999;">-</em>';
+                
+                const he50 = ev.horas_extras_50 !== null 
+                    ? `${parseFloat(ev.horas_extras_50).toFixed(1)}h`
+                    : '<em style="color: #999;">-</em>';
+                
+                const he100 = ev.horas_extras_100 !== null 
+                    ? `${parseFloat(ev.horas_extras_100).toFixed(1)}h`
+                    : '<em style="color: #999;">-</em>';
+                
+                tr.innerHTML = `
+                    <td><strong>${empleado.legajo}</strong></td>
+                    <td>${empleado.nombre_completo}</td>
+                    <td>${empleado.posicion_nombre || '<em style="color: #999;">Sin asignar</em>'}</td>
+                    <td class="text-right money">${premioFormateado}</td>
+                    <td class="text-center"><strong>${performance}</strong></td>
+                    <td class="text-right money">${comisiones}</td>
+                    <td class="text-right money">${anticipo}</td>
+                    <td class="text-right">${he50}</td>
+                    <td class="text-right">${he100}</td>
+                    <td class="text-center">${estadoBadge}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function filtrarEquipo() {
+            const busqueda = document.getElementById('buscarEmpleado').value.toLowerCase();
+            
+            if (!busqueda) {
+                equipoFiltrado = equipo;
+            } else {
+                equipoFiltrado = equipo.filter(e => 
+                    e.nombre_completo.toLowerCase().includes(busqueda) ||
+                    e.legajo.toLowerCase().includes(busqueda) ||
+                    (e.posicion_nombre && e.posicion_nombre.toLowerCase().includes(busqueda))
+                );
+            }
+            
+            mostrarEquipo();
+        }
+    </script>
+</body>
+</html>
