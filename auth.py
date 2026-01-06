@@ -14,9 +14,9 @@ from datetime import datetime
 class User(UserMixin):
     """Clase de usuario para Flask-Login"""
     
-    def __init__(self, id, username, role, full_name=None, email=None, active=True, 
+    def __init__(self, id, username, role='user', full_name=None, email=None, active=True,
                  permiso_planeamiento=False, permiso_ventas=False, 
-                 permiso_gestoria=False, permiso_entregas=False):
+                 permiso_gestoria=False, permiso_entregas=False, permiso_bi=False, permiso_rrhh=False, permiso_usados=False, permiso_postventa=False):
         self.id = id
         self.username = username
         self.role = role
@@ -27,12 +27,34 @@ class User(UserMixin):
         self.permiso_ventas = permiso_ventas
         self.permiso_gestoria = permiso_gestoria
         self.permiso_entregas = permiso_entregas
+        self.permiso_bi = permiso_bi
+        self.permiso_rrhh = permiso_rrhh
+        self.permiso_usados = permiso_usados
+        self.permiso_postventa = permiso_postventa
     
     def get_id(self):
         return str(self.id)
     
     def is_admin(self):
         return self.role == 'admin'
+    
+    def is_usuario_plus(self):
+        return self.role == 'usuario_plus'
+    
+    def is_usuario_plus_plus(self):
+        return self.role == 'usuario_plus_plus'
+    
+    def is_usuario_plus_plus_plus(self):
+        return self.role == 'usuario_plus_plus_plus'
+    
+    def is_clase_e(self):
+        return self.role == 'clase_e'
+    
+    def is_clase_f(self):
+        return self.role == 'clase_f'
+    
+    def is_clase_g(self):
+        return self.role == 'clase_g'
     
     def has_permission(self, module):
         """Verificar si el usuario tiene permiso para acceder a un módulo"""
@@ -45,7 +67,11 @@ class User(UserMixin):
             'planeamiento': self.permiso_planeamiento,
             'ventas': self.permiso_ventas,
             'gestoria': self.permiso_gestoria,
-            'entregas': self.permiso_entregas
+            'entregas': self.permiso_entregas,
+            'bi': self.permiso_bi,
+            'rrhh': self.permiso_rrhh,
+            'usados': self.permiso_usados,
+            'postventa': self.permiso_postventa
         }
         
         return permissions_map.get(module, False)
@@ -53,30 +79,13 @@ class User(UserMixin):
     @staticmethod
     def get_by_id(user_id):
         """Obtener usuario por ID"""
-        
-        # Soporte para usuario hardcodeado
-        if str(user_id) == '999999':
-            hardcoded_user = User(
-                id=999999,
-                username='administrador',
-                role='admin',
-                full_name='Administrador del Sistema',
-                email='admin@toyota.com',
-                active=True,
-                permiso_planeamiento=True,
-                permiso_ventas=True,
-                permiso_gestoria=True,
-                permiso_entregas=True
-            )
-            return hardcoded_user
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
             cursor.execute('''
                 SELECT id, username, role, full_name, email, active,
-                       permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+                       permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa
                 FROM users
                 WHERE id = %s
             ''', (user_id,))
@@ -96,7 +105,11 @@ class User(UserMixin):
                     permiso_planeamiento=row['permiso_planeamiento'],
                     permiso_ventas=row['permiso_ventas'],
                     permiso_gestoria=row['permiso_gestoria'],
-                    permiso_entregas=row['permiso_entregas']
+                    permiso_entregas=row['permiso_entregas'],
+                    permiso_bi=row['permiso_bi'],
+                    permiso_rrhh=row['permiso_rrhh'],
+                    permiso_usados=row['permiso_usados'],
+                    permiso_postventa=row['permiso_postventa']
                 )
             return None
         except Exception as e:
@@ -109,34 +122,14 @@ class User(UserMixin):
     def get_by_username(username):
         """Obtener usuario por nombre de usuario"""
         
-        # 🔐 USUARIO HARDCODEADO PARA TESTING/EMERGENCIA
-        # Este usuario funciona SIEMPRE, incluso si la base de datos falla
-        if username == 'administrador':
-            hardcoded_user = User(
-                id=999999,  # ID único que no colisiona con BD
-                username='administrador',
-                role='admin',
-                full_name='Administrador del Sistema',
-                email='admin@toyota.com',
-                active=True,
-                permiso_planeamiento=True,
-                permiso_ventas=True,
-                permiso_gestoria=True,
-                permiso_entregas=True
-            )
-            # Hash de la contraseña: LShm.2701
-            hardcoded_user.password_hash = generate_password_hash('LShm.2701')
-            print("⚠️  Usando usuario hardcodeado de emergencia: administrador")
-            return hardcoded_user
-        
-        # Intentar obtener usuario de la base de datos
+        # Obtener usuario de la base de datos
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
             cursor.execute('''
                 SELECT id, username, role, full_name, email, active, password_hash,
-                       permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+                       permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa
                 FROM users
                 WHERE username = %s
             ''', (username,))
@@ -156,7 +149,11 @@ class User(UserMixin):
                     permiso_planeamiento=row['permiso_planeamiento'],
                     permiso_ventas=row['permiso_ventas'],
                     permiso_gestoria=row['permiso_gestoria'],
-                    permiso_entregas=row['permiso_entregas']
+                    permiso_entregas=row['permiso_entregas'],
+                    permiso_bi=row['permiso_bi'],
+                    permiso_rrhh=row['permiso_rrhh'],
+                    permiso_usados=row['permiso_usados'],
+                    permiso_postventa=row['permiso_postventa']
                 )
                 user.password_hash = row['password_hash']
                 return user
@@ -212,6 +209,22 @@ def admin_required(f):
     return decorated_function
 
 
+def usuario_plus_required(f):
+    """Decorador para requerir rol de Usuario + o superior"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Debes iniciar sesión para acceder a esta página', 'warning')
+            return redirect(url_for('login'))
+        
+        if not (current_user.is_admin() or current_user.is_usuario_plus()):
+            flash('Necesitas permisos de Usuario + o superior para acceder a esta página', 'danger')
+            return redirect(url_for('home'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def module_permission_required(module_name):
     """Decorador para requerir permiso a un módulo específico"""
     def decorator(f):
@@ -230,6 +243,94 @@ def module_permission_required(module_name):
     return decorator
 
 
+def usados_section_required(section):
+    """Decorador para controlar acceso a secciones específicas del módulo Usados
+    
+    Permisos por rol:
+    - Clase A (user): solo 'lavadero'
+    - Clase B (usuario_plus): 'stock', 'ingresos', 'planificacion', 'lavadero', 'proveedores'
+    - Clase C (usuario_plus_plus): solo 'stock' (restringido a KINTO)
+    - Clase D (usuario_plus_plus_plus): solo 'stock' (restringido a TEST DRIVE)
+    - Clase E: 'stock', 'ingresos', 'lavadero'
+    - Clase F: 'stock', 'lavadero'
+    - Clase G: 'stock', 'ingresos', 'lavadero', 'proveedores'
+    - Supervisor: todas las secciones (7 módulos incluyendo proveedores)
+    - Admin: todas las secciones
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Debes iniciar sesión para acceder a esta página', 'warning')
+                return redirect(url_for('login'))
+            
+            # Admin y Supervisor tienen acceso a todo
+            if current_user.role in ['admin', 'supervisor']:
+                return f(*args, **kwargs)
+            
+            # Clase B (Usuario +) puede acceder a stock, ingresos, planificacion, lavadero, proveedores
+            if current_user.role == 'usuario_plus':
+                if section in ['stock', 'ingresos', 'planificacion', 'lavadero', 'proveedores']:
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase C (Usuario ++) solo puede acceder a stock (KINTO)
+            if current_user.role == 'usuario_plus_plus':
+                if section == 'stock':
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase D (Usuario +++) solo puede acceder a stock (TEST DRIVE)
+            if current_user.role == 'usuario_plus_plus_plus':
+                if section == 'stock':
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase E puede acceder a stock, ingresos, lavadero
+            if current_user.role == 'clase_e':
+                if section in ['stock', 'ingresos', 'lavadero']:
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase F puede acceder a stock y lavadero
+            if current_user.role == 'clase_f':
+                if section in ['stock', 'lavadero']:
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase G puede acceder a stock, ingresos, lavadero, proveedores
+            if current_user.role == 'clase_g':
+                if section in ['stock', 'ingresos', 'lavadero', 'proveedores']:
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Clase A (Usuario normal) solo puede acceder a lavadero
+            if current_user.role == 'user':
+                if section == 'lavadero':
+                    return f(*args, **kwargs)
+                else:
+                    flash('No tienes permisos para acceder a esta sección', 'danger')
+                    return redirect(url_for('usados'))
+            
+            # Cualquier otro caso, redirigir
+            flash('No tienes permisos para acceder a esta sección', 'danger')
+            return redirect(url_for('usados'))
+        return decorated_function
+    return decorator
+
+
 def get_all_users():
     """Obtener todos los usuarios (solo para admin)"""
     conn = get_db_connection()
@@ -238,7 +339,7 @@ def get_all_users():
     try:
         cursor.execute('''
             SELECT id, username, role, full_name, email, active, created_at, last_login,
-                   permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas
+                   permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa
             FROM users
             ORDER BY created_at DESC
         ''')
@@ -261,7 +362,11 @@ def get_all_users():
                 'permiso_planeamiento': row['permiso_planeamiento'],
                 'permiso_ventas': row['permiso_ventas'],
                 'permiso_gestoria': row['permiso_gestoria'],
-                'permiso_entregas': row['permiso_entregas']
+                'permiso_entregas': row['permiso_entregas'],
+                'permiso_bi': row['permiso_bi'],
+                'permiso_rrhh': row['permiso_rrhh'],
+                'permiso_usados': row['permiso_usados'],
+                'permiso_postventa': row['permiso_postventa']
             })
         
         return users
@@ -274,7 +379,7 @@ def get_all_users():
 
 def create_user(username, password, role='user', full_name=None, email=None,
                 permiso_planeamiento=False, permiso_ventas=False, 
-                permiso_gestoria=False, permiso_entregas=False):
+                permiso_gestoria=False, permiso_entregas=False, permiso_bi=False, permiso_rrhh=False, permiso_usados=False, permiso_postventa=False):
     """Crear un nuevo usuario"""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -284,11 +389,11 @@ def create_user(username, password, role='user', full_name=None, email=None,
         
         cursor.execute('''
             INSERT INTO users (username, password_hash, role, full_name, email,
-                             permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                             permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         ''', (username, password_hash, role, full_name, email,
-              permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas))
+              permiso_planeamiento, permiso_ventas, permiso_gestoria, permiso_entregas, permiso_bi, permiso_rrhh, permiso_usados, permiso_postventa))
         
         user_id = cursor.fetchone()['id']
         conn.commit()
@@ -302,7 +407,8 @@ def create_user(username, password, role='user', full_name=None, email=None,
 
 
 def update_user(user_id, username=None, password=None, role=None, full_name=None, email=None, active=None,
-                permiso_planeamiento=None, permiso_ventas=None, permiso_gestoria=None, permiso_entregas=None):
+                permiso_planeamiento=None, permiso_ventas=None, permiso_gestoria=None, permiso_entregas=None,
+                permiso_bi=None, permiso_rrhh=None, permiso_usados=None, permiso_postventa=None):
     """Actualizar un usuario"""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -350,6 +456,22 @@ def update_user(user_id, username=None, password=None, role=None, full_name=None
         if permiso_entregas is not None:
             updates.append('permiso_entregas = %s')
             params.append(permiso_entregas)
+        
+        if permiso_bi is not None:
+            updates.append('permiso_bi = %s')
+            params.append(permiso_bi)
+        
+        if permiso_rrhh is not None:
+            updates.append('permiso_rrhh = %s')
+            params.append(permiso_rrhh)
+        
+        if permiso_usados is not None:
+            updates.append('permiso_usados = %s')
+            params.append(permiso_usados)
+        
+        if permiso_postventa is not None:
+            updates.append('permiso_postventa = %s')
+            params.append(permiso_postventa)
         
         if not updates:
             return {'success': False, 'error': 'No hay campos para actualizar'}

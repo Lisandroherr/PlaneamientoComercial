@@ -20,11 +20,11 @@ def add_permission_columns():
             SELECT column_name 
             FROM information_schema.columns 
             WHERE table_name = 'users' 
-            AND column_name IN ('permiso_planeamiento', 'permiso_ventas', 'permiso_gestoria', 'permiso_entregas')
+            AND column_name IN ('permiso_planeamiento', 'permiso_ventas', 'permiso_gestoria', 'permiso_entregas', 'permiso_rrhh', 'permiso_usados')
         """)
-        existing_columns = [row[0] for row in cursor.fetchall()]
+        existing_columns = [row['column_name'] for row in cursor.fetchall()]
         
-        if len(existing_columns) == 4:
+        if len(existing_columns) == 6:
             print("✅ Las columnas de permisos ya existen en la tabla users")
             return True
         
@@ -33,7 +33,9 @@ def add_permission_columns():
             ('permiso_planeamiento', 'BOOLEAN DEFAULT FALSE'),
             ('permiso_ventas', 'BOOLEAN DEFAULT FALSE'),
             ('permiso_gestoria', 'BOOLEAN DEFAULT FALSE'),
-            ('permiso_entregas', 'BOOLEAN DEFAULT FALSE')
+            ('permiso_entregas', 'BOOLEAN DEFAULT FALSE'),
+            ('permiso_rrhh', 'BOOLEAN DEFAULT FALSE'),
+            ('permiso_usados', 'BOOLEAN DEFAULT FALSE')
         ]
         
         for column_name, column_definition in columns_to_add:
@@ -50,7 +52,9 @@ def add_permission_columns():
             SET permiso_planeamiento = TRUE,
                 permiso_ventas = TRUE,
                 permiso_gestoria = TRUE,
-                permiso_entregas = TRUE
+                permiso_entregas = TRUE,
+                permiso_rrhh = TRUE,
+                permiso_usados = TRUE
             WHERE role = 'admin'
         """)
         
@@ -64,6 +68,8 @@ def add_permission_columns():
         print("   - permiso_ventas: Acceso al módulo de Ventas")
         print("   - permiso_gestoria: Acceso al módulo de Gestoría")
         print("   - permiso_entregas: Acceso al módulo de Entregas")
+        print("   - permiso_rrhh: Acceso al módulo de Recursos Humanos")
+        print("   - permiso_usados: Acceso al módulo de Usados")
         print("\n💡 Los usuarios con role='admin' tienen todos los permisos habilitados automáticamente")
         
         return True
